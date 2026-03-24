@@ -181,8 +181,9 @@ const searchCities = cities.cities
           </h2>
           <p data-hero-caption>{heroCity.caption}</p>
         </div>
-        <a class="btn-secondary-sm" data-hero-open href={`/sunrise/${heroCity.slug}/`}>
-          Open city page
+        <a class="btn-secondary-sm hero-open-link" data-hero-open href={`/sunrise/${heroCity.slug}/`}>
+          <span>Open city page</span>
+          <i data-lucide="arrow-up-right" class="icon-sm"></i>
         </a>
       </div>
 
