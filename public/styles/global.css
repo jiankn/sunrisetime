@@ -3246,6 +3246,34 @@ summary:focus-visible {
   .city-snapshot,
   .city-secondary-grid {
     grid-template-columns: 1fr;
+    gap: var(--space-lg);
+  }
+
+  .snapshot-hero-copy {
+    display: contents;
+  }
+
+  .hero-badge {
+    order: 1;
+    margin-bottom: 0;
+  }
+
+  .hero-search-panel {
+    order: 2;
+  }
+
+  .hero-snapshot-panel {
+    order: 3;
+    min-height: 0;
+  }
+
+  .hero-search-intro {
+    order: 4;
+    gap: 8px;
+  }
+
+  .hero-proof-strip {
+    order: 5;
   }
 
   .city-highlight-grid {
@@ -3256,6 +3284,47 @@ summary:focus-visible {
 @media (max-width: 768px) {
   .snapshot-hero {
     padding-top: calc(var(--nav-height) + 48px);
+  }
+
+  .hero-badge {
+    display: none;
+  }
+
+  .hero-search-panel {
+    gap: var(--space-md);
+    padding: 18px;
+  }
+
+  .hero-snapshot-panel {
+    padding: var(--space-xl);
+    gap: var(--space-md);
+  }
+
+  .hero-next-card {
+    padding: 18px;
+  }
+
+  .hero-search-intro {
+    padding: 0 4px;
+    gap: 6px;
+  }
+
+  .hero-search-kicker {
+    font-size: 0.74rem;
+    letter-spacing: 0.08em;
+  }
+
+  .hero-search-intro h1 {
+    font-size: clamp(1.35rem, 6.4vw, 1.75rem);
+    line-height: 1.12;
+    max-width: 12ch;
+  }
+
+  .hero-search-intro .hero-subtitle {
+    margin: 0;
+    font-size: 0.94rem;
+    line-height: 1.65;
+    max-width: 34ch;
   }
 
   .hero-search-head {
@@ -3320,6 +3389,25 @@ summary:focus-visible {
     gap: 10px;
   }
 
+  .hero-proof-strip {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .hero-proof-item {
+    padding: 12px 10px;
+    gap: 4px;
+  }
+
+  .hero-proof-item strong {
+    font-size: 0.9rem;
+  }
+
+  .hero-proof-item span {
+    font-size: 0.74rem;
+    line-height: 1.35;
+  }
+
   .hero-city-pill {
     width: 100%;
     min-width: 0;
@@ -3337,7 +3425,6 @@ summary:focus-visible {
     overflow-x: clip;
   }
 
-  .hero-proof-strip,
   .hero-mini-grid,
   .city-snapshot-metrics {
     grid-template-columns: 1fr;
@@ -3365,6 +3452,10 @@ summary:focus-visible {
   .snapshot-hero-copy h1,
   .city-snapshot-copy h1 {
     max-width: none;
+  }
+
+  .hero-proof-strip {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .hero-preview-switches {
