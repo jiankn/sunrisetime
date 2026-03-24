@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SunriseTime — Real-Time Sunrise & Sunset Analytics Dashboard</title>
+  <meta name="description" content="SunriseTime provides real-time sunrise, sunset, golden hour, and moon phase analytics for 5,000+ cities worldwide. Track daylight trends, plan golden hour photography, and never miss a prayer time.">
+  <meta name="keywords" content="sunrise time, sunset time, golden hour, moon phase, prayer times, daylight analytics, sun tracking">
+  <link rel="canonical" href="https://sunrisetime.co/">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="SunriseTime — Real-Time Sunrise & Sunset Analytics Dashboard">
+  <meta property="og:description" content="Track sunrise, sunset, golden hour, and moon phases for 5,000+ cities worldwide. Real-time analytics dashboard with stunning visualizations.">
+  <meta property="og:url" content="https://sunrisetime.co/">
+  <meta property="og:site_name" content="SunriseTime">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="SunriseTime — Real-Time Sunrise & Sunset Analytics Dashboard">
+  <meta name="twitter:description" content="Track sunrise, sunset, golden hour, and moon phases for 5,000+ cities worldwide.">
+
+  <!-- Google Fonts: Fira Code + Fira Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Fira+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js" defer></script>
+
+  <link rel="stylesheet" href="styles.css">
+
+  <!-- JSON-LD Structured Data: WebSite + Organization -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": "https://sunrisetime.co/#website",
+        "name": "SunriseTime",
+        "url": "https://sunrisetime.co/",
+        "description": "Real-time sunrise, sunset, golden hour, and moon phase analytics for 5,000+ cities worldwide.",
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": "https://sunrisetime.co/sunrise/{search_term_string}/",
+          "query-input": "required name=search_term_string"
+        }
+      },
+      {
+        "@type": "Organization",
+        "@id": "https://sunrisetime.co/#organization",
+        "name": "SunriseTime",
+        "url": "https://sunrisetime.co/",
+        "sameAs": []
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "How accurate is SunriseTime data?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "SunriseTime uses the NOAA Solar Calculator algorithm, providing sunrise and sunset times accurate to within 1 minute for any location worldwide."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How many cities does SunriseTime cover?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "SunriseTime covers over 5,000 cities globally, including all major metropolitan areas and popular photography destinations."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Does SunriseTime provide golden hour times?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes, SunriseTime calculates precise golden hour windows for both morning and evening, perfect for photographers and filmmakers."
+            }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+</head>
+<body>
+  <!-- ===== FLOATING NAVBAR ===== -->
+  <nav class="navbar" id="navbar">
+    <div class="nav-inner">
+      <a href="/" class="nav-logo" aria-label="SunriseTime Home">
+        <span class="logo-icon">
+          <i data-lucide="sun" class="icon-sm"></i>
+        </span>
+        <span class="logo-text">Sunrise<span class="logo-accent">Time</span></span>
+      </a>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="#features">Features</a></li>
+        <li><a href="#dashboard">Dashboard</a></li>
+        <li><a href="#cities">Top Cities</a></li>
+        <li><a href="#faq">FAQ</a></li>
+      </ul>
+      <div class="nav-actions">
+        <a href="#dashboard" class="btn-secondary-sm">Live Demo</a>
+        <a href="#cities" class="btn-primary-sm">Explore Cities</a>
+      </div>
+      <button class="hamburger" id="hamburger" aria-label="Toggle navigation menu" type="button">
+        <i data-lucide="menu" class="icon-sm"></i>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Mobile Menu Overlay -->
+  <div class="mobile-menu" id="mobileMenu">
+    <ul>
+      <li><a href="#features">Features</a></li>
+      <li><a href="#dashboard">Dashboard</a></li>
+      <li><a href="#cities">Top Cities</a></li>
+      <li><a href="#faq">FAQ</a></li>
+      <li><a href="#dashboard" class="btn-primary-sm" style="display:inline-block;margin-top:1rem;">Explore Dashboard</a></li>
+    </ul>
+  </div>
+
+  <!-- ===== HERO SECTION ===== -->
+  <header class="hero" id="hero">
+    <div class="hero-bg-effects">
+      <div class="orb orb-1"></div>
+      <div class="orb orb-2"></div>
+      <div class="orb orb-3"></div>
+      <div class="grid-overlay"></div>
+    </div>
+    <div class="container hero-content">
+      <div class="hero-badge">
+        <i data-lucide="zap" class="icon-xs"></i>
+        <span>Real-Time Sun & Moon Analytics</span>
+      </div>
+      <h1>Track Every Sunrise, Sunset &amp; Golden Hour <span class="gradient-text">Worldwide</span></h1>
+      <p class="hero-subtitle">SunriseTime delivers precision sunrise and sunset analytics for over 5,000 cities. Real-time dashboards, golden hour tracking, moon phase data, and prayer time calculations — all in one blazing-fast platform powered by edge computing.</p>
+      <div class="hero-cta-group">
+        <a href="#dashboard" class="btn-primary" id="heroCta">
+          <i data-lucide="play" class="icon-xs"></i>
+          Explore Dashboard
+        </a>
+        <a href="#features" class="btn-secondary">
+          <i data-lucide="arrow-down" class="icon-xs"></i>
+          See Features
+        </a>
+      </div>
+      <div class="hero-stats">
+        <div class="stat">
+          <span class="stat-value" data-count="5000">0</span>
+          <span class="stat-label">Cities Tracked</span>
+        </div>
+        <div class="stat">
+          <span class="stat-value">&lt;50<span class="stat-unit">ms</span></span>
+          <span class="stat-label">Response Time</span>
+        </div>
+        <div class="stat">
+          <span class="stat-value">99.9<span class="stat-unit">%</span></span>
+          <span class="stat-label">Accuracy</span>
+        </div>
+        <div class="stat">
+          <span class="stat-value">24/7</span>
+          <span class="stat-label">Live Updates</span>
+        </div>
+      </div>
+    </div>
+    <!-- Hero Dashboard Preview -->
+    <div class="container hero-preview">
+      <div class="dashboard-preview glass-card">
+        <div class="preview-header">
+          <div class="preview-dots">
+            <span></span><span></span><span></span>
+          </div>
+          <span class="preview-title">SunriseTime Dashboard — New York City</span>
+        </div>
+        <div class="preview-grid">
+          <div class="preview-card accent-sunrise">
+            <div class="preview-card-header">
+              <i data-lucide="sunrise" class="icon-sm"></i>
+              <span>Sunrise</span>
+            </div>
+            <span class="preview-value">6:42 AM</span>
+            <span class="preview-delta positive">
+              <i data-lucide="trending-down" class="icon-xs"></i>
+              -1m vs yesterday
+            </span>
+          </div>
+          <div class="preview-card accent-sunset">
+            <div class="preview-card-header">
+              <i data-lucide="sunset" class="icon-sm"></i>
+              <span>Sunset</span>
+            </div>
+            <span class="preview-value">7:18 PM</span>
+            <span class="preview-delta positive">
+              <i data-lucide="trending-up" class="icon-xs"></i>
+              +2m vs yesterday
+            </span>
+          </div>
+          <div class="preview-card accent-golden">
+            <div class="preview-card-header">
+              <i data-lucide="camera" class="icon-sm"></i>
+              <span>Golden Hour</span>
+            </div>
+            <span class="preview-value">6:31 PM</span>
+            <span class="preview-delta">47 min window</span>
+          </div>
+          <div class="preview-card accent-moon">
+            <div class="preview-card-header">
+              <i data-lucide="moon" class="icon-sm"></i>
+              <span>Moon Phase</span>
+            </div>
+            <span class="preview-value">Waxing Gibbous</span>
+            <span class="preview-delta">82% illumination</span>
+          </div>
+        </div>
+        <!-- Mini chart area -->
+        <div class="preview-chart">
+          <div class="chart-label">Daylight Hours — March 2026</div>
+          <div class="chart-bars">
+            <div class="chart-bar" style="--height:55%"><span>10.2h</span></div>
+            <div class="chart-bar" style="--height:60%"><span>10.8h</span></div>
+            <div class="chart-bar" style="--height:65%"><span>11.3h</span></div>
+            <div class="chart-bar" style="--height:70%"><span>11.8h</span></div>
+            <div class="chart-bar active" style="--height:75%"><span>12.3h</span></div>
+            <div class="chart-bar" style="--height:80%"><span>12.9h</span></div>
+            <div class="chart-bar" style="--height:85%"><span>13.4h</span></div>
+          </div>
+          <div class="chart-x-labels">
+            <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== TRUST BADGES ===== -->
+  <section class="trust-section">
+    <div class="container">
+      <p class="trust-label">Trusted by photographers, developers, and communities worldwide</p>
+      <div class="trust-badges">
+        <div class="trust-badge glass-subtle">
+          <i data-lucide="shield-check" class="icon-md"></i>
+          <span>NOAA Algorithm</span>
+        </div>
+        <div class="trust-badge glass-subtle">
+          <i data-lucide="globe" class="icon-md"></i>
+          <span>5,000+ Cities</span>
+        </div>
+        <div class="trust-badge glass-subtle">
+          <i data-lucide="zap" class="icon-md"></i>
+          <span>Edge Computing</span>
+        </div>
+        <div class="trust-badge glass-subtle">
+          <i data-lucide="lock" class="icon-md"></i>
+          <span>Privacy First</span>
+        </div>
+        <div class="trust-badge glass-subtle">
+          <i data-lucide="clock" class="icon-md"></i>
+          <span>Real-Time Data</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== FEATURES SECTION ===== -->
+  <section class="features" id="features">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-badge">
+          <i data-lucide="layers" class="icon-xs"></i>
+          Core Features
+        </span>
+        <h2>Comprehensive Sunrise & Sunset Analytics for Every City</h2>
+        <p class="section-subtitle">From golden hour precision to moon phase tracking, SunriseTime covers every data point photographers, travelers, and communities need to plan their day perfectly.</p>
+      </div>
+
+      <div class="features-grid">
+        <div class="feature-card glass-card" id="feature-sunrise">
+          <div class="feature-icon icon-sunrise">
+            <i data-lucide="sunrise" class="icon-lg"></i>
+          </div>
+          <h3>Precision Sunrise & Sunset</h3>
+          <p>Accurate to within 1 minute using the NOAA Solar Calculator. Get civil, nautical, and astronomical twilight times for any city on any date.</p>
+          <a href="#dashboard" class="feature-link" aria-label="See sunrise and sunset data">
+            Explore data
+            <i data-lucide="arrow-right" class="icon-xs"></i>
+          </a>
+        </div>
+
+        <div class="feature-card glass-card" id="feature-golden">
+          <div class="feature-icon icon-golden">
+            <i data-lucide="camera" class="icon-lg"></i>
+          </div>
+          <h3>Golden Hour Tracking</h3>
+          <p>Never miss the perfect light again. Get precise morning and evening golden hour windows, plus blue hour timing for stunning landscape and portrait photography.</p>
+          <a href="#dashboard" class="feature-link" aria-label="See golden hour features">
+            Plan your shoot
+            <i data-lucide="arrow-right" class="icon-xs"></i>
+          </a>
+        </div>
+
+        <div class="feature-card glass-card" id="feature-moon">
+          <div class="feature-icon icon-moon">
+            <i data-lucide="moon" class="icon-lg"></i>
+          </div>
+          <h3>Moon Phase & Illumination</h3>
+          <p>Track current moon phase, illumination percentage, moonrise and moonset times. Plan night photography sessions and astronomy activities with confidence.</p>
+          <a href="#dashboard" class="feature-link" aria-label="See moon phase features">
+            View moon data
+            <i data-lucide="arrow-right" class="icon-xs"></i>
+          </a>
+        </div>
+
+        <div class="feature-card glass-card" id="feature-prayer">
+          <div class="feature-icon icon-prayer">
+            <i data-lucide="clock" class="icon-lg"></i>
+          </div>
+          <h3>Prayer Time Calculator</h3>
+          <p>Accurate Islamic prayer times calculated using multiple juristic methods. Supports Fajr, Dhuhr, Asr, Maghrib, and Isha with customizable calculation standards.</p>
+          <a href="#dashboard" class="feature-link" aria-label="See prayer time features">
+            Check times
+            <i data-lucide="arrow-right" class="icon-xs"></i>
+          </a>
+        </div>
+
+        <div class="feature-card glass-card" id="feature-daylight">
+          <div class="feature-icon icon-daylight">
+            <i data-lucide="bar-chart-3" class="icon-lg"></i>
+          </div>
+          <h3>Daylight Trend Analytics</h3>
+          <p>Visualize how daylight hours change across seasons with interactive charts. Compare daylight trends between cities and track solstice and equinox events.</p>
+          <a href="#dashboard" class="feature-link" aria-label="See daylight analytics">
+            See trends
+            <i data-lucide="arrow-right" class="icon-xs"></i>
+          </a>
+        </div>
+
+        <div class="feature-card glass-card" id="feature-speed">
+          <div class="feature-icon icon-speed">
+            <i data-lucide="gauge" class="icon-lg"></i>
+          </div>
+          <h3>Edge-Powered Performance</h3>
+          <p>Deployed on Cloudflare's 300+ global edge nodes with KV caching. Every request served in under 50ms — faster than any competitor in the sunrise data space.</p>
+          <a href="#dashboard" class="feature-link" aria-label="See performance details">
+            See benchmarks
+            <i data-lucide="arrow-right" class="icon-xs"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== DASHBOARD PREVIEW SECTION ===== -->
+  <section class="dashboard-section" id="dashboard">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-badge">
+          <i data-lucide="monitor" class="icon-xs"></i>
+          Live Dashboard
+        </span>
+        <h2>Real-Time Data Visualization at Your Fingertips</h2>
+        <p class="section-subtitle">Search any city and instantly see sunrise, sunset, golden hour, moon phase, and daylight trends — beautifully visualized with interactive charts and precision data cards.</p>
+      </div>
+
+      <!-- Interactive City Search -->
+      <div class="dashboard-demo glass-card-lg">
+        <div class="demo-search-bar">
+          <i data-lucide="search" class="icon-sm"></i>
+          <input type="text" id="citySearch" placeholder="Search a city... (e.g., Tokyo, London, New York)" autocomplete="off" aria-label="Search for a city">
+          <div class="search-results" id="searchResults"></div>
+        </div>
+
+        <div class="demo-city-name" id="demoCityName">New York City <span class="demo-timezone">EST (UTC-5)</span></div>
+
+        <div class="demo-cards">
+          <div class="demo-card glass-card accent-sunrise" id="demoSunrise">
+            <div class="demo-card-icon"><i data-lucide="sunrise" class="icon-md"></i></div>
+            <div class="demo-card-body">
+              <span class="demo-card-label">Sunrise</span>
+              <span class="demo-card-value" id="demoSunriseVal">6:42 AM</span>
+            </div>
+          </div>
+          <div class="demo-card glass-card accent-sunset" id="demoSunset">
+            <div class="demo-card-icon"><i data-lucide="sunset" class="icon-md"></i></div>
+            <div class="demo-card-body">
+              <span class="demo-card-label">Sunset</span>
+              <span class="demo-card-value" id="demoSunsetVal">7:18 PM</span>
+            </div>
+          </div>
+          <div class="demo-card glass-card accent-golden" id="demoGolden">
+            <div class="demo-card-icon"><i data-lucide="camera" class="icon-md"></i></div>
+            <div class="demo-card-body">
+              <span class="demo-card-label">Golden Hour</span>
+              <span class="demo-card-value" id="demoGoldenVal">6:31 PM</span>
+            </div>
+          </div>
+          <div class="demo-card glass-card accent-moon" id="demoMoon">
+            <div class="demo-card-icon"><i data-lucide="moon" class="icon-md"></i></div>
+            <div class="demo-card-body">
+              <span class="demo-card-label">Moon Phase</span>
+              <span class="demo-card-value" id="demoMoonVal">Waxing Gibbous</span>
+            </div>
+          </div>
+          <div class="demo-card glass-card accent-daylight" id="demoDaylight">
+            <div class="demo-card-icon"><i data-lucide="sun" class="icon-md"></i></div>
+            <div class="demo-card-body">
+              <span class="demo-card-label">Daylight</span>
+              <span class="demo-card-value" id="demoDaylightVal">12h 36m</span>
+            </div>
+          </div>
+          <div class="demo-card glass-card accent-prayer" id="demoPrayer">
+            <div class="demo-card-icon"><i data-lucide="clock" class="icon-md"></i></div>
+            <div class="demo-card-body">
+              <span class="demo-card-label">Next Prayer</span>
+              <span class="demo-card-value" id="demoPrayerVal">Maghrib 7:21</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Simulated Daylight Chart -->
+        <div class="demo-chart-area">
+          <h3 class="demo-chart-title">Daylight Hours — Weekly Trend</h3>
+          <div class="demo-chart" id="demoChart">
+            <!-- Bars generated via JS -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== ADSENSE PLACEHOLDER ===== -->
+  <div class="ad-unit" id="ad-mid">
+    <div class="container">
+      <div class="ad-placeholder">
+        <i data-lucide="monitor" class="icon-sm"></i>
+        <span>Advertisement</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== TOP CITIES SECTION ===== -->
+  <section class="top-cities" id="cities">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-badge">
+          <i data-lucide="map-pin" class="icon-xs"></i>
+          Top Cities
+        </span>
+        <h2>Sunrise & Sunset Times for Popular Cities Worldwide</h2>
+        <p class="section-subtitle">Explore sunrise, sunset, and golden hour data for the most searched cities across every continent. Click any city to see today's full sun and moon analytics.</p>
+      </div>
+
+      <div class="cities-grid">
+        <!-- North America -->
+        <div class="city-group glass-card" id="cities-na">
+          <h3><i data-lucide="globe" class="icon-sm"></i> North America</h3>
+          <ul class="city-list">
+            <li><a href="/sunrise/new-york/" class="city-link"><span class="city-name">New York</span><span class="city-country">US</span></a></li>
+            <li><a href="/sunrise/los-angeles/" class="city-link"><span class="city-name">Los Angeles</span><span class="city-country">US</span></a></li>
+            <li><a href="/sunrise/toronto/" class="city-link"><span class="city-name">Toronto</span><span class="city-country">CA</span></a></li>
+            <li><a href="/sunrise/mexico-city/" class="city-link"><span class="city-name">Mexico City</span><span class="city-country">MX</span></a></li>
+            <li><a href="/sunrise/chicago/" class="city-link"><span class="city-name">Chicago</span><span class="city-country">US</span></a></li>
+            <li><a href="/sunrise/miami/" class="city-link"><span class="city-name">Miami</span><span class="city-country">US</span></a></li>
+          </ul>
+        </div>
+
+        <!-- Europe -->
+        <div class="city-group glass-card" id="cities-eu">
+          <h3><i data-lucide="globe" class="icon-sm"></i> Europe</h3>
+          <ul class="city-list">
+            <li><a href="/sunrise/london/" class="city-link"><span class="city-name">London</span><span class="city-country">UK</span></a></li>
+            <li><a href="/sunrise/paris/" class="city-link"><span class="city-name">Paris</span><span class="city-country">FR</span></a></li>
+            <li><a href="/sunrise/berlin/" class="city-link"><span class="city-name">Berlin</span><span class="city-country">DE</span></a></li>
+            <li><a href="/sunrise/istanbul/" class="city-link"><span class="city-name">Istanbul</span><span class="city-country">TR</span></a></li>
+            <li><a href="/sunrise/madrid/" class="city-link"><span class="city-name">Madrid</span><span class="city-country">ES</span></a></li>
+            <li><a href="/sunrise/rome/" class="city-link"><span class="city-name">Rome</span><span class="city-country">IT</span></a></li>
+          </ul>
+        </div>
+
+        <!-- Asia -->
+        <div class="city-group glass-card" id="cities-as">
+          <h3><i data-lucide="globe" class="icon-sm"></i> Asia</h3>
+          <ul class="city-list">
+            <li><a href="/sunrise/tokyo/" class="city-link"><span class="city-name">Tokyo</span><span class="city-country">JP</span></a></li>
+            <li><a href="/sunrise/dubai/" class="city-link"><span class="city-name">Dubai</span><span class="city-country">AE</span></a></li>
+            <li><a href="/sunrise/singapore/" class="city-link"><span class="city-name">Singapore</span><span class="city-country">SG</span></a></li>
+            <li><a href="/sunrise/mumbai/" class="city-link"><span class="city-name">Mumbai</span><span class="city-country">IN</span></a></li>
+            <li><a href="/sunrise/bangkok/" class="city-link"><span class="city-name">Bangkok</span><span class="city-country">TH</span></a></li>
+            <li><a href="/sunrise/seoul/" class="city-link"><span class="city-name">Seoul</span><span class="city-country">KR</span></a></li>
+          </ul>
+        </div>
+
+        <!-- Africa & Oceania -->
+        <div class="city-group glass-card" id="cities-af">
+          <h3><i data-lucide="globe" class="icon-sm"></i> Africa & Oceania</h3>
+          <ul class="city-list">
+            <li><a href="/sunrise/cairo/" class="city-link"><span class="city-name">Cairo</span><span class="city-country">EG</span></a></li>
+            <li><a href="/sunrise/sydney/" class="city-link"><span class="city-name">Sydney</span><span class="city-country">AU</span></a></li>
+            <li><a href="/sunrise/sao-paulo/" class="city-link"><span class="city-name">São Paulo</span><span class="city-country">BR</span></a></li>
+            <li><a href="/sunrise/lagos/" class="city-link"><span class="city-name">Lagos</span><span class="city-country">NG</span></a></li>
+            <li><a href="/sunrise/melbourne/" class="city-link"><span class="city-name">Melbourne</span><span class="city-country">AU</span></a></li>
+            <li><a href="/sunrise/cape-town/" class="city-link"><span class="city-name">Cape Town</span><span class="city-country">ZA</span></a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="cities-cta">
+        <a href="/cities/" class="btn-secondary" id="viewAllCities">
+          <i data-lucide="globe" class="icon-xs"></i>
+          View All 5,000+ Cities
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== FAQ SECTION ===== -->
+  <section class="faq" id="faq">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-badge">
+          <i data-lucide="help-circle" class="icon-xs"></i>
+          FAQ
+        </span>
+        <h2>Frequently Asked Questions About Sunrise & Sunset Data</h2>
+        <p class="section-subtitle">Everything you need to know about SunriseTime's accuracy, coverage, and data sources.</p>
+      </div>
+
+      <div class="faq-list">
+        <details class="faq-item glass-card" id="faq-1">
+          <summary>
+            <span>How accurate is SunriseTime data?</span>
+            <i data-lucide="chevron-down" class="icon-sm faq-icon"></i>
+          </summary>
+          <div class="faq-answer">
+            <p>SunriseTime uses the NOAA Solar Calculator algorithm, the same standard used by the U.S. National Oceanic and Atmospheric Administration. Our sunrise and sunset predictions are accurate to within 1 minute for any location worldwide, accounting for latitude, longitude, altitude, and atmospheric refraction.</p>
+          </div>
+        </details>
+
+        <details class="faq-item glass-card" id="faq-2">
+          <summary>
+            <span>How many cities does SunriseTime cover?</span>
+            <i data-lucide="chevron-down" class="icon-sm faq-icon"></i>
+          </summary>
+          <div class="faq-answer">
+            <p>SunriseTime covers over 5,000 cities globally, sourced from the GeoNames geographical database. This includes all major metropolitan areas, popular photography destinations, and cities with over 50,000 population. We're continuously expanding coverage based on user demand.</p>
+          </div>
+        </details>
+
+        <details class="faq-item glass-card" id="faq-3">
+          <summary>
+            <span>What is golden hour and why does it matter?</span>
+            <i data-lucide="chevron-down" class="icon-sm faq-icon"></i>
+          </summary>
+          <div class="faq-answer">
+            <p>Golden hour is the period shortly after sunrise and before sunset when the sun is low on the horizon, creating warm, soft, directional light. It's considered the best time for photography, filmmaking, and outdoor activities. SunriseTime calculates the exact golden hour window for your location, so you never miss that perfect light.</p>
+          </div>
+        </details>
+
+        <details class="faq-item glass-card" id="faq-4">
+          <summary>
+            <span>How are prayer times calculated?</span>
+            <i data-lucide="chevron-down" class="icon-sm faq-icon"></i>
+          </summary>
+          <div class="faq-answer">
+            <p>Prayer times are calculated using the PrayTimes algorithm, which supports multiple juristic methods including University of Islamic Sciences (Karachi), Islamic Society of North America (ISNA), Muslim World League, and Umm al-Qura. You can select your preferred calculation method for the most accurate results.</p>
+          </div>
+        </details>
+
+        <details class="faq-item glass-card" id="faq-5">
+          <summary>
+            <span>Can I access SunriseTime data via API?</span>
+            <i data-lucide="chevron-down" class="icon-sm faq-icon"></i>
+          </summary>
+          <div class="faq-answer">
+            <p>Yes! SunriseTime provides a free REST API that returns JSON data for sunrise, sunset, golden hour, moon phase, and prayer times for any city and date. The API is open to developers who want to integrate sun data into their own applications. Check our API documentation for integration guides and rate limits.</p>
+          </div>
+        </details>
+
+        <details class="faq-item glass-card" id="faq-6">
+          <summary>
+            <span>Is SunriseTime free to use?</span>
+            <i data-lucide="chevron-down" class="icon-sm faq-icon"></i>
+          </summary>
+          <div class="faq-answer">
+            <p>Absolutely! SunriseTime is 100% free to use — no account required, no hidden fees. All features including sunrise/sunset times, golden hour tracking, moon phase data, prayer time calculations, and the API are completely free for everyone. We sustain the platform through unobtrusive advertising.</p>
+          </div>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== ADSENSE PLACEHOLDER BOTTOM ===== -->
+  <div class="ad-unit" id="ad-bottom">
+    <div class="container">
+      <div class="ad-placeholder">
+        <i data-lucide="monitor" class="icon-sm"></i>
+        <span>Advertisement</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== CTA SECTION ===== -->
+  <section class="cta-section">
+    <div class="container">
+      <div class="cta-card glass-card-lg">
+        <h2>Start Tracking Sunrise & Sunset Times Today</h2>
+        <p>Join thousands of photographers, travelers, and developers who rely on SunriseTime for precise sun and moon data. 100% free, forever — no signup required.</p>
+        <div class="cta-buttons">
+          <a href="#dashboard" class="btn-primary" id="ctaMainBtn">
+            <i data-lucide="search" class="icon-xs"></i>
+            Search Your City
+          </a>
+          <a href="#cities" class="btn-secondary" id="ctaSecBtn">
+            <i data-lucide="globe" class="icon-xs"></i>
+            Browse Top Cities
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== FOOTER ===== -->
+  <footer class="footer">
+    <div class="container footer-grid">
+      <div class="footer-brand">
+        <div class="nav-logo">
+          <span class="logo-icon"><i data-lucide="sun" class="icon-sm"></i></span>
+          <span class="logo-text">Sunrise<span class="logo-accent">Time</span></span>
+        </div>
+        <p>Precision sunrise, sunset, and golden hour analytics for 5,000+ cities worldwide.</p>
+      </div>
+      <div class="footer-links">
+        <h4>Product</h4>
+        <ul>
+          <li><a href="#features">Features</a></li>
+          <li><a href="#dashboard">Dashboard</a></li>
+          <li><a href="#cities">Top Cities</a></li>
+          <li><a href="#">Free API</a></li>
+        </ul>
+      </div>
+      <div class="footer-links">
+        <h4>Data</h4>
+        <ul>
+          <li><a href="#">Top Cities</a></li>
+          <li><a href="#">Golden Hour Guide</a></li>
+          <li><a href="#">Moon Calendar</a></li>
+          <li><a href="#">Prayer Times</a></li>
+        </ul>
+      </div>
+      <div class="footer-links">
+        <h4>Company</h4>
+        <ul>
+          <li><a href="#">About</a></li>
+          <li><a href="#">Privacy Policy</a></li>
+          <li><a href="#">Terms of Service</a></li>
+          <li><a href="#">Contact</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="container footer-bottom">
+      <p>&copy; 2026 SunriseTime. All rights reserved. Data powered by NOAA Solar Calculator.</p>
+    </div>
+  </footer>
+
+  <script src="main.js"></script>
+</body>
+</html>
