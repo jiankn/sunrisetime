@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100%" height="100%">
+  <defs>
+    <!-- 太阳与光芒的双色渐变 -->
+    <linearGradient id="sun-grad" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#FF6B35" />
+      <stop offset="100%" stop-color="#FFC947" />
+    </linearGradient>
+  </defs>
+
+  <!-- 深邃海军蓝底色与金黄色圆形边框 (加粗版) -->
+  <circle cx="50" cy="50" r="47" fill="#0B1426" stroke="#FFC947" stroke-width="4" />
+
+  <!-- 半个太阳本体 -->
+  <path d="M 28 64 A 22 22 0 0 1 72 64 Z" fill="url(#sun-grad)" />
+
+  <!-- 地平线 -->
+  <line x1="20" y1="64" x2="80" y2="64" stroke="url(#sun-grad)" stroke-width="4" stroke-linecap="round" />
+
+  <!-- 太阳光芒 (从中心发散) -->
+  <g stroke="url(#sun-grad)" stroke-width="4" stroke-linecap="round">
+    <line x1="50" y1="36" x2="50" y2="24" />
+    <line x1="50" y1="36" x2="50" y2="24" transform="rotate(-35 50 64)" />
+    <line x1="50" y1="36" x2="50" y2="24" transform="rotate(-70 50 64)" />
+    <line x1="50" y1="36" x2="50" y2="24" transform="rotate(35 50 64)" />
+    <line x1="50" y1="36" x2="50" y2="24" transform="rotate(70 50 64)" />
+  </g>
+</svg>
