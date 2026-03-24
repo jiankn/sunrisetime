@@ -1,0 +1,16 @@
+{
+  "name": "sunrisetime",
+  "type": "module",
+  "version": "1.0.0",
+  "description": "SunriseTime.co — Real-time sunrise, sunset, golden hour, and moon phase analytics",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview"
+  },
+  "dependencies": {
+    "astro": "^5.7.0",
+    "@astrojs/cloudflare": "^12.3.0",
+    "suncalc": "^1.9.0"
+  }
+}

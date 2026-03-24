@@ -1,0 +1,67 @@
+---
+/**
+ * Base Layout — SunriseTime.co
+ * 所有页面共用的 HTML 外壳
+ */
+interface Props {
+  title: string;
+  description: string;
+  canonical?: string;
+  keywords?: string;
+  jsonLd?: object[];
+}
+
+const {
+  title,
+  description,
+  canonical = 'https://sunrisetime.co/',
+  keywords = 'sunrise time, sunset time, golden hour, moon phase',
+  jsonLd = [],
+} = Astro.props;
+---
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{title}</title>
+  <meta name="description" content={description}>
+  <meta name="keywords" content={keywords}>
+  <link rel="canonical" href={canonical}>
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content={title}>
+  <meta property="og:description" content={description}>
+  <meta property="og:url" content={canonical}>
+  <meta property="og:site_name" content="SunriseTime">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content={title}>
+  <meta name="twitter:description" content={description}>
+
+  <!-- Google Fonts: Fira Code + Fira Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Fira+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js" defer></script>
+
+  <!-- Global Styles -->
+  <link rel="stylesheet" href="/styles/global.css">
+
+  <!-- JSON-LD Structured Data -->
+  {jsonLd.length > 0 && (
+    <script type="application/ld+json" set:html={JSON.stringify({ "@context": "https://schema.org", "@graph": jsonLd })} />
+  )}
+
+  <slot name="head" />
+</head>
+<body>
+  <slot />
+  <script src="/scripts/main.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,82 @@
+---
+/**
+ * Dashboard Demo Section — 城市搜索 + 数据卡片 + 图表
+ */
+---
+
+<section class="dashboard-section" id="dashboard">
+  <div class="container">
+    <div class="section-header">
+      <span class="section-badge">
+        <i data-lucide="monitor" class="icon-xs"></i>
+        Live Dashboard
+      </span>
+      <h2>Real-Time Data Visualization at Your Fingertips</h2>
+      <p class="section-subtitle">Search any city and instantly see sunrise, sunset, golden hour, moon phase, and daylight trends — beautifully visualized with interactive charts and precision data cards.</p>
+    </div>
+
+    <!-- Interactive City Search -->
+    <div class="dashboard-demo glass-card-lg">
+      <div class="demo-search-bar">
+        <i data-lucide="search" class="icon-sm"></i>
+        <input type="text" id="citySearch" placeholder="Search a city... (e.g., Tokyo, London, New York)" autocomplete="off" aria-label="Search for a city">
+        <div class="search-results" id="searchResults"></div>
+      </div>
+
+      <div class="demo-city-name" id="demoCityName">New York City <span class="demo-timezone">EST (UTC-5)</span></div>
+
+      <div class="demo-cards">
+        <div class="demo-card glass-card accent-sunrise" id="demoSunrise">
+          <div class="demo-card-icon"><i data-lucide="sunrise" class="icon-md"></i></div>
+          <div class="demo-card-body">
+            <span class="demo-card-label">Sunrise</span>
+            <span class="demo-card-value" id="demoSunriseVal">6:42 AM</span>
+          </div>
+        </div>
+        <div class="demo-card glass-card accent-sunset" id="demoSunset">
+          <div class="demo-card-icon"><i data-lucide="sunset" class="icon-md"></i></div>
+          <div class="demo-card-body">
+            <span class="demo-card-label">Sunset</span>
+            <span class="demo-card-value" id="demoSunsetVal">7:18 PM</span>
+          </div>
+        </div>
+        <div class="demo-card glass-card accent-golden" id="demoGolden">
+          <div class="demo-card-icon"><i data-lucide="camera" class="icon-md"></i></div>
+          <div class="demo-card-body">
+            <span class="demo-card-label">Golden Hour</span>
+            <span class="demo-card-value" id="demoGoldenVal">6:31 PM</span>
+          </div>
+        </div>
+        <div class="demo-card glass-card accent-moon" id="demoMoon">
+          <div class="demo-card-icon"><i data-lucide="moon" class="icon-md"></i></div>
+          <div class="demo-card-body">
+            <span class="demo-card-label">Moon Phase</span>
+            <span class="demo-card-value" id="demoMoonVal">Waxing Gibbous</span>
+          </div>
+        </div>
+        <div class="demo-card glass-card accent-daylight" id="demoDaylight">
+          <div class="demo-card-icon"><i data-lucide="sun" class="icon-md"></i></div>
+          <div class="demo-card-body">
+            <span class="demo-card-label">Daylight</span>
+            <span class="demo-card-value" id="demoDaylightVal">12h 36m</span>
+          </div>
+        </div>
+        <div class="demo-card glass-card accent-prayer" id="demoPrayer">
+          <div class="demo-card-icon"><i data-lucide="clock" class="icon-md"></i></div>
+          <div class="demo-card-body">
+            <span class="demo-card-label">Next Prayer</span>
+            <span class="demo-card-value" id="demoPrayerVal">Maghrib 7:21</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Simulated Daylight Chart -->
+      <div class="demo-chart-area">
+        <h3 class="demo-chart-title">Daylight Hours — Weekly Trend</h3>
+        <div class="demo-chart" id="demoChart">
+          <!-- Bars generated via JS -->
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

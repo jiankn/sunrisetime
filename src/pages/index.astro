@@ -1,0 +1,87 @@
+---
+/**
+ * SunriseTime.co — 首页
+ * 关键词: sunrise sunset analytics dashboard
+ */
+import Base from '@layouts/Base.astro';
+import Header from '@components/Header.astro';
+import Hero from '@components/Hero.astro';
+import TrustBadges from '@components/TrustBadges.astro';
+import Features from '@components/Features.astro';
+import Dashboard from '@components/Dashboard.astro';
+import AdUnit from '@components/AdUnit.astro';
+import TopCities from '@components/TopCities.astro';
+import FAQ from '@components/FAQ.astro';
+import CTA from '@components/CTA.astro';
+import Footer from '@components/Footer.astro';
+
+const jsonLd = [
+  {
+    "@type": "WebSite",
+    "@id": "https://sunrisetime.co/#website",
+    "name": "SunriseTime",
+    "url": "https://sunrisetime.co/",
+    "description": "Real-time sunrise, sunset, golden hour, and moon phase analytics for 5,000+ cities worldwide.",
+    "potentialAction": {
+      "@type": "SearchAction",
+      "target": "https://sunrisetime.co/sunrise/{search_term_string}/",
+      "query-input": "required name=search_term_string"
+    }
+  },
+  {
+    "@type": "Organization",
+    "@id": "https://sunrisetime.co/#organization",
+    "name": "SunriseTime",
+    "url": "https://sunrisetime.co/",
+    "sameAs": []
+  },
+  {
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "How accurate is SunriseTime data?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "SunriseTime uses the NOAA Solar Calculator algorithm, providing sunrise and sunset times accurate to within 1 minute for any location worldwide."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How many cities does SunriseTime cover?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "SunriseTime covers over 5,000 cities globally, including all major metropolitan areas and popular photography destinations."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Does SunriseTime provide golden hour times?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes, SunriseTime calculates precise golden hour windows for both morning and evening, perfect for photographers and filmmakers."
+        }
+      }
+    ]
+  }
+];
+---
+
+<Base
+  title="SunriseTime — Real-Time Sunrise & Sunset Analytics Dashboard"
+  description="SunriseTime provides real-time sunrise, sunset, golden hour, and moon phase analytics for 5,000+ cities worldwide. Track daylight trends, plan golden hour photography, and never miss a prayer time."
+  keywords="sunrise time, sunset time, golden hour, moon phase, prayer times, daylight analytics, sun tracking"
+  jsonLd={jsonLd}
+>
+  <Header />
+  <Hero />
+  <TrustBadges />
+  <Features />
+  <Dashboard />
+  <AdUnit id="ad-mid" />
+  <TopCities />
+  <FAQ />
+  <AdUnit id="ad-bottom" />
+  <CTA />
+  <Footer />
+</Base>

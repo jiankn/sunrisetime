@@ -1,0 +1,63 @@
+---
+/**
+ * Top Cities — 按大洲分组的城市内链网格
+ */
+import cities from '@data/cities.json';
+
+type CityGroup = {
+  name: string;
+  id: string;
+  cities: typeof cities.cities[0][];
+};
+
+const continentMap: Record<string, string> = {
+  'NA': 'North America',
+  'EU': 'Europe',
+  'AS': 'Asia',
+  'AF': 'Africa & Oceania',
+};
+
+const groups: CityGroup[] = Object.entries(continentMap).map(([code, name]) => ({
+  name,
+  id: `cities-${code.toLowerCase()}`,
+  cities: cities.cities.filter(c => c.continent === code).slice(0, 6),
+}));
+---
+
+<section class="top-cities" id="cities">
+  <div class="container">
+    <div class="section-header">
+      <span class="section-badge">
+        <i data-lucide="map-pin" class="icon-xs"></i>
+        Top Cities
+      </span>
+      <h2>Sunrise & Sunset Times for Popular Cities Worldwide</h2>
+      <p class="section-subtitle">Explore sunrise, sunset, and golden hour data for the most searched cities across every continent. Click any city to see today's full sun and moon analytics.</p>
+    </div>
+
+    <div class="cities-grid">
+      {groups.map(group => (
+        <div class="city-group glass-card" id={group.id}>
+          <h3><i data-lucide="globe" class="icon-sm"></i> {group.name}</h3>
+          <ul class="city-list">
+            {group.cities.map(city => (
+              <li>
+                <a href={`/sunrise/${city.slug}/`} class="city-link">
+                  <span class="city-name">{city.name}</span>
+                  <span class="city-country">{city.country}</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </div>
+
+    <div class="cities-cta">
+      <a href="/cities/" class="btn-secondary" id="viewAllCities">
+        <i data-lucide="globe" class="icon-xs"></i>
+        View All 5,000+ Cities
+      </a>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,18 @@
+---
+/**
+ * AdUnit — AdSense 广告占位组件
+ */
+interface Props {
+  id: string;
+}
+const { id } = Astro.props;
+---
+
+<div class="ad-unit" id={id}>
+  <div class="container">
+    <div class="ad-placeholder">
+      <i data-lucide="monitor" class="icon-sm"></i>
+      <span>Advertisement</span>
+    </div>
+  </div>
+</div>
