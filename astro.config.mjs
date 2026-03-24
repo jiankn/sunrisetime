@@ -10,7 +10,10 @@ export default defineConfig({
       changefreq: 'daily',
       priority: 0.7,
       lastmod: new Date(),
-      filter: (page) => !page.includes('/404'),
+      filter: (page) => {
+        const excludedPages = ['/404', '/privacy/', '/terms/', '/contact/', '/sitemap/'];
+        return !excludedPages.some((segment) => page.includes(segment));
+      },
     }),
   ],
   vite: {
