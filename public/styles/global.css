@@ -330,9 +330,9 @@ summary:focus-visible {
   justify-content: center;
   width: 36px;
   height: 36px;
-  background: var(--accent-gradient);
-  border-radius: var(--border-radius-sm);
-  color: #0B1426;
+  background: none;
+  border-radius: 50%;
+  overflow: hidden;
 }
 
 .logo-text {
