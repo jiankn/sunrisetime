@@ -129,29 +129,57 @@ export function formatTime(date: Date, timezone: string): string {
   }
 }
 
+function getClockMinutes(date: Date, timezone?: string): number {
+  if (!timezone) {
+    return date.getHours() * 60 + date.getMinutes();
+  }
+
+  try {
+    const parts = new Intl.DateTimeFormat('en-GB', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23',
+      timeZone: timezone,
+    }).formatToParts(date);
+
+    const hours = Number(parts.find(part => part.type === 'hour')?.value ?? date.getHours());
+    const minutes = Number(parts.find(part => part.type === 'minute')?.value ?? date.getMinutes());
+
+    return hours * 60 + minutes;
+  } catch {
+    return date.getHours() * 60 + date.getMinutes();
+  }
+}
+
+function normalizeClockDelta(diffMinutes: number): number {
+  if (diffMinutes > 720) return diffMinutes - 1440;
+  if (diffMinutes < -720) return diffMinutes + 1440;
+  return diffMinutes;
+}
+
 /**
  * Compare today's sunrise with yesterday's (delta in minutes)
  */
-export function getSunriseDelta(date: Date, lat: number, lng: number): number {
+export function getSunriseDelta(date: Date, lat: number, lng: number, timezone?: string): number {
   const yesterday = new Date(date);
   yesterday.setDate(yesterday.getDate() - 1);
 
   const todayTimes = SunCalc.getTimes(date, lat, lng);
   const yesterdayTimes = SunCalc.getTimes(yesterday, lat, lng);
 
-  return Math.round(
-    (todayTimes.sunrise.getTime() - yesterdayTimes.sunrise.getTime()) / 60000
+  return normalizeClockDelta(
+    getClockMinutes(todayTimes.sunrise, timezone) - getClockMinutes(yesterdayTimes.sunrise, timezone)
   );
 }
 
-export function getSunsetDelta(date: Date, lat: number, lng: number): number {
+export function getSunsetDelta(date: Date, lat: number, lng: number, timezone?: string): number {
   const yesterday = new Date(date);
   yesterday.setDate(yesterday.getDate() - 1);
 
   const todayTimes = SunCalc.getTimes(date, lat, lng);
   const yesterdayTimes = SunCalc.getTimes(yesterday, lat, lng);
 
-  return Math.round(
-    (todayTimes.sunset.getTime() - yesterdayTimes.sunset.getTime()) / 60000
+  return normalizeClockDelta(
+    getClockMinutes(todayTimes.sunset, timezone) - getClockMinutes(yesterdayTimes.sunset, timezone)
   );
 }

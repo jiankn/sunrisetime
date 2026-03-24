@@ -38,6 +38,31 @@ function formatCountdown(ms: number) {
   return `${minutes}m`;
 }
 
+function formatMinuteShift(delta: number) {
+  if (delta === 0) return 'Same as yesterday';
+
+  const minutes = Math.abs(delta);
+  const direction = delta > 0 ? 'later' : 'earlier';
+
+  return `${minutes} min ${direction} than yesterday`;
+}
+
+function formatMinuteShiftSentence(delta: number) {
+  if (delta === 0) return 'at the same local time as yesterday';
+
+  const minutes = Math.abs(delta);
+  const direction = delta > 0 ? 'later' : 'earlier';
+
+  return `${minutes} min ${direction} than yesterday`;
+}
+
+function formatDaylightTrend(minutes: number) {
+  if (minutes === 0) return 'Holding steady across 7 days';
+
+  const direction = minutes > 0 ? 'longer' : 'shorter';
+  return `${Math.abs(minutes)} min ${direction} across 7 days`;
+}
+
 const today = new Date();
 const sun = getSunTimes(today, city.lat, city.lng);
 const golden = getGoldenHour(today, city.lat, city.lng);
@@ -45,10 +70,15 @@ const moon = getMoonData(today, city.lat, city.lng);
 const nextMoonEvent = getNextMoonEvent(today);
 const prayers = getPrayerTimes(today, city.lat, city.lng, 'MWL', 'Standard');
 const nextPrayer = getNextPrayer(today, city.lat, city.lng, 'MWL', 'Standard');
-const sunriseDelta = getSunriseDelta(today, city.lat, city.lng);
-const sunsetDelta = getSunsetDelta(today, city.lat, city.lng);
+const sunriseDelta = getSunriseDelta(today, city.lat, city.lng, city.timezone);
+const sunsetDelta = getSunsetDelta(today, city.lat, city.lng, city.timezone);
 const series = getDaylightSeries(today, 7, city.lat, city.lng);
 const daylightTrendMinutes = Math.round((series[series.length - 1].hours - series[0].hours) * 60);
+const sunriseDeltaCopy = formatMinuteShift(sunriseDelta);
+const sunsetDeltaCopy = formatMinuteShift(sunsetDelta);
+const sunriseDeltaSentence = formatMinuteShiftSentence(sunriseDelta);
+const sunsetDeltaSentence = formatMinuteShiftSentence(sunsetDelta);
+const daylightTrendCopy = formatDaylightTrend(daylightTrendMinutes);
 
 function getNextSunEvent() {
   if (today < sun.sunrise) {
@@ -244,24 +274,28 @@ const jsonLd = [
 
           <div class="city-snapshot-metrics">
             <div class="city-metric-card glass-card accent-sunrise">
-              <span>Sunrise</span>
-              <strong>{formatTime(sun.sunrise, city.timezone)}</strong>
-              <small>{sunriseDelta <= 0 ? 'Earlier' : 'Later'} by {Math.abs(sunriseDelta)}m vs yesterday</small>
+              <span class="city-metric-visual" aria-hidden="true"></span>
+              <span class="city-metric-label">Sunrise</span>
+              <strong class="city-metric-value">{formatTime(sun.sunrise, city.timezone)}</strong>
+              <small class="city-metric-note">{sunriseDeltaCopy}</small>
             </div>
             <div class="city-metric-card glass-card accent-sunset">
-              <span>Sunset</span>
-              <strong>{formatTime(sun.sunset, city.timezone)}</strong>
-              <small>{sunsetDelta >= 0 ? 'Later' : 'Earlier'} by {Math.abs(sunsetDelta)}m vs yesterday</small>
+              <span class="city-metric-visual" aria-hidden="true"></span>
+              <span class="city-metric-label">Sunset</span>
+              <strong class="city-metric-value">{formatTime(sun.sunset, city.timezone)}</strong>
+              <small class="city-metric-note">{sunsetDeltaCopy}</small>
             </div>
             <div class="city-metric-card glass-card accent-daylight">
-              <span>Daylight</span>
-              <strong>{sun.daylightFormatted}</strong>
-              <small>{daylightTrendMinutes >= 0 ? '+' : ''}{daylightTrendMinutes}m change across 7 days</small>
+              <span class="city-metric-visual" aria-hidden="true"></span>
+              <span class="city-metric-label">Daylight</span>
+              <strong class="city-metric-value">{sun.daylightFormatted}</strong>
+              <small class="city-metric-note">{daylightTrendCopy}</small>
             </div>
             <div class="city-metric-card glass-card accent-moon">
-              <span>Moon</span>
-              <strong>{moon.phaseName}</strong>
-              <small>{moon.illumination}% illumination tonight</small>
+              <span class="city-metric-visual" aria-hidden="true"></span>
+              <span class="city-metric-label">Moon</span>
+              <strong class="city-metric-value">{moon.phaseName}</strong>
+              <small class="city-metric-note">{moon.illumination}% illumination tonight</small>
             </div>
           </div>
         </div>
@@ -446,7 +480,7 @@ const jsonLd = [
 
           <h3>Daylight Trends and Seasonal Changes</h3>
           <p>
-            Daylight duration in {city.name} changes throughout the year based on its latitude of {city.lat.toFixed(2)}°. The 7-day forecast above shows how daylight hours are currently trending. Compared to yesterday, sunrise shifted by {Math.abs(sunriseDelta)} minute{Math.abs(sunriseDelta) !== 1 ? 's' : ''} and sunset by {Math.abs(sunsetDelta)} minute{Math.abs(sunsetDelta) !== 1 ? 's' : ''}, reflecting the gradual seasonal transition.
+            Daylight duration in {city.name} changes throughout the year based on its latitude of {city.lat.toFixed(2)}°. The 7-day forecast above shows how daylight hours are currently trending. Compared to yesterday, sunrise is {sunriseDeltaSentence} and sunset is {sunsetDeltaSentence}, reflecting the gradual seasonal transition.
           </p>
 
           <h3>Moon Phase and Lunar Data</h3>
