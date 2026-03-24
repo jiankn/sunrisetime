@@ -1,7 +1,7 @@
 ---
 /**
  * SunriseTime.co — 首页
- * 关键词: sunrise sunset analytics dashboard
+ * 关键词: sunrise sunset times city search
  */
 import Base from '@layouts/Base.astro';
 import Header from '@components/Header.astro';
@@ -21,7 +21,7 @@ const jsonLd = [
     "@id": "https://sunrisetime.co/#website",
     "name": "SunriseTime",
     "url": "https://sunrisetime.co/",
-    "description": "Real-time sunrise, sunset, golden hour, and moon phase analytics for 5,000+ cities worldwide.",
+    "description": "Search today's sunrise, sunset, golden hour, and moon phase times for 5,000+ cities worldwide.",
     "potentialAction": {
       "@type": "SearchAction",
       "target": "https://sunrisetime.co/sunrise/{search_term_string}/",
@@ -68,9 +68,9 @@ const jsonLd = [
 ---
 
 <Base
-  title="SunriseTime — Real-Time Sunrise & Sunset Analytics Dashboard"
-  description="SunriseTime provides real-time sunrise, sunset, golden hour, and moon phase analytics for 5,000+ cities worldwide. Track daylight trends, plan golden hour photography, and never miss a prayer time."
-  keywords="sunrise time, sunset time, golden hour, moon phase, prayer times, daylight analytics, sun tracking"
+  title="SunriseTime — Search Today's Sunrise & Sunset Times by City"
+  description="Search today's sunrise, sunset, golden hour, moon phase, and prayer times for 5,000+ cities worldwide. Find your city fast and plan the light in seconds."
+  keywords="sunrise time, sunset time, city search, golden hour, moon phase, prayer times, daylight"
   jsonLd={jsonLd}
 >
   <Header />

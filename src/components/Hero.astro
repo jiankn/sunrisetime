@@ -1,117 +1,216 @@
 ---
 /**
- * Hero Section — 首屏英雄区
+ * Hero Section — 搜索优先的首屏快照
  */
+import cities from '@data/cities.json';
+import { getSunTimes, getGoldenHour, formatTime } from '@utils/sun';
+import { getMoonData } from '@utils/moon';
+import { getNextPrayer } from '@utils/prayer-times';
+
+type City = typeof cities.cities[0];
+
+const now = new Date();
+const previewSlugs = ['new-york', 'london', 'tokyo', 'dubai', 'sydney', 'sao-paulo'];
+
+function getTimezoneLabel(timezone: string) {
+  return timezone.split('/').pop()?.replace(/_/g, ' ') ?? timezone;
+}
+
+function getNextSunSnapshot(date: Date, city: City) {
+  const todaySun = getSunTimes(date, city.lat, city.lng);
+  const todayGolden = getGoldenHour(date, city.lat, city.lng);
+
+  if (date < todaySun.sunrise) {
+    return {
+      label: 'Next sunrise',
+      time: formatTime(todaySun.sunrise, city.timezone),
+      support: `Morning golden hour ends ${formatTime(todayGolden.morning.end, city.timezone)}`,
+    };
+  }
+
+  if (date < todaySun.sunset) {
+    return {
+      label: 'Next sunset',
+      time: formatTime(todaySun.sunset, city.timezone),
+      support: `Civil dusk lands at ${formatTime(todaySun.dusk, city.timezone)}`,
+    };
+  }
+
+  const tomorrow = new Date(date);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const tomorrowSun = getSunTimes(tomorrow, city.lat, city.lng);
+
+  return {
+    label: 'Tomorrow sunrise',
+    time: formatTime(tomorrowSun.sunrise, city.timezone),
+    support: `Tomorrow brings ${tomorrowSun.daylightFormatted} of daylight`,
+  };
+}
+
+const previewCities = previewSlugs
+  .map(slug => cities.cities.find(city => city.slug === slug))
+  .filter((city): city is City => Boolean(city))
+  .map(city => {
+    const sun = getSunTimes(now, city.lat, city.lng);
+    const golden = getGoldenHour(now, city.lat, city.lng);
+    const moon = getMoonData(now, city.lat, city.lng);
+    const nextPrayer = getNextPrayer(now, city.lat, city.lng, 'MWL', 'Standard');
+    const nextSun = getNextSunSnapshot(now, city);
+
+    return {
+      slug: city.slug,
+      name: city.name,
+      country: city.country,
+      timezone: city.timezone,
+      caption: `${getTimezoneLabel(city.timezone)} local time · ${now.toLocaleDateString('en-US', {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+        timeZone: city.timezone,
+      })}`,
+      sunrise: formatTime(sun.sunrise, city.timezone),
+      sunset: formatTime(sun.sunset, city.timezone),
+      daylight: sun.daylightFormatted,
+      golden: `${formatTime(golden.evening.start, city.timezone)} to ${formatTime(golden.evening.end, city.timezone)}`,
+      moon: `${moon.phaseName} · ${moon.illumination}%`,
+      prayer: `${nextPrayer.name} ${formatTime(nextPrayer.time, city.timezone)}`,
+      nextEventLabel: nextSun.label,
+      nextEventTime: nextSun.time,
+      nextEventSupport: nextSun.support,
+    };
+  });
+
+const heroCity = previewCities[0];
+const searchCities = cities.cities
+  .slice()
+  .sort((a, b) => b.population - a.population)
+  .map(city => ({
+    name: city.name,
+    slug: city.slug,
+    country: city.country,
+    lat: city.lat,
+    lng: city.lng,
+    population: city.population,
+  }));
 ---
 
-<header class="hero" id="hero">
-  <div class="hero-bg-effects">
-    <div class="orb orb-1"></div>
-    <div class="orb orb-2"></div>
-    <div class="orb orb-3"></div>
-    <div class="grid-overlay"></div>
+<section class="snapshot-hero" id="search">
+  <div class="container snapshot-hero-shell">
+    <div class="snapshot-hero-copy">
+      <div class="hero-badge">
+        <i data-lucide="sun-medium" class="icon-xs"></i>
+        <span>Search first. Answer first.</span>
+      </div>
+      <h1>Search a city and get today&apos;s sunrise, sunset, and next light window instantly.</h1>
+      <p class="hero-subtitle">
+        Built for photographers, travelers, runners, and prayer planning. One fast search,
+        one clear answer, no signup.
+      </p>
+
+      <div class="hero-search-panel glass-card-lg" data-hero-search>
+        <label class="hero-search-shell" for="heroCitySearch">
+          <i data-lucide="search" class="icon-sm"></i>
+          <input
+            id="heroCitySearch"
+            type="text"
+            data-city-search-input
+            placeholder="Search a city, e.g. New York, Tokyo, Dubai"
+            autocomplete="off"
+            aria-autocomplete="list"
+            aria-controls="heroSearchResults"
+            aria-expanded="false"
+            aria-label="Search for a city"
+            role="combobox"
+          >
+        </label>
+        <button type="button" class="hero-location-btn" data-use-location>
+          <i data-lucide="locate-fixed" class="icon-sm"></i>
+          <span data-location-label>Use my location</span>
+        </button>
+        <div class="hero-search-results" id="heroSearchResults" data-search-results role="listbox"></div>
+      </div>
+
+      <div class="hero-quick-row">
+        <span class="hero-quick-label">Popular snapshots</span>
+        <div class="hero-preview-switches">
+          {previewCities.map((city, index) => (
+            <button
+              type="button"
+              class={`hero-city-pill ${index === 0 ? 'active' : ''}`}
+              data-hero-city={city.slug}
+            >
+              {city.name}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div class="hero-proof-strip">
+        <div class="hero-proof-item glass-subtle">
+          <strong>5,000+</strong>
+          <span>cities ready to search</span>
+        </div>
+        <div class="hero-proof-item glass-subtle">
+          <strong>NOAA-grade</strong>
+          <span>timing you can trust</span>
+        </div>
+        <div class="hero-proof-item glass-subtle">
+          <strong>No signup</strong>
+          <span>straight to the answer</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="hero-snapshot-panel glass-card-lg">
+      <div class="hero-panel-top">
+        <div>
+          <span class="hero-panel-label">Today&apos;s snapshot</span>
+          <h2>
+            <span data-hero-city-name>{heroCity.name}</span>
+            <span class="hero-panel-country" data-hero-country>{heroCity.country}</span>
+          </h2>
+          <p data-hero-caption>{heroCity.caption}</p>
+        </div>
+        <a class="btn-secondary-sm" data-hero-open href={`/sunrise/${heroCity.slug}/`}>
+          Open city page
+        </a>
+      </div>
+
+      <div class="hero-next-card">
+        <span class="hero-next-label" data-hero-next-label>{heroCity.nextEventLabel}</span>
+        <strong class="hero-next-time" data-hero-next-time>{heroCity.nextEventTime}</strong>
+        <span class="hero-next-sub" data-hero-next-support>{heroCity.nextEventSupport}</span>
+      </div>
+
+      <div class="hero-mini-grid">
+        <div class="hero-mini-card glass-card">
+          <span class="hero-mini-label">Sunrise</span>
+          <strong data-hero-sunrise>{heroCity.sunrise}</strong>
+        </div>
+        <div class="hero-mini-card glass-card">
+          <span class="hero-mini-label">Sunset</span>
+          <strong data-hero-sunset>{heroCity.sunset}</strong>
+        </div>
+        <div class="hero-mini-card glass-card">
+          <span class="hero-mini-label">Daylight</span>
+          <strong data-hero-daylight>{heroCity.daylight}</strong>
+        </div>
+        <div class="hero-mini-card glass-card">
+          <span class="hero-mini-label">Golden Hour</span>
+          <strong data-hero-golden>{heroCity.golden}</strong>
+        </div>
+        <div class="hero-mini-card glass-card">
+          <span class="hero-mini-label">Moon</span>
+          <strong data-hero-moon>{heroCity.moon}</strong>
+        </div>
+        <div class="hero-mini-card glass-card">
+          <span class="hero-mini-label">Next Prayer</span>
+          <strong data-hero-prayer>{heroCity.prayer}</strong>
+        </div>
+      </div>
+    </div>
   </div>
-  <div class="container hero-content">
-    <div class="hero-badge">
-      <i data-lucide="zap" class="icon-xs"></i>
-      <span>Real-Time Sun & Moon Analytics</span>
-    </div>
-    <h1>Track Every Sunrise, Sunset &amp; Golden Hour <span class="gradient-text">Worldwide</span></h1>
-    <p class="hero-subtitle">SunriseTime delivers precision sunrise and sunset analytics for over 5,000 cities. Real-time dashboards, golden hour tracking, moon phase data, and prayer time calculations — all in one blazing-fast platform powered by edge computing.</p>
-    <div class="hero-cta-group">
-      <a href="#dashboard" class="btn-primary" id="heroCta">
-        <i data-lucide="play" class="icon-xs"></i>
-        Explore Dashboard
-      </a>
-      <a href="#features" class="btn-secondary">
-        <i data-lucide="arrow-down" class="icon-xs"></i>
-        See Features
-      </a>
-    </div>
-    <div class="hero-stats">
-      <div class="stat">
-        <span class="stat-value" data-count="5000">0</span>
-        <span class="stat-label">Cities Tracked</span>
-      </div>
-      <div class="stat">
-        <span class="stat-value">&lt;50<span class="stat-unit">ms</span></span>
-        <span class="stat-label">Response Time</span>
-      </div>
-      <div class="stat">
-        <span class="stat-value">99.9<span class="stat-unit">%</span></span>
-        <span class="stat-label">Accuracy</span>
-      </div>
-      <div class="stat">
-        <span class="stat-value">24/7</span>
-        <span class="stat-label">Live Updates</span>
-      </div>
-    </div>
-  </div>
-  <!-- Hero Dashboard Preview -->
-  <div class="container hero-preview">
-    <div class="dashboard-preview glass-card">
-      <div class="preview-header">
-        <div class="preview-dots">
-          <span></span><span></span><span></span>
-        </div>
-        <span class="preview-title">SunriseTime Dashboard — New York City</span>
-      </div>
-      <div class="preview-grid">
-        <div class="preview-card accent-sunrise">
-          <div class="preview-card-header">
-            <i data-lucide="sunrise" class="icon-sm"></i>
-            <span>Sunrise</span>
-          </div>
-          <span class="preview-value">6:42 AM</span>
-          <span class="preview-delta positive">
-            <i data-lucide="trending-down" class="icon-xs"></i>
-            -1m vs yesterday
-          </span>
-        </div>
-        <div class="preview-card accent-sunset">
-          <div class="preview-card-header">
-            <i data-lucide="sunset" class="icon-sm"></i>
-            <span>Sunset</span>
-          </div>
-          <span class="preview-value">7:18 PM</span>
-          <span class="preview-delta positive">
-            <i data-lucide="trending-up" class="icon-xs"></i>
-            +2m vs yesterday
-          </span>
-        </div>
-        <div class="preview-card accent-golden">
-          <div class="preview-card-header">
-            <i data-lucide="camera" class="icon-sm"></i>
-            <span>Golden Hour</span>
-          </div>
-          <span class="preview-value">6:31 PM</span>
-          <span class="preview-delta">47 min window</span>
-        </div>
-        <div class="preview-card accent-moon">
-          <div class="preview-card-header">
-            <i data-lucide="moon" class="icon-sm"></i>
-            <span>Moon Phase</span>
-          </div>
-          <span class="preview-value">Waxing Gibbous</span>
-          <span class="preview-delta">82% illumination</span>
-        </div>
-      </div>
-      <!-- Mini chart area -->
-      <div class="preview-chart">
-        <div class="chart-label">Daylight Hours — March 2026</div>
-        <div class="chart-bars">
-          <div class="chart-bar" style="--height:55%"><span>10.2h</span></div>
-          <div class="chart-bar" style="--height:60%"><span>10.8h</span></div>
-          <div class="chart-bar" style="--height:65%"><span>11.3h</span></div>
-          <div class="chart-bar" style="--height:70%"><span>11.8h</span></div>
-          <div class="chart-bar active" style="--height:75%"><span>12.3h</span></div>
-          <div class="chart-bar" style="--height:80%"><span>12.9h</span></div>
-          <div class="chart-bar" style="--height:85%"><span>13.4h</span></div>
-        </div>
-        <div class="chart-x-labels">
-          <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
-        </div>
-      </div>
-    </div>
-  </div>
-</header>
+
+  <script type="application/json" id="heroPreviewData" set:html={JSON.stringify(previewCities)} />
+  <script type="application/json" id="heroSearchData" set:html={JSON.stringify(searchCities)} />
+</section>

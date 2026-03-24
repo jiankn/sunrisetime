@@ -1,80 +1,109 @@
 ---
 /**
- * Dashboard Demo Section — 城市搜索 + 数据卡片 + 图表
+ * Planner Section — 按使用场景组织内容
  */
+import cities from '@data/cities.json';
+import { getSunTimes, getGoldenHour, getDaylightSeries, formatTime } from '@utils/sun';
+import { getNextPrayer } from '@utils/prayer-times';
+
+const plannerCity = cities.cities.find(city => city.slug === 'new-york') ?? cities.cities[0];
+const plannerNow = new Date();
+const plannerSun = getSunTimes(plannerNow, plannerCity.lat, plannerCity.lng);
+const plannerGolden = getGoldenHour(plannerNow, plannerCity.lat, plannerCity.lng);
+const plannerPrayer = getNextPrayer(plannerNow, plannerCity.lat, plannerCity.lng, 'MWL', 'Standard');
+const plannerTrend = getDaylightSeries(plannerNow, 5, plannerCity.lat, plannerCity.lng);
+const plannerTrendDelta = Math.round((plannerTrend[plannerTrend.length - 1].hours - plannerTrend[0].hours) * 60);
+const plannerMoments = [
+  {
+    label: 'Before sunrise',
+    value: formatTime(plannerSun.dawn, plannerCity.timezone),
+    detail: 'Civil dawn begins',
+  },
+  {
+    label: 'Morning golden hour',
+    value: `${formatTime(plannerGolden.morning.start, plannerCity.timezone)} to ${formatTime(plannerGolden.morning.end, plannerCity.timezone)}`,
+    detail: 'Soft light, low sun angle',
+  },
+  {
+    label: 'Sunset window',
+    value: formatTime(plannerSun.sunset, plannerCity.timezone),
+    detail: `Next prayer ${plannerPrayer.name} at ${formatTime(plannerPrayer.time, plannerCity.timezone)}`,
+  },
+];
 ---
 
-<section class="dashboard-section" id="dashboard">
+<section class="planner-section" id="planner">
   <div class="container">
     <div class="section-header">
       <span class="section-badge">
-        <i data-lucide="monitor" class="icon-xs"></i>
-        Live Dashboard
+        <i data-lucide="compass" class="icon-xs"></i>
+        Daily Planner
       </span>
-      <h2>Real-Time Data Visualization at Your Fingertips</h2>
-      <p class="section-subtitle">Search any city and instantly see sunrise, sunset, golden hour, moon phase, and daylight trends — beautifully visualized with interactive charts and precision data cards.</p>
+      <h2>Choose the moment that matters, then go straight to the answer.</h2>
+      <p class="section-subtitle">A better tool follows the way people plan a day: first light, best light, prayer windows, then nearby alternatives.</p>
     </div>
 
-    <!-- Interactive City Search -->
-    <div class="dashboard-demo glass-card-lg">
-      <div class="demo-search-bar">
-        <i data-lucide="search" class="icon-sm"></i>
-        <input type="text" id="citySearch" placeholder="Search a city... (e.g., Tokyo, London, New York)" autocomplete="off" aria-label="Search for a city">
-        <div class="search-results" id="searchResults"></div>
+    <div class="planner-layout">
+      <div class="planner-card-grid">
+        <article class="planner-card glass-card">
+          <div class="planner-card-icon icon-golden">
+            <i data-lucide="camera" class="icon-lg"></i>
+          </div>
+          <h3>Photography first</h3>
+          <p>Lead with golden hour, twilight, and moon illumination so the best shooting window is visible before anything else.</p>
+          <a href="#search" class="feature-link">Search a city <i data-lucide="arrow-right" class="icon-xs"></i></a>
+        </article>
+
+        <article class="planner-card glass-card">
+          <div class="planner-card-icon icon-daylight">
+            <i data-lucide="backpack" class="icon-lg"></i>
+          </div>
+          <h3>Travel and routine</h3>
+          <p>See sunrise, sunset, daylight length, and the next change in light at a glance so you can plan the day without reading a wall of content.</p>
+          <a href="#cities" class="feature-link">Browse popular cities <i data-lucide="arrow-right" class="icon-xs"></i></a>
+        </article>
+
+        <article class="planner-card glass-card">
+          <div class="planner-card-icon icon-prayer">
+            <i data-lucide="clock-3" class="icon-lg"></i>
+          </div>
+          <h3>Prayer support</h3>
+          <p>Keep prayer times present but secondary, so they are easy to reach when relevant without crowding the main sunrise and sunset answer.</p>
+          <a href="#faq" class="feature-link">See how it works <i data-lucide="arrow-right" class="icon-xs"></i></a>
+        </article>
       </div>
 
-      <div class="demo-city-name" id="demoCityName">New York City <span class="demo-timezone">EST (UTC-5)</span></div>
+      <div class="planner-rhythm glass-card-lg">
+        <div class="planner-rhythm-head">
+          <div>
+            <span class="planner-rhythm-kicker">Example rhythm</span>
+            <h3>{plannerCity.name} today</h3>
+          </div>
+          <span class="planner-rhythm-trend">
+            {plannerTrendDelta >= 0 ? '+' : ''}{plannerTrendDelta}m daylight this week
+          </span>
+        </div>
 
-      <div class="demo-cards">
-        <div class="demo-card glass-card accent-sunrise" id="demoSunrise">
-          <div class="demo-card-icon"><i data-lucide="sunrise" class="icon-md"></i></div>
-          <div class="demo-card-body">
-            <span class="demo-card-label">Sunrise</span>
-            <span class="demo-card-value" id="demoSunriseVal">6:42 AM</span>
-          </div>
+        <div class="planner-rhythm-list">
+          {plannerMoments.map(moment => (
+            <div class="planner-rhythm-row">
+              <div>
+                <span class="planner-rhythm-label">{moment.label}</span>
+                <strong>{moment.value}</strong>
+              </div>
+              <span class="planner-rhythm-detail">{moment.detail}</span>
+            </div>
+          ))}
         </div>
-        <div class="demo-card glass-card accent-sunset" id="demoSunset">
-          <div class="demo-card-icon"><i data-lucide="sunset" class="icon-md"></i></div>
-          <div class="demo-card-body">
-            <span class="demo-card-label">Sunset</span>
-            <span class="demo-card-value" id="demoSunsetVal">7:18 PM</span>
-          </div>
-        </div>
-        <div class="demo-card glass-card accent-golden" id="demoGolden">
-          <div class="demo-card-icon"><i data-lucide="camera" class="icon-md"></i></div>
-          <div class="demo-card-body">
-            <span class="demo-card-label">Golden Hour</span>
-            <span class="demo-card-value" id="demoGoldenVal">6:31 PM</span>
-          </div>
-        </div>
-        <div class="demo-card glass-card accent-moon" id="demoMoon">
-          <div class="demo-card-icon"><i data-lucide="moon" class="icon-md"></i></div>
-          <div class="demo-card-body">
-            <span class="demo-card-label">Moon Phase</span>
-            <span class="demo-card-value" id="demoMoonVal">Waxing Gibbous</span>
-          </div>
-        </div>
-        <div class="demo-card glass-card accent-daylight" id="demoDaylight">
-          <div class="demo-card-icon"><i data-lucide="sun" class="icon-md"></i></div>
-          <div class="demo-card-body">
-            <span class="demo-card-label">Daylight</span>
-            <span class="demo-card-value" id="demoDaylightVal">12h 36m</span>
-          </div>
-        </div>
-        <div class="demo-card glass-card accent-prayer" id="demoPrayer">
-          <div class="demo-card-icon"><i data-lucide="clock" class="icon-md"></i></div>
-          <div class="demo-card-body">
-            <span class="demo-card-label">Next Prayer</span>
-            <span class="demo-card-value" id="demoPrayerVal">Maghrib 7:21</span>
-          </div>
-        </div>
-      </div>
 
-      <!-- Simulated Daylight Chart -->
-      <div class="demo-chart-area">
-        <h3 class="demo-chart-title">Daylight Hours — Weekly Trend</h3>
-        <div class="demo-chart" id="demoChart">
-          <!-- Bars generated via JS -->
+        <div class="planner-bar-group">
+          {plannerTrend.map(point => (
+            <div class="planner-bar-col">
+              <span>{point.hours.toFixed(1)}h</span>
+              <div class="planner-bar" style={`height:${Math.round((point.hours / 16) * 100)}%`}></div>
+              <small>{point.date.toLocaleDateString('en-US', { weekday: 'short', timeZone: plannerCity.timezone })}</small>
+            </div>
+          ))}
         </div>
       </div>
     </div>
