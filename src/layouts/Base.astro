@@ -9,6 +9,8 @@ interface Props {
   canonical?: string;
   keywords?: string;
   jsonLd?: object[];
+  robots?: string;
+  ogType?: string;
 }
 
 const {
@@ -17,6 +19,8 @@ const {
   canonical = 'https://sunrisetime.co/',
   keywords = 'sunrise time, sunset time, golden hour, moon phase',
   jsonLd = [],
+  robots = 'index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1',
+  ogType = 'website',
 } = Astro.props;
 ---
 
@@ -28,12 +32,13 @@ const {
   <title>{title}</title>
   <meta name="description" content={description}>
   <meta name="keywords" content={keywords}>
+  <meta name="robots" content={robots}>
   <link rel="canonical" href={canonical}>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="apple-touch-icon" href="/logo.png">
 
   <!-- Open Graph -->
-  <meta property="og:type" content="website">
+  <meta property="og:type" content={ogType}>
   <meta property="og:title" content={title}>
   <meta property="og:description" content={description}>
   <meta property="og:url" content={canonical}>

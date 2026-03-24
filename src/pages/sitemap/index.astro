@@ -9,28 +9,32 @@ import {
   regionHubs,
   useCaseHubs,
 } from '@data/site';
+import { buildBreadcrumbJsonLd } from '@utils/seo';
+
+const pageUrl = 'https://sunrisetime.co/sitemap/';
 
 const jsonLd = [
   {
     "@type": "WebPage",
+    "@id": `${pageUrl}#webpage`,
     "name": "HTML Sitemap",
     "description": "Browse the main pages, region hubs, guides, and indexed city pages on SunriseTime.",
-    "url": "https://sunrisetime.co/sitemap/",
-    "breadcrumb": {
-      "@type": "BreadcrumbList",
-      "itemListElement": [
-        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://sunrisetime.co/" },
-        { "@type": "ListItem", "position": 2, "name": "HTML Sitemap", "item": "https://sunrisetime.co/sitemap/" }
-      ]
+    "url": pageUrl,
+    "isPartOf": {
+      "@id": "https://sunrisetime.co/#website"
     }
-  }
+  },
+  buildBreadcrumbJsonLd([
+    { name: 'Home', path: '/' },
+    { name: 'HTML Sitemap', path: '/sitemap/' },
+  ]),
 ];
 ---
 
 <Base
   title="HTML Sitemap - SunriseTime"
   description="Browse the core pages, region hubs, use-case guides, and indexed city pages on SunriseTime."
-  canonical="https://sunrisetime.co/sitemap/"
+  canonical={pageUrl}
   keywords="HTML sitemap, SunriseTime sitemap, city pages"
   jsonLd={jsonLd}
 >

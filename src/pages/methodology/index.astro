@@ -3,28 +3,32 @@ import Base from '@layouts/Base.astro';
 import Header from '@components/Header.astro';
 import Footer from '@components/Footer.astro';
 import { cityIndexLabel, legalLastUpdated, totalCities } from '@data/site';
+import { buildBreadcrumbJsonLd } from '@utils/seo';
+
+const pageUrl = 'https://sunrisetime.co/methodology/';
 
 const jsonLd = [
   {
     "@type": "TechArticle",
+    "@id": `${pageUrl}#article`,
     "headline": "SunriseTime Methodology",
     "description": "Learn how SunriseTime computes solar, moon, and prayer timing data for its indexed city pages.",
-    "url": "https://sunrisetime.co/methodology/",
-    "breadcrumb": {
-      "@type": "BreadcrumbList",
-      "itemListElement": [
-        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://sunrisetime.co/" },
-        { "@type": "ListItem", "position": 2, "name": "Methodology", "item": "https://sunrisetime.co/methodology/" }
-      ]
+    "url": pageUrl,
+    "isPartOf": {
+      "@id": "https://sunrisetime.co/#website"
     }
-  }
+  },
+  buildBreadcrumbJsonLd([
+    { name: 'Home', path: '/' },
+    { name: 'Methodology', path: '/methodology/' },
+  ]),
 ];
 ---
 
 <Base
   title="Methodology - How SunriseTime Calculates Sun, Moon, and Prayer Data"
   description="Read the methodology behind SunriseTime's solar calculations, moon data, prayer times, and indexed city directory."
-  canonical="https://sunrisetime.co/methodology/"
+  canonical={pageUrl}
   keywords="sunrise methodology, sunset calculation, moon phase method, prayer times method"
   jsonLd={jsonLd}
 >

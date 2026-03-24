@@ -4,6 +4,7 @@ import Header from '@components/Header.astro';
 import Footer from '@components/Footer.astro';
 import AdUnit from '@components/AdUnit.astro';
 import { getRegionHub, regionHubs, useCaseHubs } from '@data/site';
+import { buildBreadcrumbJsonLd } from '@utils/seo';
 
 export function getStaticPaths() {
   return regionHubs.map((region) => ({
@@ -20,29 +21,32 @@ if (!region) {
 const relatedGuides = useCaseHubs.filter((hub) => hub.relatedRegionSlugs.includes(region.slug));
 const otherRegions = regionHubs.filter((entry) => entry.slug !== region.slug);
 const leadCity = region.featuredCities[0] ?? region.cities[0];
+const pageUrl = `https://sunrisetime.co${region.path}`;
+const breadcrumbItems = [
+  { name: 'Home', path: '/' },
+  { name: 'Cities', path: '/cities/' },
+  { name: region.name, path: region.path },
+];
 
 const jsonLd = [
   {
     "@type": "CollectionPage",
+    "@id": `${pageUrl}#webpage`,
     "name": `${region.name} Sunrise & Sunset Times`,
     "description": region.description,
-    "url": `https://sunrisetime.co${region.path}`,
-    "breadcrumb": {
-      "@type": "BreadcrumbList",
-      "itemListElement": [
-        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://sunrisetime.co/" },
-        { "@type": "ListItem", "position": 2, "name": "Cities", "item": "https://sunrisetime.co/cities/" },
-        { "@type": "ListItem", "position": 3, "name": region.name, "item": `https://sunrisetime.co${region.path}` }
-      ]
+    "url": pageUrl,
+    "isPartOf": {
+      "@id": "https://sunrisetime.co/#website"
     }
-  }
+  },
+  buildBreadcrumbJsonLd(breadcrumbItems),
 ];
 ---
 
 <Base
   title={`${region.name} Sunrise & Sunset Times - SunriseTime`}
   description={region.description}
-  canonical={`https://sunrisetime.co${region.path}`}
+  canonical={pageUrl}
   keywords={`${region.name.toLowerCase()} sunrise times, ${region.name.toLowerCase()} sunset times, ${region.name.toLowerCase()} cities`}
   jsonLd={jsonLd}
 >

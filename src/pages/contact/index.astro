@@ -3,28 +3,32 @@ import Base from '@layouts/Base.astro';
 import Header from '@components/Header.astro';
 import Footer from '@components/Footer.astro';
 import { supportEmail, supportEmailHref } from '@data/site';
+import { buildBreadcrumbJsonLd } from '@utils/seo';
+
+const pageUrl = 'https://sunrisetime.co/contact/';
 
 const jsonLd = [
   {
     "@type": "ContactPage",
+    "@id": `${pageUrl}#webpage`,
     "name": "Contact SunriseTime",
     "description": "Contact SunriseTime for feedback, city corrections, privacy requests, or partnership questions.",
-    "url": "https://sunrisetime.co/contact/",
-    "breadcrumb": {
-      "@type": "BreadcrumbList",
-      "itemListElement": [
-        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://sunrisetime.co/" },
-        { "@type": "ListItem", "position": 2, "name": "Contact", "item": "https://sunrisetime.co/contact/" }
-      ]
+    "url": pageUrl,
+    "isPartOf": {
+      "@id": "https://sunrisetime.co/#website"
     }
-  }
+  },
+  buildBreadcrumbJsonLd([
+    { name: 'Home', path: '/' },
+    { name: 'Contact', path: '/contact/' },
+  ]),
 ];
 ---
 
 <Base
   title="Contact SunriseTime"
   description="Contact SunriseTime for data corrections, feedback, advertising questions, and privacy requests."
-  canonical="https://sunrisetime.co/contact/"
+  canonical={pageUrl}
   keywords="contact SunriseTime, city correction, advertising inquiry"
   jsonLd={jsonLd}
 >

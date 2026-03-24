@@ -3,28 +3,32 @@ import Base from '@layouts/Base.astro';
 import Header from '@components/Header.astro';
 import Footer from '@components/Footer.astro';
 import { regionHubs, useCaseHubs } from '@data/site';
+import { buildBreadcrumbJsonLd } from '@utils/seo';
+
+const pageUrl = 'https://sunrisetime.co/guides/';
 
 const jsonLd = [
   {
     "@type": "CollectionPage",
+    "@id": `${pageUrl}#webpage`,
     "name": "SunriseTime Guides",
     "description": "Browse use-case guides for golden hour, moon phase, daylight length, and prayer-time planning.",
-    "url": "https://sunrisetime.co/guides/",
-    "breadcrumb": {
-      "@type": "BreadcrumbList",
-      "itemListElement": [
-        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://sunrisetime.co/" },
-        { "@type": "ListItem", "position": 2, "name": "Guides", "item": "https://sunrisetime.co/guides/" }
-      ]
+    "url": pageUrl,
+    "isPartOf": {
+      "@id": "https://sunrisetime.co/#website"
     }
-  }
+  },
+  buildBreadcrumbJsonLd([
+    { name: 'Home', path: '/' },
+    { name: 'Guides', path: '/guides/' },
+  ]),
 ];
 ---
 
 <Base
   title="Planning Guides - SunriseTime"
   description="Browse SunriseTime guides for golden hour, moon phase, prayer-time planning, and daylight-length comparisons."
-  canonical="https://sunrisetime.co/guides/"
+  canonical={pageUrl}
   keywords="golden hour guide, moon phase guide, prayer times guide, daylight length guide"
   jsonLd={jsonLd}
 >

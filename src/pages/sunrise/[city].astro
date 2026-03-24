@@ -13,6 +13,7 @@ import cities from '@data/cities.json';
 import { getSunTimes, getGoldenHour, getDaylightSeries, formatTime, getSunriseDelta, getSunsetDelta } from '@utils/sun';
 import { getMoonData, getNextMoonEvent } from '@utils/moon';
 import { getPrayerTimes, getNextPrayer } from '@utils/prayer-times';
+import { buildBreadcrumbJsonLd } from '@utils/seo';
 
 export function getStaticPaths() {
   return cities.cities.map(city => ({
@@ -154,24 +155,28 @@ const otherCities = cities.cities
 
 const pageTitle = `Sunrise & Sunset Times in ${city.name} Today — SunriseTime`;
 const pageDesc = `Today's sunrise in ${city.name} is at ${formatTime(sun.sunrise, city.timezone)}, sunset at ${formatTime(sun.sunset, city.timezone)}. ${sun.daylightFormatted} of daylight. Golden hour, moon phase, and prayer times included.`;
+const pageUrl = `https://sunrisetime.co/sunrise/${city.slug}/`;
+const breadcrumbItems = [
+  { name: 'Home', path: '/' },
+  { name: 'Cities', path: '/cities/' },
+  { name: city.name, path: `/sunrise/${city.slug}/` },
+];
 
 const jsonLd = [
   {
     "@type": "WebPage",
+    "@id": `${pageUrl}#webpage`,
     "name": pageTitle,
     "description": pageDesc,
-    "url": `https://sunrisetime.co/sunrise/${city.slug}/`,
-    "breadcrumb": {
-      "@type": "BreadcrumbList",
-      "itemListElement": [
-        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://sunrisetime.co/" },
-        { "@type": "ListItem", "position": 2, "name": "Cities", "item": "https://sunrisetime.co/cities/" },
-        { "@type": "ListItem", "position": 3, "name": city.name, "item": `https://sunrisetime.co/sunrise/${city.slug}/` },
-      ]
+    "url": pageUrl,
+    "isPartOf": {
+      "@id": "https://sunrisetime.co/#website"
     }
   },
+  buildBreadcrumbJsonLd(breadcrumbItems),
   {
     "@type": "FAQPage",
+    "@id": `${pageUrl}#faq`,
     "mainEntity": [
       {
         "@type": "Question",
@@ -197,7 +202,7 @@ const jsonLd = [
 <Base
   title={pageTitle}
   description={pageDesc}
-  canonical={`https://sunrisetime.co/sunrise/${city.slug}/`}
+  canonical={pageUrl}
   keywords={`sunrise ${city.name}, sunset ${city.name}, golden hour ${city.name}, ${city.name} sun times`}
   jsonLd={jsonLd}
 >

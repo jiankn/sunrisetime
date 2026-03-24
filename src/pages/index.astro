@@ -23,21 +23,20 @@ const jsonLd = [
     "name": "SunriseTime",
     "url": "https://sunrisetime.co/",
     "description": `Search today's sunrise, sunset, golden hour, and moon phase times for ${totalCities} indexed cities worldwide.`,
-    "potentialAction": {
-      "@type": "SearchAction",
-      "target": "https://sunrisetime.co/sunrise/{search_term_string}/",
-      "query-input": "required name=search_term_string"
+    "inLanguage": "en",
+    "publisher": {
+      "@id": "https://sunrisetime.co/#organization"
     }
   },
   {
     "@type": "Organization",
     "@id": "https://sunrisetime.co/#organization",
     "name": "SunriseTime",
-    "url": "https://sunrisetime.co/",
-    "sameAs": []
+    "url": "https://sunrisetime.co/"
   },
   {
     "@type": "FAQPage",
+    "@id": "https://sunrisetime.co/#faq",
     "mainEntity": [
       {
         "@type": "Question",
