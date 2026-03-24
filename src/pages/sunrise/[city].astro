@@ -1,0 +1,371 @@
+---
+/**
+ * [city].astro — 城市日出日落页（核心 SEO 模板）
+ *
+ * 路由: /sunrise/new-york/, /sunrise/tokyo/, etc.
+ * SSG: getStaticPaths() 从 cities.json 生成
+ */
+import Base from '@layouts/Base.astro';
+import Header from '@components/Header.astro';
+import Footer from '@components/Footer.astro';
+import AdUnit from '@components/AdUnit.astro';
+import cities from '@data/cities.json';
+import { getSunTimes, getGoldenHour, getDaylightSeries, formatTime, getSunriseDelta, getSunsetDelta } from '@utils/sun';
+import { getMoonData } from '@utils/moon';
+import { getPrayerTimes } from '@utils/prayer-times';
+
+export function getStaticPaths() {
+  return cities.cities.map(city => ({
+    params: { city: city.slug },
+    props: { city },
+  }));
+}
+
+type City = typeof cities.cities[0];
+const { city } = Astro.props as { city: City };
+
+const today = new Date();
+const sun = getSunTimes(today, city.lat, city.lng);
+const golden = getGoldenHour(today, city.lat, city.lng);
+const moon = getMoonData(today, city.lat, city.lng);
+const prayers = getPrayerTimes(today, city.lat, city.lng, 'MWL', 'Standard');
+const sunriseDelta = getSunriseDelta(today, city.lat, city.lng);
+const sunsetDelta = getSunsetDelta(today, city.lat, city.lng);
+const series = getDaylightSeries(today, 7, city.lat, city.lng);
+
+// Nearby cities for internal linking (same continent, exclude self)
+const nearbyCities = cities.cities
+  .filter(c => c.continent === city.continent && c.slug !== city.slug)
+  .slice(0, 6);
+
+// Different continent cities for cross-linking
+const otherCities = cities.cities
+  .filter(c => c.continent !== city.continent)
+  .sort(() => Math.random() - 0.5)
+  .slice(0, 4);
+
+const pageTitle = `Sunrise & Sunset Times in ${city.name} Today — SunriseTime`;
+const pageDesc = `Today's sunrise in ${city.name} is at ${formatTime(sun.sunrise, city.timezone)}, sunset at ${formatTime(sun.sunset, city.timezone)}. ${sun.daylightFormatted} of daylight. Golden hour, moon phase, and prayer times included.`;
+
+const jsonLd = [
+  {
+    "@type": "WebPage",
+    "name": pageTitle,
+    "description": pageDesc,
+    "url": `https://sunrisetime.co/sunrise/${city.slug}/`,
+    "breadcrumb": {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://sunrisetime.co/" },
+        { "@type": "ListItem", "position": 2, "name": "Cities", "item": "https://sunrisetime.co/cities/" },
+        { "@type": "ListItem", "position": 3, "name": city.name, "item": `https://sunrisetime.co/sunrise/${city.slug}/` },
+      ]
+    }
+  },
+  {
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": `What time is sunrise in ${city.name} today?`,
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": `Sunrise in ${city.name} today is at ${formatTime(sun.sunrise, city.timezone)}.`
+        }
+      },
+      {
+        "@type": "Question",
+        "name": `What time is sunset in ${city.name} today?`,
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": `Sunset in ${city.name} today is at ${formatTime(sun.sunset, city.timezone)}.`
+        }
+      }
+    ]
+  }
+];
+---
+
+<Base
+  title={pageTitle}
+  description={pageDesc}
+  canonical={`https://sunrisetime.co/sunrise/${city.slug}/`}
+  keywords={`sunrise ${city.name}, sunset ${city.name}, golden hour ${city.name}, ${city.name} sun times`}
+  jsonLd={jsonLd}
+>
+  <Header />
+
+  <main class="city-page">
+    <div class="container">
+      <!-- Breadcrumb -->
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/">Home</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <a href="/cities/">Cities</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <span>{city.name}</span>
+      </nav>
+
+      <!-- City Header -->
+      <header class="city-header">
+        <div class="city-header-top">
+          <div>
+            <h1>Sunrise & Sunset Times in <span class="gradient-text">{city.name}</span> Today</h1>
+            <p class="city-meta">
+              <span class="city-country-badge">{city.country}</span>
+              <span>Lat {city.lat.toFixed(4)}° Lng {city.lng.toFixed(4)}°</span>
+              <span>•</span>
+              <span>{city.timezone}</span>
+            </p>
+          </div>
+        </div>
+        <p class="city-date">
+          <i data-lucide="calendar" class="icon-sm"></i>
+          {today.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: city.timezone })}
+        </p>
+      </header>
+
+      <!-- Primary Data Cards -->
+      <section class="data-grid" aria-label="Sun times data">
+        <div class="data-card glass-card accent-sunrise">
+          <div class="data-card-icon"><i data-lucide="sunrise" class="icon-lg"></i></div>
+          <div class="data-card-body">
+            <span class="data-label">Sunrise</span>
+            <span class="data-value">{formatTime(sun.sunrise, city.timezone)}</span>
+            <span class={`data-delta ${sunriseDelta <= 0 ? 'positive' : ''}`}>
+              {sunriseDelta <= 0 ? '↑' : '↓'} {Math.abs(sunriseDelta)}m vs yesterday
+            </span>
+          </div>
+        </div>
+
+        <div class="data-card glass-card accent-sunset">
+          <div class="data-card-icon"><i data-lucide="sunset" class="icon-lg"></i></div>
+          <div class="data-card-body">
+            <span class="data-label">Sunset</span>
+            <span class="data-value">{formatTime(sun.sunset, city.timezone)}</span>
+            <span class={`data-delta ${sunsetDelta >= 0 ? 'positive' : ''}`}>
+              {sunsetDelta >= 0 ? '↑' : '↓'} {Math.abs(sunsetDelta)}m vs yesterday
+            </span>
+          </div>
+        </div>
+
+        <div class="data-card glass-card accent-daylight">
+          <div class="data-card-icon"><i data-lucide="sun" class="icon-lg"></i></div>
+          <div class="data-card-body">
+            <span class="data-label">Daylight</span>
+            <span class="data-value">{sun.daylightFormatted}</span>
+            <span class="data-delta">Solar noon {formatTime(sun.solarNoon, city.timezone)}</span>
+          </div>
+        </div>
+
+        <div class="data-card glass-card accent-moon">
+          <div class="data-card-icon"><i data-lucide="moon" class="icon-lg"></i></div>
+          <div class="data-card-body">
+            <span class="data-label">Moon Phase</span>
+            <span class="data-value">{moon.emoji} {moon.phaseName}</span>
+            <span class="data-delta">{moon.illumination}% illumination</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Golden Hour -->
+      <section class="detail-section" aria-label="Golden hour times">
+        <h2><i data-lucide="camera" class="icon-md"></i> Golden Hour in {city.name}</h2>
+        <div class="detail-grid">
+          <div class="detail-card glass-card">
+            <h3>Morning Golden Hour</h3>
+            <div class="detail-time">
+              <span class="detail-time-value">{formatTime(golden.morning.start, city.timezone)}</span>
+              <i data-lucide="arrow-right" class="icon-sm"></i>
+              <span class="detail-time-value">{formatTime(golden.morning.end, city.timezone)}</span>
+            </div>
+            <span class="detail-duration">{golden.morning.durationMin} minutes</span>
+          </div>
+          <div class="detail-card glass-card">
+            <h3>Evening Golden Hour</h3>
+            <div class="detail-time">
+              <span class="detail-time-value">{formatTime(golden.evening.start, city.timezone)}</span>
+              <i data-lucide="arrow-right" class="icon-sm"></i>
+              <span class="detail-time-value">{formatTime(golden.evening.end, city.timezone)}</span>
+            </div>
+            <span class="detail-duration">{golden.evening.durationMin} minutes</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Twilight -->
+      <section class="detail-section" aria-label="Twilight times">
+        <h2><i data-lucide="cloud" class="icon-md"></i> Twilight Times</h2>
+        <div class="twilight-table glass-card">
+          <table>
+            <thead>
+              <tr><th>Phase</th><th>Dawn</th><th>Dusk</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Civil Twilight</td>
+                <td>{formatTime(sun.dawn, city.timezone)}</td>
+                <td>{formatTime(sun.dusk, city.timezone)}</td>
+              </tr>
+              <tr>
+                <td>Nautical Twilight</td>
+                <td>{formatTime(sun.nauticalDawn, city.timezone)}</td>
+                <td>{formatTime(sun.nauticalDusk, city.timezone)}</td>
+              </tr>
+              <tr>
+                <td>Astronomical Twilight</td>
+                <td>{formatTime(sun.nightEnd, city.timezone)}</td>
+                <td>{formatTime(sun.night, city.timezone)}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <AdUnit id="ad-city-mid" />
+
+      <!-- Daylight Chart -->
+      <section class="detail-section" aria-label="Daylight trend">
+        <h2><i data-lucide="bar-chart-3" class="icon-md"></i> Daylight Trend — 7 Day Forecast</h2>
+        <div class="daylight-chart glass-card">
+          <div class="chart-bars-static">
+            {series.map((s, i) => {
+              const pct = Math.round((s.hours / 16) * 100);
+              const dayName = s.date.toLocaleDateString('en-US', { weekday: 'short', timeZone: city.timezone });
+              return (
+                <div class={`chart-col ${i === 0 ? 'active' : ''}`}>
+                  <span class="chart-val">{s.hours.toFixed(1)}h</span>
+                  <div class="chart-fill" style={`height:${pct}%`}></div>
+                  <span class="chart-day">{dayName}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      <!-- Moon Data -->
+      <section class="detail-section" aria-label="Moon data">
+        <h2><i data-lucide="moon" class="icon-md"></i> Moon Data for {city.name}</h2>
+        <div class="detail-grid">
+          <div class="detail-card glass-card">
+            <h3>Moon Phase</h3>
+            <div class="moon-display">
+              <span class="moon-emoji">{moon.emoji}</span>
+              <div>
+                <span class="detail-time-value">{moon.phaseName}</span>
+                <span class="detail-duration">{moon.illumination}% illumination</span>
+              </div>
+            </div>
+          </div>
+          <div class="detail-card glass-card">
+            <h3>Moonrise & Moonset</h3>
+            <div class="detail-time">
+              <div>
+                <span class="data-label">Rise</span>
+                <span class="detail-time-value">{moon.rise ? formatTime(moon.rise, city.timezone) : '—'}</span>
+              </div>
+              <div>
+                <span class="data-label">Set</span>
+                <span class="detail-time-value">{moon.set ? formatTime(moon.set, city.timezone) : '—'}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Prayer Times -->
+      <section class="detail-section" aria-label="Prayer times">
+        <h2><i data-lucide="clock" class="icon-md"></i> Prayer Times in {city.name}</h2>
+        <div class="prayer-grid">
+          {[
+            { name: 'Fajr', time: prayers.fajr, icon: 'cloud-moon' },
+            { name: 'Sunrise', time: prayers.sunrise, icon: 'sunrise' },
+            { name: 'Dhuhr', time: prayers.dhuhr, icon: 'sun' },
+            { name: 'Asr', time: prayers.asr, icon: 'cloud-sun' },
+            { name: 'Maghrib', time: prayers.maghrib, icon: 'sunset' },
+            { name: 'Isha', time: prayers.isha, icon: 'moon' },
+          ].map(p => (
+            <div class="prayer-card glass-card">
+              <i data-lucide={p.icon} class="icon-md"></i>
+              <span class="prayer-name">{p.name}</span>
+              <span class="prayer-time">{formatTime(p.time, city.timezone)}</span>
+            </div>
+          ))}
+        </div>
+        <p class="prayer-note">
+          Calculated using Muslim World League (MWL) method. Standard (Shafi'i) juristic method for Asr.
+        </p>
+      </section>
+
+      <AdUnit id="ad-city-bottom" />
+
+      <!-- SEO Content Section -->
+      <section class="detail-section seo-content" aria-label="About sunrise and sunset">
+        <h2><i data-lucide="info" class="icon-md"></i> About Sunrise & Sunset in {city.name}</h2>
+        <div class="seo-text glass-card">
+          <p>
+            Today in {city.name}, the sun rises at {formatTime(sun.sunrise, city.timezone)} and sets at {formatTime(sun.sunset, city.timezone)}, providing {sun.daylightFormatted} of daylight. The solar noon occurs at {formatTime(sun.solarNoon, city.timezone)}, when the sun reaches its highest point in the sky. Civil twilight begins at {formatTime(sun.dawn, city.timezone)} in the morning and ends at {formatTime(sun.dusk, city.timezone)} in the evening, extending usable outdoor light beyond sunrise and sunset.
+          </p>
+
+          <h3>How Sunrise and Sunset Times Are Calculated</h3>
+          <p>
+            SunriseTime uses the NOAA Solar Calculator algorithm to compute sunrise and sunset times with precision within one minute. The calculation accounts for {city.name}'s geographic coordinates (latitude {city.lat.toFixed(4)}°, longitude {city.lng.toFixed(4)}°), atmospheric refraction, and the sun's apparent diameter. All times are displayed in the local timezone ({city.timezone}) and updated daily.
+          </p>
+
+          <h3>Golden Hour Photography in {city.name}</h3>
+          <p>
+            The morning golden hour in {city.name} runs from {formatTime(golden.morning.start, city.timezone)} to {formatTime(golden.morning.end, city.timezone)} ({golden.morning.durationMin} minutes), while the evening golden hour spans {formatTime(golden.evening.start, city.timezone)} to {formatTime(golden.evening.end, city.timezone)} ({golden.evening.durationMin} minutes). During golden hour, sunlight travels through more atmosphere, producing warm tones ideal for photography and filmmaking.
+          </p>
+
+          <h3>Daylight Trends and Seasonal Changes</h3>
+          <p>
+            Daylight duration in {city.name} changes throughout the year based on its latitude of {city.lat.toFixed(2)}°. The 7-day forecast above shows how daylight hours are currently trending. Compared to yesterday, sunrise shifted by {Math.abs(sunriseDelta)} minute{Math.abs(sunriseDelta) !== 1 ? 's' : ''} and sunset by {Math.abs(sunsetDelta)} minute{Math.abs(sunsetDelta) !== 1 ? 's' : ''}, reflecting the gradual seasonal transition.
+          </p>
+
+          <h3>Moon Phase and Lunar Data</h3>
+          <p>
+            The current moon phase in {city.name} is {moon.phaseName} with {moon.illumination}% illumination. {moon.rise ? `Moonrise occurs at ${formatTime(moon.rise, city.timezone)}` : 'The moon does not rise today'}{moon.set ? ` and moonset at ${formatTime(moon.set, city.timezone)}` : ''}. Lunar data is useful for astronomers, photographers planning night shoots, and anyone interested in tidal patterns.
+          </p>
+
+          <h3>Prayer Times Calculation Method</h3>
+          <p>
+            Prayer times for {city.name} are calculated using the Muslim World League (MWL) convention, which sets Fajr at 18° below the horizon and Isha at 17°. The Asr time follows the Standard (Shafi'i) juristic method, where the shadow length equals the object height plus the shadow at solar noon. SunriseTime supports five calculation methods: MWL, ISNA, Egyptian General Authority, Umm al-Qura, and University of Islamic Sciences Karachi.
+          </p>
+        </div>
+      </section>
+
+      <!-- Nearby Cities (Internal Links) -->
+      <section class="detail-section" aria-label="Nearby cities">
+        <h2><i data-lucide="map-pin" class="icon-md"></i> Sunrise Times in Nearby Cities</h2>
+        <div class="nearby-grid">
+          {nearbyCities.map(c => (
+            <a href={`/sunrise/${c.slug}/`} class="nearby-card glass-card">
+              <span class="nearby-name">{c.name}</span>
+              <span class="nearby-country">{c.country}</span>
+            </a>
+          ))}
+        </div>
+        {otherCities.length > 0 && (
+          <h3 class="other-cities-title">Popular Cities Worldwide</h3>
+          <div class="nearby-grid">
+            {otherCities.map(c => (
+              <a href={`/sunrise/${c.slug}/`} class="nearby-card glass-card">
+                <span class="nearby-name">{c.name}</span>
+                <span class="nearby-country">{c.country}</span>
+              </a>
+            ))}
+          </div>
+        )}
+        <div class="cities-cta" style="margin-top:2rem;">
+          <a href="/cities/" class="btn-secondary">
+            <i data-lucide="globe" class="icon-xs"></i>
+            View All Cities
+          </a>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <Footer />
+</Base>

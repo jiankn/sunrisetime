@@ -100,21 +100,21 @@ function initScrollAnimations() {
 
 /* ── City Search with demo data ─────────────────────────────── */
 const CITIES = [
-  { name: 'New York City', timezone: 'EST (UTC-5)', sunrise: '6:42 AM', sunset: '7:18 PM', golden: '6:31 PM', moon: 'Waxing Gibbous', daylight: '12h 36m', prayer: 'Maghrib 7:21' },
-  { name: 'London', timezone: 'GMT (UTC+0)', sunrise: '5:58 AM', sunset: '6:15 PM', golden: '5:36 PM', moon: 'Waxing Gibbous', daylight: '12h 17m', prayer: 'Maghrib 6:18' },
-  { name: 'Tokyo', timezone: 'JST (UTC+9)', sunrise: '5:42 AM', sunset: '5:52 PM', golden: '5:14 PM', moon: 'Waxing Gibbous', daylight: '12h 10m', prayer: 'Maghrib 5:55' },
-  { name: 'Paris', timezone: 'CET (UTC+1)', sunrise: '7:08 AM', sunset: '7:29 PM', golden: '6:50 PM', moon: 'Waxing Gibbous', daylight: '12h 21m', prayer: 'Maghrib 7:32' },
-  { name: 'Dubai', timezone: 'GST (UTC+4)', sunrise: '6:12 AM', sunset: '6:24 PM', golden: '5:52 PM', moon: 'Waxing Gibbous', daylight: '12h 12m', prayer: 'Maghrib 6:27' },
-  { name: 'Sydney', timezone: 'AEDT (UTC+11)', sunrise: '6:56 AM', sunset: '7:08 PM', golden: '6:30 PM', moon: 'Waxing Gibbous', daylight: '12h 12m', prayer: 'Maghrib 7:11' },
-  { name: 'Los Angeles', timezone: 'PST (UTC-8)', sunrise: '6:48 AM', sunset: '7:05 PM', golden: '6:28 PM', moon: 'Waxing Gibbous', daylight: '12h 17m', prayer: 'Maghrib 7:08' },
-  { name: 'Singapore', timezone: 'SGT (UTC+8)', sunrise: '7:06 AM', sunset: '7:14 PM', golden: '6:42 PM', moon: 'Waxing Gibbous', daylight: '12h 08m', prayer: 'Maghrib 7:17' },
-  { name: 'Cairo', timezone: 'EET (UTC+2)', sunrise: '5:48 AM', sunset: '6:05 PM', golden: '5:33 PM', moon: 'Waxing Gibbous', daylight: '12h 17m', prayer: 'Maghrib 6:08' },
-  { name: 'Istanbul', timezone: 'TRT (UTC+3)', sunrise: '6:25 AM', sunset: '6:43 PM', golden: '6:05 PM', moon: 'Waxing Gibbous', daylight: '12h 18m', prayer: 'Maghrib 6:46' },
-  { name: 'Mumbai', timezone: 'IST (UTC+5:30)', sunrise: '6:28 AM', sunset: '6:39 PM', golden: '6:07 PM', moon: 'Waxing Gibbous', daylight: '12h 11m', prayer: 'Maghrib 6:42' },
-  { name: 'São Paulo', timezone: 'BRT (UTC-3)', sunrise: '6:12 AM', sunset: '6:15 PM', golden: '5:43 PM', moon: 'Waxing Gibbous', daylight: '12h 03m', prayer: 'Maghrib 6:18' },
-  { name: 'Toronto', timezone: 'EST (UTC-5)', sunrise: '7:12 AM', sunset: '7:32 PM', golden: '6:54 PM', moon: 'Waxing Gibbous', daylight: '12h 20m', prayer: 'Maghrib 7:35' },
-  { name: 'Berlin', timezone: 'CET (UTC+1)', sunrise: '6:12 AM', sunset: '6:34 PM', golden: '5:56 PM', moon: 'Waxing Gibbous', daylight: '12h 22m', prayer: 'Maghrib 6:37' },
-  { name: 'Mexico City', timezone: 'CST (UTC-6)', sunrise: '6:55 AM', sunset: '7:05 PM', golden: '6:33 PM', moon: 'Waxing Gibbous', daylight: '12h 10m', prayer: 'Maghrib 7:08' },
+  { name: 'New York City', slug: 'new-york', timezone: 'EST (UTC-5)', sunrise: '6:42 AM', sunset: '7:18 PM', golden: '6:31 PM', moon: 'Waxing Gibbous', daylight: '12h 36m', prayer: 'Maghrib 7:21' },
+  { name: 'London', slug: 'london', timezone: 'GMT (UTC+0)', sunrise: '5:58 AM', sunset: '6:15 PM', golden: '5:36 PM', moon: 'Waxing Gibbous', daylight: '12h 17m', prayer: 'Maghrib 6:18' },
+  { name: 'Tokyo', slug: 'tokyo', timezone: 'JST (UTC+9)', sunrise: '5:42 AM', sunset: '5:52 PM', golden: '5:14 PM', moon: 'Waxing Gibbous', daylight: '12h 10m', prayer: 'Maghrib 5:55' },
+  { name: 'Paris', slug: 'paris', timezone: 'CET (UTC+1)', sunrise: '7:08 AM', sunset: '7:29 PM', golden: '6:50 PM', moon: 'Waxing Gibbous', daylight: '12h 21m', prayer: 'Maghrib 7:32' },
+  { name: 'Dubai', slug: 'dubai', timezone: 'GST (UTC+4)', sunrise: '6:12 AM', sunset: '6:24 PM', golden: '5:52 PM', moon: 'Waxing Gibbous', daylight: '12h 12m', prayer: 'Maghrib 6:27' },
+  { name: 'Sydney', slug: 'sydney', timezone: 'AEDT (UTC+11)', sunrise: '6:56 AM', sunset: '7:08 PM', golden: '6:30 PM', moon: 'Waxing Gibbous', daylight: '12h 12m', prayer: 'Maghrib 7:11' },
+  { name: 'Los Angeles', slug: 'los-angeles', timezone: 'PST (UTC-8)', sunrise: '6:48 AM', sunset: '7:05 PM', golden: '6:28 PM', moon: 'Waxing Gibbous', daylight: '12h 17m', prayer: 'Maghrib 7:08' },
+  { name: 'Singapore', slug: 'singapore', timezone: 'SGT (UTC+8)', sunrise: '7:06 AM', sunset: '7:14 PM', golden: '6:42 PM', moon: 'Waxing Gibbous', daylight: '12h 08m', prayer: 'Maghrib 7:17' },
+  { name: 'Cairo', slug: 'cairo', timezone: 'EET (UTC+2)', sunrise: '5:48 AM', sunset: '6:05 PM', golden: '5:33 PM', moon: 'Waxing Gibbous', daylight: '12h 17m', prayer: 'Maghrib 6:08' },
+  { name: 'Istanbul', slug: 'istanbul', timezone: 'TRT (UTC+3)', sunrise: '6:25 AM', sunset: '6:43 PM', golden: '6:05 PM', moon: 'Waxing Gibbous', daylight: '12h 18m', prayer: 'Maghrib 6:46' },
+  { name: 'Mumbai', slug: 'mumbai', timezone: 'IST (UTC+5:30)', sunrise: '6:28 AM', sunset: '6:39 PM', golden: '6:07 PM', moon: 'Waxing Gibbous', daylight: '12h 11m', prayer: 'Maghrib 6:42' },
+  { name: 'São Paulo', slug: 'sao-paulo', timezone: 'BRT (UTC-3)', sunrise: '6:12 AM', sunset: '6:15 PM', golden: '5:43 PM', moon: 'Waxing Gibbous', daylight: '12h 03m', prayer: 'Maghrib 6:18' },
+  { name: 'Toronto', slug: 'toronto', timezone: 'EST (UTC-5)', sunrise: '7:12 AM', sunset: '7:32 PM', golden: '6:54 PM', moon: 'Waxing Gibbous', daylight: '12h 20m', prayer: 'Maghrib 7:35' },
+  { name: 'Berlin', slug: 'berlin', timezone: 'CET (UTC+1)', sunrise: '6:12 AM', sunset: '6:34 PM', golden: '5:56 PM', moon: 'Waxing Gibbous', daylight: '12h 22m', prayer: 'Maghrib 6:37' },
+  { name: 'Mexico City', slug: 'mexico-city', timezone: 'CST (UTC-6)', sunrise: '6:55 AM', sunset: '7:05 PM', golden: '6:33 PM', moon: 'Waxing Gibbous', daylight: '12h 10m', prayer: 'Maghrib 7:08' },
 ];
 
 // Daylight hours data per city (7-day mock data)
@@ -157,19 +157,11 @@ function initCitySearch() {
     }
 
     results.innerHTML = matches.map(c =>
-      `<div class="search-result-item" data-city="${c.name}">${c.name} <span style="color:var(--text-tertiary);font-size:0.8rem;">${c.timezone}</span></div>`
+      `<div class="search-result-item" data-city="${c.name}">${c.name} <span style="color:var(--text-tertiary);font-size:0.8rem;">${c.timezone}</span> <span style="color:var(--accent-end);font-size:0.75rem;margin-left:auto;">View →</span></div>`
     ).join('');
 
     results.classList.add('active');
-
-    results.querySelectorAll('.search-result-item').forEach(item => {
-      item.addEventListener('click', () => {
-        const cityName = item.dataset.city;
-        selectCity(cityName);
-        input.value = '';
-        results.classList.remove('active');
-      });
-    });
+    bindSearchResults(results, input);
   });
 
   // Close results on outside click
@@ -183,25 +175,34 @@ function initCitySearch() {
   input.addEventListener('focus', () => {
     if (input.value.trim().length === 0) {
       results.innerHTML = CITIES.slice(0, 8).map(c =>
-        `<div class="search-result-item" data-city="${c.name}">${c.name} <span style="color:var(--text-tertiary);font-size:0.8rem;">${c.timezone}</span></div>`
+        `<div class="search-result-item" data-city="${c.name}">${c.name} <span style="color:var(--text-tertiary);font-size:0.8rem;">${c.timezone}</span> <span style="color:var(--accent-end);font-size:0.75rem;margin-left:auto;">View →</span></div>`
       ).join('');
       results.classList.add('active');
-
-      results.querySelectorAll('.search-result-item').forEach(item => {
-        item.addEventListener('click', () => {
-          const cityName = item.dataset.city;
-          selectCity(cityName);
-          input.value = '';
-          results.classList.remove('active');
-        });
-      });
+      bindSearchResults(results, input);
     }
+  });
+}
+
+function bindSearchResults(results, input) {
+  results.querySelectorAll('.search-result-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const cityName = item.dataset.city;
+      selectCity(cityName);
+      input.value = '';
+      results.classList.remove('active');
+    });
   });
 }
 
 function selectCity(cityName) {
   const city = CITIES.find(c => c.name === cityName);
   if (!city) return;
+
+  // Navigate to real city page if slug exists
+  if (city.slug) {
+    window.location.href = `/sunrise/${city.slug}/`;
+    return;
+  }
 
   const nameEl = document.getElementById('demoCityName');
   const sunriseEl = document.getElementById('demoSunriseVal');
