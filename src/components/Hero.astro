@@ -108,12 +108,8 @@ const searchCities = cities.cities
             <span class="hero-search-label">Find today&apos;s answer</span>
             <strong class="hero-search-title">Type a city or jump in from your current location</strong>
           </div>
-          <button type="button" class="hero-location-btn" data-use-location>
-            <i data-lucide="locate-fixed" class="icon-sm"></i>
-            <span data-location-label>Use my location</span>
-          </button>
         </div>
-        <label class="hero-search-shell hero-search-shell-lg" for="heroCitySearch">
+        <div class="hero-search-shell hero-search-shell-lg">
           <i data-lucide="search" class="icon-sm"></i>
           <input
             id="heroCitySearch"
@@ -127,7 +123,11 @@ const searchCities = cities.cities
             aria-label="Search for a city"
             role="combobox"
           >
-        </label>
+          <button type="button" class="hero-location-btn hero-location-btn-inline" data-use-location>
+            <i data-lucide="locate-fixed" class="icon-sm"></i>
+            <span class="hero-location-text" data-location-label aria-live="polite" aria-atomic="true">Use my location</span>
+          </button>
+        </div>
         <div class="hero-search-results" id="heroSearchResults" data-search-results role="listbox"></div>
 
         <div class="hero-quick-row">

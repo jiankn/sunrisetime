@@ -97,6 +97,7 @@ function initHeroSearch() {
 
   const input = searchRoot.querySelector('[data-city-search-input]');
   const results = searchRoot.querySelector('[data-search-results]');
+  const searchShell = searchRoot.querySelector('.hero-search-shell');
   const locationButton = searchRoot.querySelector('[data-use-location]');
   const locationLabel = searchRoot.querySelector('[data-location-label]');
   const previewButtons = document.querySelectorAll('[data-hero-city]');
@@ -221,6 +222,13 @@ function initHeroSearch() {
     });
   }
 
+  if (searchShell) {
+    searchShell.addEventListener('click', (event) => {
+      if (event.target.closest('[data-use-location]')) return;
+      input.focus();
+    });
+  }
+
   input.addEventListener('focus', () => {
     if (input.value.trim()) return;
     matches = searchData.slice(0, 6);
@@ -286,17 +294,51 @@ function initHeroSearch() {
   });
 
   if (locationButton && locationLabel) {
-    locationButton.addEventListener('click', () => {
-      if (!navigator.geolocation) {
-        locationLabel.textContent = 'Location unavailable';
-        window.setTimeout(() => {
-          locationLabel.textContent = 'Use my location';
-        }, 1600);
+    let locationResetTimer = null;
+
+    function setLocationState(label, { disabled = false, feedback = false } = {}) {
+      locationButton.disabled = disabled;
+      locationLabel.textContent = label;
+
+      if (feedback) {
+        locationButton.setAttribute('data-feedback', 'true');
         return;
       }
 
-      locationButton.disabled = true;
-      locationLabel.textContent = 'Locating...';
+      locationButton.removeAttribute('data-feedback');
+    }
+
+    function resetLocationState() {
+      setLocationState('Use my location');
+      if (locationResetTimer) {
+        window.clearTimeout(locationResetTimer);
+        locationResetTimer = null;
+      }
+    }
+
+    function queueLocationReset() {
+      if (locationResetTimer) {
+        window.clearTimeout(locationResetTimer);
+      }
+
+      locationResetTimer = window.setTimeout(() => {
+        resetLocationState();
+      }, 1600);
+    }
+
+    locationButton.addEventListener('click', () => {
+      if (!navigator.geolocation) {
+        setLocationState('Location unavailable', { feedback: true });
+        queueLocationReset();
+        return;
+      }
+
+      if (locationResetTimer) {
+        window.clearTimeout(locationResetTimer);
+        locationResetTimer = null;
+      }
+
+      setLocationState('Locating...', { disabled: true, feedback: true });
 
       navigator.geolocation.getCurrentPosition((position) => {
         const nearestCity = findNearestCity(position.coords.latitude, position.coords.longitude, searchData);
@@ -305,14 +347,11 @@ function initHeroSearch() {
           return;
         }
 
-        locationButton.disabled = false;
-        locationLabel.textContent = 'Use my location';
+        setLocationState('Nearest city unavailable', { feedback: true });
+        queueLocationReset();
       }, () => {
-        locationButton.disabled = false;
-        locationLabel.textContent = 'Location blocked';
-        window.setTimeout(() => {
-          locationLabel.textContent = 'Use my location';
-        }, 1600);
+        setLocationState('Location blocked', { feedback: true });
+        queueLocationReset();
       }, {
         enableHighAccuracy: false,
         timeout: 8000,
