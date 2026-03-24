@@ -2760,10 +2760,15 @@ summary:focus-visible {
 }
 
 .hero-panel-top {
-  display: flex;
-  justify-content: space-between;
-  gap: var(--space-lg);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-lg) var(--space-xl);
   align-items: flex-start;
+}
+
+.hero-panel-copy {
+  min-width: 0;
+  max-width: 36rem;
 }
 
 .hero-panel-label {
@@ -2803,8 +2808,11 @@ summary:focus-visible {
 
 .hero-open-link {
   align-self: flex-start;
+  justify-self: end;
+  flex-shrink: 0;
   justify-content: center;
   min-height: 48px;
+  min-width: max-content;
   padding: 12px 18px;
   gap: 10px;
   border-radius: 18px;
@@ -2819,6 +2827,11 @@ summary:focus-visible {
   font-size: 0.84rem;
   font-weight: 600;
   letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+.hero-open-link span {
+  white-space: nowrap;
 }
 
 .hero-open-link .icon-sm {
