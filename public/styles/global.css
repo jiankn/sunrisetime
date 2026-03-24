@@ -1109,25 +1109,21 @@ button {
 }
 
 /* ============================================================
-   ADSENSE PLACEHOLDERS
+   ADSENSE CONTAINERS
    ============================================================ */
-.ad-unit {
-  padding: var(--space-xl) 0;
+.ad-container {
+  padding: var(--space-md) 0;
+  min-height: 0;
 }
 
-.ad-placeholder {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-sm);
-  padding: var(--space-lg);
-  border: 1px dashed var(--border-subtle);
+.ad-container:empty {
+  display: none;
+}
+
+.ad-container .adsbygoogle {
+  display: block;
   border-radius: var(--border-radius-sm);
-  color: var(--text-tertiary);
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  opacity: 0.5;
+  overflow: hidden;
 }
 
 /* ============================================================

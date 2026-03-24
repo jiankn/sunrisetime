@@ -58,6 +58,16 @@ const {
     <script type="application/ld+json" set:html={JSON.stringify({ "@context": "https://schema.org", "@graph": jsonLd })} />
   )}
 
+  <!--
+    Google AdSense Auto Ads
+    接入步骤：
+    1. 在 AdSense 后台获取你的 ca-pub-XXXXXXXXXXXXXXXX ID
+    2. 取消下方注释，替换 data-ad-client 值
+    3. Auto Ads 会自动分析页面结构，在最优位置插入广告
+    4. 无需手动指定广告位置，Google 算法最大化收益
+  -->
+  <!-- <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" crossorigin="anonymous"></script> -->
+
   <slot name="head" />
 </head>
 <body>
