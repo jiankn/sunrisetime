@@ -1,33 +1,18 @@
 ---
 /**
  * Cities Hub — /cities/
- * 按大洲分组的城市索引页，带客户端搜索过滤
+ * 按区域分组的城市索引页，带客户端搜索过滤
  */
 import Base from '@layouts/Base.astro';
 import Header from '@components/Header.astro';
 import Footer from '@components/Footer.astro';
-import cities from '@data/cities.json';
-
-const continentMap: Record<string, string> = {
-  'NA': 'North America',
-  'EU': 'Europe',
-  'AS': 'Asia',
-  'AF': 'Africa & Oceania',
-};
-
-const groups = Object.entries(continentMap).map(([code, name]) => ({
-  code,
-  name,
-  cities: cities.cities.filter(c => c.continent === code).sort((a, b) => b.population - a.population),
-}));
-
-const totalCities = cities.cities.length;
+import { regionHubs, totalCities } from '@data/site';
 
 const jsonLd = [
   {
     "@type": "CollectionPage",
     "name": "Sunrise & Sunset Times for All Cities",
-    "description": `Browse sunrise and sunset times for ${totalCities} cities worldwide. Organized by continent with real-time sun, moon, and prayer time data.`,
+    "description": `Browse sunrise and sunset times for ${totalCities} cities worldwide. Organized by region with real-time sun, moon, and prayer time data.`,
     "url": "https://sunrisetime.co/cities/",
     "breadcrumb": {
       "@type": "BreadcrumbList",
@@ -42,7 +27,7 @@ const jsonLd = [
 
 <Base
   title={`Sunrise & Sunset Times for ${totalCities} Cities Worldwide — SunriseTime`}
-  description={`Browse sunrise and sunset times for ${totalCities} cities worldwide. Organized by continent with golden hour, moon phase, and prayer time data.`}
+  description={`Browse sunrise and sunset times for ${totalCities} cities worldwide. Organized by region with golden hour, moon phase, and prayer time data.`}
   canonical="https://sunrisetime.co/cities/"
   keywords="sunrise times by city, sunset times worldwide, city sun data, golden hour cities"
   jsonLd={jsonLd}
@@ -59,16 +44,19 @@ const jsonLd = [
 
       <header class="cities-hub-header">
         <h1>Sunrise & Sunset Times for <span class="gradient-text">{totalCities} Cities</span> Worldwide</h1>
-        <p>Explore sunrise, sunset, golden hour, moon phase, and prayer time data for cities across every continent.</p>
+        <p>Explore sunrise, sunset, golden hour, moon phase, and prayer time data for cities across each regional hub.</p>
         <div class="hub-search">
           <i data-lucide="search" class="icon-sm" style="color:var(--text-tertiary);flex-shrink:0;"></i>
           <input type="text" id="hubCitySearch" placeholder="Search cities..." autocomplete="off" />
         </div>
       </header>
 
-      {groups.map(group => (
-        <section class="continent-section" data-continent={group.code}>
-          <h2><i data-lucide="globe" class="icon-md"></i> {group.name}</h2>
+      {regionHubs.map(group => (
+        <section class="continent-section" data-continent={group.slug}>
+          <h2>
+            <i data-lucide="globe" class="icon-md"></i>
+            <a href={group.path}>{group.name}</a>
+          </h2>
           <div class="hub-city-grid">
             {group.cities.map(city => (
               <a href={`/sunrise/${city.slug}/`} class="hub-city-card glass-card" data-city-name={city.name.toLowerCase()}>
@@ -76,6 +64,9 @@ const jsonLd = [
                 <span class="hub-city-country">{city.country}</span>
               </a>
             ))}
+          </div>
+          <div class="cities-cta" style="text-align:left; margin-top:1rem;">
+            <a href={group.path} class="btn-secondary-sm">Open {group.name} hub</a>
           </div>
         </section>
       ))}

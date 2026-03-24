@@ -3,6 +3,7 @@
  * Hero Section — 搜索优先的首屏快照
  */
 import cities from '@data/cities.json';
+import { totalCities } from '@data/site';
 import { getSunTimes, getGoldenHour, formatTime } from '@utils/sun';
 import { getMoonData } from '@utils/moon';
 import { getNextPrayer } from '@utils/prayer-times';
@@ -147,8 +148,8 @@ const searchCities = cities.cities
 
         <div class="hero-proof-strip">
           <div class="hero-proof-item glass-subtle">
-            <strong>5,000+</strong>
-            <span>cities ready to search</span>
+            <strong>{totalCities}</strong>
+            <span>cities in the public index</span>
           </div>
           <div class="hero-proof-item glass-subtle">
             <strong>NOAA-grade</strong>

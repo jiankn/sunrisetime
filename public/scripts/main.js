@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initMobileMenu();
   initScrollAnimations();
   initHeroSearch();
+  initFooterSearch();
 });
 
 function initNavbar() {
@@ -91,6 +92,26 @@ function initScrollAnimations() {
   document.querySelectorAll('.fade-in').forEach(element => observer.observe(element));
 }
 
+function goToCity(slug) {
+  if (!slug) return;
+  window.location.href = `/sunrise/${slug}/`;
+}
+
+function getRankedCityMatches(query, searchData, limit = 8) {
+  const normalizedQuery = query.toLowerCase().trim();
+  if (!normalizedQuery) return [];
+
+  return searchData
+    .filter(city => city.name.toLowerCase().includes(normalizedQuery))
+    .sort((a, b) => {
+      const aStarts = a.name.toLowerCase().startsWith(normalizedQuery) ? 0 : 1;
+      const bStarts = b.name.toLowerCase().startsWith(normalizedQuery) ? 0 : 1;
+      if (aStarts !== bStarts) return aStarts - bStarts;
+      return b.population - a.population;
+    })
+    .slice(0, limit);
+}
+
 function initHeroSearch() {
   const searchRoot = document.querySelector('[data-hero-search]');
   if (!searchRoot) return;
@@ -166,26 +187,6 @@ function initHeroSearch() {
     input.setAttribute('aria-activedescendant', activeOption.id);
   }
 
-  function goToCity(slug) {
-    if (!slug) return;
-    window.location.href = `/sunrise/${slug}/`;
-  }
-
-  function getRankedMatches(query) {
-    const normalizedQuery = query.toLowerCase().trim();
-    if (!normalizedQuery) return [];
-
-    return searchData
-      .filter(city => city.name.toLowerCase().includes(normalizedQuery))
-      .sort((a, b) => {
-        const aStarts = a.name.toLowerCase().startsWith(normalizedQuery) ? 0 : 1;
-        const bStarts = b.name.toLowerCase().startsWith(normalizedQuery) ? 0 : 1;
-        if (aStarts !== bStarts) return aStarts - bStarts;
-        return b.population - a.population;
-      })
-      .slice(0, 8);
-  }
-
   function updateHeroPreview(slug) {
     const snapshot = previewData.find(city => city.slug === slug);
     if (!snapshot) return;
@@ -242,7 +243,7 @@ function initHeroSearch() {
       return;
     }
 
-    matches = getRankedMatches(query);
+    matches = getRankedCityMatches(query, searchData, 8);
     renderResults(matches);
   });
 
@@ -351,6 +352,124 @@ function initHeroSearch() {
         queueLocationReset();
       }, () => {
         setLocationState('Location blocked', { feedback: true });
+        queueLocationReset();
+      }, {
+        enableHighAccuracy: false,
+        timeout: 8000,
+        maximumAge: 600000,
+      });
+    });
+  }
+}
+
+function initFooterSearch() {
+  const searchRoot = document.querySelector('[data-footer-search]');
+  if (!searchRoot) return;
+
+  const input = searchRoot.querySelector('[data-footer-city-input]');
+  const status = searchRoot.querySelector('[data-footer-search-status]');
+  const locationButton = searchRoot.querySelector('[data-footer-use-location]');
+  const locationLabel = searchRoot.querySelector('[data-footer-location-label]');
+  const searchData = readJsonScript('footerSearchData');
+
+  if (!input || !status || !Array.isArray(searchData)) {
+    return;
+  }
+
+  let locationResetTimer = null;
+
+  function setStatus(message = '') {
+    status.textContent = message;
+  }
+
+  function setLocationState(label, { disabled = false, feedback = false } = {}) {
+    if (!locationButton || !locationLabel) return;
+
+    locationButton.disabled = disabled;
+    locationLabel.textContent = label;
+
+    if (feedback) {
+      locationButton.setAttribute('data-feedback', 'true');
+      return;
+    }
+
+    locationButton.removeAttribute('data-feedback');
+  }
+
+  function resetLocationState() {
+    setLocationState('Use my location');
+    if (locationResetTimer) {
+      window.clearTimeout(locationResetTimer);
+      locationResetTimer = null;
+    }
+  }
+
+  function queueLocationReset() {
+    if (locationResetTimer) {
+      window.clearTimeout(locationResetTimer);
+    }
+
+    locationResetTimer = window.setTimeout(() => {
+      resetLocationState();
+    }, 1800);
+  }
+
+  input.addEventListener('input', () => {
+    if (status.textContent) {
+      setStatus('');
+    }
+  });
+
+  searchRoot.addEventListener('submit', (event) => {
+    event.preventDefault();
+
+    const query = input.value.trim();
+    if (!query) {
+      setStatus('Type a city name to continue.');
+      input.focus();
+      return;
+    }
+
+    const matches = getRankedCityMatches(query, searchData, 1);
+    if (!matches.length) {
+      setStatus('No matching city yet. Try another spelling.');
+      return;
+    }
+
+    setStatus('');
+    goToCity(matches[0].slug);
+  });
+
+  if (locationButton && locationLabel) {
+    locationButton.addEventListener('click', () => {
+      if (!navigator.geolocation) {
+        setLocationState('Unavailable', { feedback: true });
+        setStatus('Browser location is not available here.');
+        queueLocationReset();
+        return;
+      }
+
+      if (locationResetTimer) {
+        window.clearTimeout(locationResetTimer);
+        locationResetTimer = null;
+      }
+
+      setLocationState('Locating...', { disabled: true, feedback: true });
+      setStatus('');
+
+      navigator.geolocation.getCurrentPosition((position) => {
+        const nearestCity = findNearestCity(position.coords.latitude, position.coords.longitude, searchData);
+        if (nearestCity) {
+          goToCity(nearestCity.slug);
+          return;
+        }
+
+        setLocationState('No match', { feedback: true });
+        setStatus('We could not map that location to an indexed city yet.');
+        queueLocationReset();
+      }, () => {
+        setLocationState('Blocked', { feedback: true });
+        setStatus('Location permission was denied or timed out.');
         queueLocationReset();
       }, {
         enableHighAccuracy: false,

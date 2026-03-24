@@ -1,0 +1,77 @@
+---
+import Base from '@layouts/Base.astro';
+import Header from '@components/Header.astro';
+import Footer from '@components/Footer.astro';
+import { regionHubs, useCaseHubs } from '@data/site';
+
+const jsonLd = [
+  {
+    "@type": "CollectionPage",
+    "name": "SunriseTime Guides",
+    "description": "Browse use-case guides for golden hour, moon phase, daylight length, and prayer-time planning.",
+    "url": "https://sunrisetime.co/guides/",
+    "breadcrumb": {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://sunrisetime.co/" },
+        { "@type": "ListItem", "position": 2, "name": "Guides", "item": "https://sunrisetime.co/guides/" }
+      ]
+    }
+  }
+];
+---
+
+<Base
+  title="Planning Guides - SunriseTime"
+  description="Browse SunriseTime guides for golden hour, moon phase, prayer-time planning, and daylight-length comparisons."
+  canonical="https://sunrisetime.co/guides/"
+  keywords="golden hour guide, moon phase guide, prayer times guide, daylight length guide"
+  jsonLd={jsonLd}
+>
+  <Header />
+
+  <main class="resource-page">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/">Home</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <span>Guides</span>
+      </nav>
+
+      <header class="resource-header">
+        <span class="section-badge">
+          <i data-lucide="compass" class="icon-xs"></i>
+          Guides
+        </span>
+        <h1>Use guides when the question is bigger than one city.</h1>
+        <p class="resource-subtitle">Guides create the bridge between broad intent and local answers. Start here when you want the right topic first, then move into the city pages that matter.</p>
+      </header>
+
+      <section class="resource-link-grid">
+        {useCaseHubs.map((hub) => (
+          <a href={hub.path} class="resource-link-card resource-link-card-rich glass-card">
+            <strong>{hub.name}</strong>
+            <span>{hub.description}</span>
+          </a>
+        ))}
+      </section>
+
+      <section class="resource-section">
+        <div class="detail-section-head">
+          <h2>Use guides with region hubs</h2>
+          <p>Topic intent gets stronger when users can immediately compare multiple related cities.</p>
+        </div>
+        <div class="resource-link-grid">
+          {regionHubs.map((region) => (
+            <a href={region.path} class="resource-link-card glass-card">
+              <strong>{region.name}</strong>
+              <span>{region.cityCount} indexed cities</span>
+            </a>
+          ))}
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <Footer />
+</Base>

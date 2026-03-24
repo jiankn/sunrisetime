@@ -1,0 +1,90 @@
+---
+import Base from '@layouts/Base.astro';
+import Header from '@components/Header.astro';
+import Footer from '@components/Footer.astro';
+import { supportEmail, supportEmailHref } from '@data/site';
+
+const jsonLd = [
+  {
+    "@type": "ContactPage",
+    "name": "Contact SunriseTime",
+    "description": "Contact SunriseTime for feedback, city corrections, privacy requests, or partnership questions.",
+    "url": "https://sunrisetime.co/contact/",
+    "breadcrumb": {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://sunrisetime.co/" },
+        { "@type": "ListItem", "position": 2, "name": "Contact", "item": "https://sunrisetime.co/contact/" }
+      ]
+    }
+  }
+];
+---
+
+<Base
+  title="Contact SunriseTime"
+  description="Contact SunriseTime for data corrections, feedback, advertising questions, and privacy requests."
+  canonical="https://sunrisetime.co/contact/"
+  keywords="contact SunriseTime, city correction, advertising inquiry"
+  jsonLd={jsonLd}
+>
+  <Header />
+
+  <main class="resource-page">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/">Home</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <span>Contact</span>
+      </nav>
+
+      <header class="resource-header">
+        <span class="section-badge">
+          <i data-lucide="mail" class="icon-xs"></i>
+          Contact
+        </span>
+        <h1>Use one inbox for feedback, corrections, privacy questions, and business conversations.</h1>
+        <p class="resource-subtitle">The fastest way to reach SunriseTime is email. If your request is about an incorrect city, timezone, or methodology detail, include the city page URL and what looks wrong.</p>
+        <div class="resource-meta">
+          <span class="resource-meta-chip">Primary inbox: {supportEmail}</span>
+        </div>
+      </header>
+
+      <section class="resource-grid">
+        <article class="resource-card glass-card">
+          <h2>Best reasons to contact us</h2>
+          <ul class="resource-list">
+            <li>Data corrections for a city page or time zone.</li>
+            <li>Requests to add or prioritize a city.</li>
+            <li>Questions about privacy, terms, or methodology.</li>
+            <li>Advertising, partnership, or media inquiries.</li>
+          </ul>
+        </article>
+
+        <article class="resource-card glass-card">
+          <h2>What helps us respond faster</h2>
+          <ul class="resource-list">
+            <li>The exact page URL or city name you are referring to.</li>
+            <li>A short description of the issue or request.</li>
+            <li>The date, local time, and context if the question is about timing output.</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="resource-callout glass-card-lg">
+        <div>
+          <span class="resource-callout-label">Primary contact method</span>
+          <h2>Email SunriseTime directly.</h2>
+          <p>{supportEmail}</p>
+        </div>
+        <div class="resource-link-row">
+          <a href={supportEmailHref} class="btn-primary-sm">Send email</a>
+          <a href="/methodology/" class="btn-secondary-sm">Review methodology</a>
+          <a href="/sitemap/" class="btn-secondary-sm">Open sitemap</a>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <Footer />
+</Base>

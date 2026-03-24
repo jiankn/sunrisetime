@@ -1,0 +1,140 @@
+---
+import Base from '@layouts/Base.astro';
+import Header from '@components/Header.astro';
+import Footer from '@components/Footer.astro';
+import AdUnit from '@components/AdUnit.astro';
+import { getCitiesBySlugs, getUseCaseHub, regionHubs, useCaseHubs } from '@data/site';
+
+export function getStaticPaths() {
+  return useCaseHubs.map((hub) => ({
+    params: { topic: hub.slug },
+  }));
+}
+
+const hub = getUseCaseHub(Astro.params.topic ?? '');
+
+if (!hub) {
+  throw new Error(`Unknown guide topic: ${Astro.params.topic}`);
+}
+
+const featuredCities = getCitiesBySlugs(hub.featuredCitySlugs);
+const relatedRegions = regionHubs.filter((region) => hub.relatedRegionSlugs.includes(region.slug));
+const siblingGuides = useCaseHubs.filter((entry) => entry.slug !== hub.slug);
+
+const jsonLd = [
+  {
+    "@type": "CollectionPage",
+    "name": `${hub.name} Guide`,
+    "description": hub.description,
+    "url": `https://sunrisetime.co${hub.path}`,
+    "breadcrumb": {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://sunrisetime.co/" },
+        { "@type": "ListItem", "position": 2, "name": "Guides", "item": "https://sunrisetime.co/guides/" },
+        { "@type": "ListItem", "position": 3, "name": hub.name, "item": `https://sunrisetime.co${hub.path}` }
+      ]
+    }
+  }
+];
+---
+
+<Base
+  title={`${hub.name} Planning Guide - SunriseTime`}
+  description={hub.description}
+  canonical={`https://sunrisetime.co${hub.path}`}
+  keywords={`${hub.name.toLowerCase()} guide, ${hub.name.toLowerCase()} by city, sunrise planning`}
+  jsonLd={jsonLd}
+>
+  <Header />
+
+  <main class="resource-page">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/">Home</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <a href="/guides/">Guides</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <span>{hub.name}</span>
+      </nav>
+
+      <header class="resource-header">
+        <span class="section-badge">
+          <i data-lucide="sparkles" class="icon-xs"></i>
+          {hub.name}
+        </span>
+        <h1>{hub.description}</h1>
+        <p class="resource-subtitle">{hub.intro}</p>
+      </header>
+
+      <section class="resource-grid">
+        <article class="resource-card glass-card">
+          <h2>What this guide helps you do</h2>
+          <ul class="resource-list">
+            {hub.primaryBullets.map((item) => (
+              <li>{item}</li>
+            ))}
+          </ul>
+        </article>
+
+        <article class="resource-card glass-card">
+          <h2>Recommended workflow</h2>
+          <ul class="resource-list">
+            {hub.workflowBullets.map((item) => (
+              <li>{item}</li>
+            ))}
+          </ul>
+        </article>
+      </section>
+
+      <section class="resource-section">
+        <div class="detail-section-head">
+          <h2>Featured cities for {hub.name.toLowerCase()}</h2>
+          <p>These pages are strong entry points when you want a fast answer and clear internal links after it.</p>
+        </div>
+        <div class="hub-city-grid">
+          {featuredCities.map((city) => (
+            <a href={`/sunrise/${city.slug}/`} class="hub-city-card glass-card">
+              <span class="hub-city-name">{city.name}</span>
+              <span class="hub-city-country">{city.country}</span>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <AdUnit id={`ad-guide-${hub.slug}`} />
+
+      <section class="resource-section">
+        <div class="detail-section-head">
+          <h2>Related region hubs</h2>
+          <p>Use region pages when you need multiple nearby cities without repeating the search flow.</p>
+        </div>
+        <div class="resource-link-grid">
+          {relatedRegions.map((region) => (
+            <a href={region.path} class="resource-link-card glass-card">
+              <strong>{region.name}</strong>
+              <span>{region.cityCount} indexed cities</span>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <section class="resource-section">
+        <div class="detail-section-head">
+          <h2>Other guides</h2>
+          <p>Each guide solves a different starting intent, but they all lead into the same city pages.</p>
+        </div>
+        <div class="resource-link-grid">
+          {siblingGuides.map((entry) => (
+            <a href={entry.path} class="resource-link-card glass-card">
+              <strong>{entry.name}</strong>
+              <span>{entry.description}</span>
+            </a>
+          ))}
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <Footer />
+</Base>

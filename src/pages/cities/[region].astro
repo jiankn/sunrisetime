@@ -1,0 +1,160 @@
+---
+import Base from '@layouts/Base.astro';
+import Header from '@components/Header.astro';
+import Footer from '@components/Footer.astro';
+import AdUnit from '@components/AdUnit.astro';
+import { getRegionHub, regionHubs, useCaseHubs } from '@data/site';
+
+export function getStaticPaths() {
+  return regionHubs.map((region) => ({
+    params: { region: region.slug },
+  }));
+}
+
+const region = getRegionHub(Astro.params.region ?? '');
+
+if (!region) {
+  throw new Error(`Unknown region hub: ${Astro.params.region}`);
+}
+
+const relatedGuides = useCaseHubs.filter((hub) => hub.relatedRegionSlugs.includes(region.slug));
+const otherRegions = regionHubs.filter((entry) => entry.slug !== region.slug);
+const leadCity = region.featuredCities[0] ?? region.cities[0];
+
+const jsonLd = [
+  {
+    "@type": "CollectionPage",
+    "name": `${region.name} Sunrise & Sunset Times`,
+    "description": region.description,
+    "url": `https://sunrisetime.co${region.path}`,
+    "breadcrumb": {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://sunrisetime.co/" },
+        { "@type": "ListItem", "position": 2, "name": "Cities", "item": "https://sunrisetime.co/cities/" },
+        { "@type": "ListItem", "position": 3, "name": region.name, "item": `https://sunrisetime.co${region.path}` }
+      ]
+    }
+  }
+];
+---
+
+<Base
+  title={`${region.name} Sunrise & Sunset Times - SunriseTime`}
+  description={region.description}
+  canonical={`https://sunrisetime.co${region.path}`}
+  keywords={`${region.name.toLowerCase()} sunrise times, ${region.name.toLowerCase()} sunset times, ${region.name.toLowerCase()} cities`}
+  jsonLd={jsonLd}
+>
+  <Header />
+
+  <main class="resource-page">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/">Home</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <a href="/cities/">Cities</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <span>{region.name}</span>
+      </nav>
+
+      <header class="resource-header">
+        <span class="section-badge">
+          <i data-lucide="globe-2" class="icon-xs"></i>
+          {region.name}
+        </span>
+        <h1>{region.description}</h1>
+        <p class="resource-subtitle">{region.intro}</p>
+        <div class="resource-meta">
+          <span class="resource-meta-chip">{region.cityCount} indexed cities</span>
+          {leadCity && <span class="resource-meta-chip">Start with {leadCity.name}</span>}
+          <span class="resource-meta-chip">Regional comparison hub</span>
+        </div>
+      </header>
+
+      <section class="resource-grid">
+        <article class="resource-card glass-card">
+          <h2>Why browse this region</h2>
+          <ul class="resource-list">
+            {region.reasons.map((item) => (
+              <li>{item}</li>
+            ))}
+          </ul>
+        </article>
+
+        <article class="resource-card glass-card">
+          <h2>Best fit for</h2>
+          <ul class="resource-list">
+            {region.audiences.map((item) => (
+              <li>{item}</li>
+            ))}
+          </ul>
+        </article>
+      </section>
+
+      <section class="resource-section">
+        <div class="detail-section-head">
+          <h2>Featured cities</h2>
+          <p>Open one of these cities first if you want the shortest path from browse to answer.</p>
+        </div>
+        <div class="hub-city-grid">
+          {region.featuredCities.map((city) => (
+            <a href={`/sunrise/${city.slug}/`} class="hub-city-card glass-card">
+              <span class="hub-city-name">{city.name}</span>
+              <span class="hub-city-country">{city.country}</span>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <AdUnit id={`ad-region-${region.slug}`} />
+
+      <section class="resource-section">
+        <div class="detail-section-head">
+          <h2>All indexed cities in {region.name}</h2>
+          <p>Use the full regional list when you need comparison depth.</p>
+        </div>
+        <div class="hub-city-grid">
+          {region.cities.map((city) => (
+            <a href={`/sunrise/${city.slug}/`} class="hub-city-card glass-card">
+              <span class="hub-city-name">{city.name}</span>
+              <span class="hub-city-country">{city.country}</span>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <section class="resource-section">
+        <div class="detail-section-head">
+          <h2>Related guides</h2>
+          <p>Guides capture broader intent, then hand users back into city pages and regional browse flows.</p>
+        </div>
+        <div class="resource-link-grid">
+          {relatedGuides.map((hub) => (
+            <a href={hub.path} class="resource-link-card glass-card">
+              <strong>{hub.name}</strong>
+              <span>{hub.description}</span>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <section class="resource-section">
+        <div class="detail-section-head">
+          <h2>Other regions</h2>
+          <p>Use another region hub instead of restarting from the homepage.</p>
+        </div>
+        <div class="resource-link-grid">
+          {otherRegions.map((entry) => (
+            <a href={entry.path} class="resource-link-card glass-card">
+              <strong>{entry.name}</strong>
+              <span>{entry.cityCount} indexed cities</span>
+            </a>
+          ))}
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <Footer />
+</Base>

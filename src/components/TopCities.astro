@@ -2,25 +2,13 @@
 /**
  * Top Cities — 按大洲分组的城市内链网格
  */
-import cities from '@data/cities.json';
+import { regionHubs, totalCities } from '@data/site';
 
-type CityGroup = {
-  name: string;
-  id: string;
-  cities: typeof cities.cities[0][];
-};
-
-const continentMap: Record<string, string> = {
-  'NA': 'North America',
-  'EU': 'Europe',
-  'AS': 'Asia',
-  'AF': 'Africa & Oceania',
-};
-
-const groups: CityGroup[] = Object.entries(continentMap).map(([code, name]) => ({
-  name,
-  id: `cities-${code.toLowerCase()}`,
-  cities: cities.cities.filter(c => c.continent === code).slice(0, 6),
+const groups = regionHubs.map((region) => ({
+  name: region.name,
+  id: `cities-${region.slug}`,
+  path: region.path,
+  cities: region.cities.slice(0, 6),
 }));
 ---
 
@@ -38,7 +26,10 @@ const groups: CityGroup[] = Object.entries(continentMap).map(([code, name]) => (
     <div class="cities-grid">
       {groups.map(group => (
         <div class="city-group glass-card" id={group.id}>
-          <h3><i data-lucide="globe" class="icon-sm"></i> {group.name}</h3>
+          <h3>
+            <i data-lucide="globe" class="icon-sm"></i>
+            <a href={group.path}>{group.name}</a>
+          </h3>
           <ul class="city-list">
             {group.cities.map(city => (
               <li>
@@ -56,7 +47,7 @@ const groups: CityGroup[] = Object.entries(continentMap).map(([code, name]) => (
     <div class="cities-cta">
       <a href="/cities/" class="btn-secondary" id="viewAllCities">
         <i data-lucide="globe" class="icon-xs"></i>
-        Browse All 5,000+ Cities
+        Browse All {totalCities} Cities
       </a>
     </div>
   </div>

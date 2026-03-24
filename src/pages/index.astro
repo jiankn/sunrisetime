@@ -14,6 +14,7 @@ import TopCities from '@components/TopCities.astro';
 import FAQ from '@components/FAQ.astro';
 import CTA from '@components/CTA.astro';
 import Footer from '@components/Footer.astro';
+import { totalCities } from '@data/site';
 
 const jsonLd = [
   {
@@ -21,7 +22,7 @@ const jsonLd = [
     "@id": "https://sunrisetime.co/#website",
     "name": "SunriseTime",
     "url": "https://sunrisetime.co/",
-    "description": "Search today's sunrise, sunset, golden hour, and moon phase times for 5,000+ cities worldwide.",
+    "description": `Search today's sunrise, sunset, golden hour, and moon phase times for ${totalCities} indexed cities worldwide.`,
     "potentialAction": {
       "@type": "SearchAction",
       "target": "https://sunrisetime.co/sunrise/{search_term_string}/",
@@ -51,7 +52,7 @@ const jsonLd = [
         "name": "How many cities does SunriseTime cover?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "SunriseTime covers over 5,000 cities globally, including all major metropolitan areas and popular photography destinations."
+          "text": `SunriseTime currently publishes timing pages for ${totalCities} indexed cities in the public directory.`
         }
       },
       {
@@ -69,7 +70,7 @@ const jsonLd = [
 
 <Base
   title="SunriseTime — Search Today's Sunrise & Sunset Times by City"
-  description="Search today's sunrise, sunset, golden hour, moon phase, and prayer times for 5,000+ cities worldwide. Find your city fast and plan the light in seconds."
+  description={`Search today's sunrise, sunset, golden hour, moon phase, and prayer times for ${totalCities} indexed cities worldwide. Find your city fast and plan the light in seconds.`}
   keywords="sunrise time, sunset time, city search, golden hour, moon phase, prayer times, daylight"
   jsonLd={jsonLd}
 >

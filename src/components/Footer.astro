@@ -1,47 +1,135 @@
 ---
 /**
- * Footer — 站点页脚
+ * Footer - Growth-oriented site footer
  */
+import {
+  allCities,
+  cityIndexLabel,
+  featuredFooterCities,
+  footerCompanyLinks,
+  footerCoreLinks,
+  regionHubs,
+  totalCities,
+  useCaseHubs,
+} from '@data/site';
+
+const footerSearchCities = allCities.map((city) => ({
+  name: city.name,
+  slug: city.slug,
+  country: city.country,
+  lat: city.lat,
+  lng: city.lng,
+  population: city.population,
+}));
 ---
 
 <footer class="footer">
+  <div class="container">
+    <section class="footer-task-panel glass-card-lg">
+      <div class="footer-task-grid">
+        <div class="footer-task-copy">
+          <span class="footer-panel-label">Keep planning</span>
+          <h2>Search another city before you leave.</h2>
+          <p>The best Footer for SunriseTime is not "about us" first. It is a fast handoff into the next useful city page, region hub, or guide.</p>
+          <div class="footer-chip-list">
+            {featuredFooterCities.map((city) => (
+              <a href={`/sunrise/${city.slug}/`} class="footer-chip">
+                {city.name}
+              </a>
+            ))}
+          </div>
+        </div>
+
+        <form class="footer-search-panel" data-footer-search>
+          <label class="footer-search-shell" for="footerCitySearch">
+            <i data-lucide="search" class="icon-sm"></i>
+            <input
+              id="footerCitySearch"
+              type="text"
+              data-footer-city-input
+              placeholder="Search another city"
+              autocomplete="off"
+              aria-label="Search another city"
+            >
+          </label>
+
+          <div class="footer-search-actions">
+            <button type="submit" class="btn-primary-sm">Open city page</button>
+            <button type="button" class="btn-secondary-sm footer-location-action" data-footer-use-location>
+              <i data-lucide="locate-fixed" class="icon-xs"></i>
+              <span data-footer-location-label>Use my location</span>
+            </button>
+          </div>
+
+          <p class="footer-search-status" data-footer-search-status aria-live="polite"></p>
+          <p class="footer-search-note">{cityIndexLabel}. Ads help keep the core experience free while the indexed directory grows.</p>
+        </form>
+      </div>
+    </section>
+  </div>
+
   <div class="container footer-grid">
     <div class="footer-brand">
       <div class="nav-logo">
-      <span class="logo-icon"><img src="/logo.svg" alt="SunriseTime" width="28" height="28"></span>
+        <span class="logo-icon"><img src="/logo.svg" alt="SunriseTime" width="28" height="28"></span>
         <span class="logo-text">Sunrise<span class="logo-accent">Time</span></span>
       </div>
-      <p>Search today&apos;s sunrise, sunset, golden hour, moon phase, and prayer times for cities around the world.</p>
+      <p>Search today&apos;s sunrise, sunset, golden hour, moon phase, and prayer times across {totalCities} indexed cities.</p>
+      <p class="footer-brand-note">SunriseTime is designed to answer the first question fast, then route people into the next relevant page instead of sending them back to search from scratch.</p>
     </div>
+
     <div class="footer-links">
-      <h4>Product</h4>
+      <h4>Continue Task</h4>
       <ul>
-        <li><a href="/#search">Search City</a></li>
-        <li><a href="/#planner">Plan Your Day</a></li>
-        <li><a href="/#cities">Popular Cities</a></li>
-        <li><a href="/#faq">FAQ</a></li>
+        {footerCoreLinks.map((link) => (
+          <li><a href={link.path}>{link.name}</a></li>
+        ))}
+        <li><a href="/guides/">Guides</a></li>
       </ul>
     </div>
+
     <div class="footer-links">
-      <h4>Data</h4>
+      <h4>Browse by Region</h4>
       <ul>
-        <li><a href="/cities/">Cities Index</a></li>
-        <li><a href="/#features">Golden Hour</a></li>
-        <li><a href="/#features">Moon Phase</a></li>
-        <li><a href="/#features">Prayer Times</a></li>
+        {regionHubs.map((region) => (
+          <li><a href={region.path}>{region.name}</a></li>
+        ))}
       </ul>
     </div>
+
     <div class="footer-links">
-      <h4>Company</h4>
+      <h4>Plan by Use Case</h4>
       <ul>
-        <li><a href="/#faq">About</a></li>
-        <li><a href="/#faq">Privacy</a></li>
-        <li><a href="/#faq">Terms</a></li>
-        <li><a href="/#faq">Contact</a></li>
+        {useCaseHubs.map((hub) => (
+          <li><a href={hub.path}>{hub.name}</a></li>
+        ))}
+      </ul>
+    </div>
+
+    <div class="footer-links">
+      <h4>Trust & Support</h4>
+      <ul>
+        {footerCompanyLinks.map((link) => (
+          <li><a href={link.path}>{link.name}</a></li>
+        ))}
       </ul>
     </div>
   </div>
+
   <div class="container footer-bottom">
-    <p>&copy; {new Date().getFullYear()} SunriseTime. All rights reserved. Data powered by NOAA Solar Calculator.</p>
+    <div class="footer-bottom-copy">
+      <p>&copy; {new Date().getFullYear()} SunriseTime. {cityIndexLabel}. Built for fast sunrise, sunset, golden hour, moon phase, and prayer-time answers.</p>
+      <p class="footer-disclosure">SunriseTime is free to use and may display advertising to support ongoing operation. Review the methodology, privacy policy, and terms before relying on the service for important decisions.</p>
+    </div>
+
+    <div class="footer-bottom-links">
+      <a href="/methodology/">Methodology</a>
+      <a href="/privacy/">Privacy</a>
+      <a href="/terms/">Terms</a>
+      <a href="/contact/">Contact</a>
+      <a href="/sitemap/">Sitemap</a>
+    </div>
   </div>
+
+  <script type="application/json" id="footerSearchData" set:html={JSON.stringify(footerSearchCities)} />
 </footer>

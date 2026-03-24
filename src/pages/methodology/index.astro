@@ -1,0 +1,133 @@
+---
+import Base from '@layouts/Base.astro';
+import Header from '@components/Header.astro';
+import Footer from '@components/Footer.astro';
+import { cityIndexLabel, legalLastUpdated, totalCities } from '@data/site';
+
+const jsonLd = [
+  {
+    "@type": "TechArticle",
+    "headline": "SunriseTime Methodology",
+    "description": "Learn how SunriseTime computes solar, moon, and prayer timing data for its indexed city pages.",
+    "url": "https://sunrisetime.co/methodology/",
+    "breadcrumb": {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://sunrisetime.co/" },
+        { "@type": "ListItem", "position": 2, "name": "Methodology", "item": "https://sunrisetime.co/methodology/" }
+      ]
+    }
+  }
+];
+---
+
+<Base
+  title="Methodology - How SunriseTime Calculates Sun, Moon, and Prayer Data"
+  description="Read the methodology behind SunriseTime's solar calculations, moon data, prayer times, and indexed city directory."
+  canonical="https://sunrisetime.co/methodology/"
+  keywords="sunrise methodology, sunset calculation, moon phase method, prayer times method"
+  jsonLd={jsonLd}
+>
+  <Header />
+
+  <main class="resource-page">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/">Home</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <span>Methodology</span>
+      </nav>
+
+      <header class="resource-header">
+        <span class="section-badge">
+          <i data-lucide="flask-conical" class="icon-xs"></i>
+          Methodology
+        </span>
+        <h1>SunriseTime is only useful if people can understand where the numbers come from.</h1>
+        <p class="resource-subtitle">This page explains the current public methodology for sunrise, sunset, golden hour, moon phase, and prayer timing data, along with how the indexed city list is structured.</p>
+        <div class="resource-meta">
+          <span class="resource-meta-chip">Last updated {legalLastUpdated}</span>
+          <span class="resource-meta-chip">{cityIndexLabel}</span>
+        </div>
+      </header>
+
+      <section class="resource-grid">
+        <article class="resource-card glass-card">
+          <h2>Solar calculations</h2>
+          <p class="resource-text">SunriseTime uses SunCalc-based solar calculations aligned with NOAA-style solar-position standards to derive sunrise, sunset, solar noon, twilight, and golden hour timing from latitude, longitude, and date.</p>
+          <ul class="resource-list">
+            <li>Sunrise and sunset are calculated per city coordinate pair.</li>
+            <li>Golden hour windows are derived from the same daily solar events.</li>
+            <li>Displayed times are formatted in the city&apos;s local timezone.</li>
+          </ul>
+        </article>
+
+        <article class="resource-card glass-card">
+          <h2>Moon data</h2>
+          <p class="resource-text">Moon phase names, illumination, and moonrise or moonset estimates are generated from the same astronomy library stack used in the live city pages.</p>
+          <ul class="resource-list">
+            <li>Phase labels are mapped from the current lunar fraction.</li>
+            <li>Illumination is rounded for readability.</li>
+            <li>Moon details are presented as planning aids, not observatory-grade forecasts.</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="resource-grid">
+        <article class="resource-card glass-card">
+          <h2>Prayer-time calculations</h2>
+          <p class="resource-text">The current public SunriseTime experience uses the Muslim World League (MWL) convention for Fajr and Isha, with the Standard (Shafi&apos;i) method for Asr.</p>
+          <ul class="resource-list">
+            <li>Fajr is calculated at 18 degrees below the horizon.</li>
+            <li>Isha is calculated at 17 degrees below the horizon.</li>
+            <li>Asr uses the standard shadow-length convention in the current public interface.</li>
+          </ul>
+        </article>
+
+        <article class="resource-card glass-card">
+          <h2>City directory</h2>
+          <p class="resource-text">The public index currently covers {totalCities} major cities. The list is curated from a GeoNames-based seed so the highest-demand locations are easy to browse and search first.</p>
+          <ul class="resource-list">
+            <li>Each city stores a name, slug, country code, timezone, and coordinates.</li>
+            <li>Regional hubs group cities for easier comparison and deeper internal linking.</li>
+            <li>The indexed directory can expand as coverage priorities change.</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="resource-grid">
+        <article class="resource-card glass-card">
+          <h2>How updates work</h2>
+          <ul class="resource-list">
+            <li>City pages are recalculated from the site&apos;s current build and utility layer.</li>
+            <li>When content, city coverage, or calculation details change, SunriseTime should be rebuilt so pages stay aligned.</li>
+            <li>Methodology and policy pages should be updated whenever the live product meaningfully changes.</li>
+          </ul>
+        </article>
+
+        <article class="resource-card glass-card">
+          <h2>Known limitations</h2>
+          <ul class="resource-list">
+            <li>Displayed results are planning tools, not legal, navigational, or religious authority.</li>
+            <li>Weather, terrain, skyline obstruction, and local observation conditions are not reflected in the raw timing output.</li>
+            <li>Prayer-time preferences are not yet selectable in the current public interface.</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="resource-callout glass-card-lg">
+        <div>
+          <span class="resource-callout-label">Next step</span>
+          <h2>Methodology matters most when it stays connected to useful pages.</h2>
+          <p>After reading this page, the best next move is usually to open a city page or a regional browse page and see the calculations in context.</p>
+        </div>
+        <div class="resource-link-row">
+          <a href="/cities/" class="btn-primary-sm">Browse cities</a>
+          <a href="/guides/" class="btn-secondary-sm">Open guides</a>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <Footer />
+</Base>

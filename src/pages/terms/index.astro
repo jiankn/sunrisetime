@@ -1,0 +1,113 @@
+---
+import Base from '@layouts/Base.astro';
+import Header from '@components/Header.astro';
+import Footer from '@components/Footer.astro';
+import { legalLastUpdated, supportEmail, supportEmailHref } from '@data/site';
+
+const jsonLd = [
+  {
+    "@type": "WebPage",
+    "name": "Terms of Service",
+    "description": "Read the basic terms that govern the use of SunriseTime.",
+    "url": "https://sunrisetime.co/terms/",
+    "breadcrumb": {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://sunrisetime.co/" },
+        { "@type": "ListItem", "position": 2, "name": "Terms of Service", "item": "https://sunrisetime.co/terms/" }
+      ]
+    }
+  }
+];
+---
+
+<Base
+  title="Terms of Service - SunriseTime"
+  description="Read the basic terms for using SunriseTime, including informational-use disclaimers and advertising disclosures."
+  canonical="https://sunrisetime.co/terms/"
+  keywords="terms of service, SunriseTime terms, site use"
+  jsonLd={jsonLd}
+>
+  <Header />
+
+  <main class="resource-page">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/">Home</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <span>Terms of Service</span>
+      </nav>
+
+      <header class="resource-header">
+        <span class="section-badge">
+          <i data-lucide="file-text" class="icon-xs"></i>
+          Terms of Service
+        </span>
+        <h1>Use SunriseTime as an informational planning tool, not as a substitute for critical professional judgment.</h1>
+        <p class="resource-subtitle">These terms set the basic rules for using the site. They are intentionally concise and focused on public utility usage, not on accounts or paid plans.</p>
+        <div class="resource-meta">
+          <span class="resource-meta-chip">Last updated {legalLastUpdated}</span>
+          <span class="resource-meta-chip">Public utility site</span>
+        </div>
+      </header>
+
+      <section class="resource-grid">
+        <article class="resource-card glass-card">
+          <h2>Permitted use</h2>
+          <ul class="resource-list">
+            <li>You may use SunriseTime to search, browse, and reference timing information for personal or business planning.</li>
+            <li>You may link to SunriseTime pages and use the site as a public informational resource.</li>
+            <li>You may not use the site in a way that attempts to disrupt service, scrape beyond reasonable public use, or abuse the infrastructure.</li>
+          </ul>
+        </article>
+
+        <article class="resource-card glass-card">
+          <h2>Informational-use disclaimer</h2>
+          <ul class="resource-list">
+            <li>SunriseTime provides timing estimates and reference information for convenience.</li>
+            <li>You should verify important decisions independently when precision is critical for safety, legal compliance, or religious practice.</li>
+            <li>We do not guarantee that the site will always be available, error-free, or suitable for every purpose.</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="resource-grid">
+        <article class="resource-card glass-card">
+          <h2>Advertising and monetization</h2>
+          <ul class="resource-list">
+            <li>SunriseTime may display advertising to support the free public version of the service.</li>
+            <li>Advertising partners may apply their own policies, measurement tools, or cookies when enabled.</li>
+            <li>Ads should not be interpreted as endorsements unless clearly stated otherwise.</li>
+          </ul>
+        </article>
+
+        <article class="resource-card glass-card">
+          <h2>Content and intellectual property</h2>
+          <ul class="resource-list">
+            <li>The site design, brand, written content, and page structure belong to SunriseTime unless otherwise noted.</li>
+            <li>Third-party names, datasets, and libraries remain the property of their respective owners.</li>
+            <li>You may not copy the site in a way that misrepresents authorship or brand ownership.</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="resource-grid">
+        <article class="resource-card glass-card">
+          <h2>External services and links</h2>
+          <ul class="resource-list">
+            <li>SunriseTime may link to third-party resources or rely on third-party infrastructure.</li>
+            <li>We are not responsible for the content, availability, or policies of external services.</li>
+            <li>Using third-party services from SunriseTime may subject you to separate terms and policies.</li>
+          </ul>
+        </article>
+
+        <article class="resource-card glass-card">
+          <h2>Contact</h2>
+          <p class="resource-text">Questions about these terms can be sent to <a href={supportEmailHref}>{supportEmail}</a>.</p>
+        </article>
+      </section>
+    </div>
+  </main>
+
+  <Footer />
+</Base>

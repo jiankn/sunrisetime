@@ -1,0 +1,133 @@
+---
+import Base from '@layouts/Base.astro';
+import Header from '@components/Header.astro';
+import Footer from '@components/Footer.astro';
+import {
+  allCities,
+  footerCompanyLinks,
+  footerCoreLinks,
+  regionHubs,
+  useCaseHubs,
+} from '@data/site';
+
+const jsonLd = [
+  {
+    "@type": "WebPage",
+    "name": "HTML Sitemap",
+    "description": "Browse the main pages, region hubs, guides, and indexed city pages on SunriseTime.",
+    "url": "https://sunrisetime.co/sitemap/",
+    "breadcrumb": {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://sunrisetime.co/" },
+        { "@type": "ListItem", "position": 2, "name": "HTML Sitemap", "item": "https://sunrisetime.co/sitemap/" }
+      ]
+    }
+  }
+];
+---
+
+<Base
+  title="HTML Sitemap - SunriseTime"
+  description="Browse the core pages, region hubs, use-case guides, and indexed city pages on SunriseTime."
+  canonical="https://sunrisetime.co/sitemap/"
+  keywords="HTML sitemap, SunriseTime sitemap, city pages"
+  jsonLd={jsonLd}
+>
+  <Header />
+
+  <main class="resource-page">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/">Home</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <span>HTML Sitemap</span>
+      </nav>
+
+      <header class="resource-header">
+        <span class="section-badge">
+          <i data-lucide="map" class="icon-xs"></i>
+          HTML Sitemap
+        </span>
+        <h1>Browse every major part of SunriseTime from one page.</h1>
+        <p class="resource-subtitle">This sitemap exists for both people and crawlers. It groups the site into task-oriented pages first, then the full city directory by region.</p>
+      </header>
+
+      <section class="sitemap-grid">
+        <article class="sitemap-section glass-card">
+          <h2>Core Pages</h2>
+          <ul class="sitemap-links">
+            {footerCoreLinks.map((link) => (
+              <li><a href={link.path}>{link.name}</a></li>
+            ))}
+          </ul>
+        </article>
+
+        <article class="sitemap-section glass-card">
+          <h2>Guides</h2>
+          <ul class="sitemap-links">
+            <li><a href="/guides/">All Guides</a></li>
+            {useCaseHubs.map((hub) => (
+              <li><a href={hub.path}>{hub.name}</a></li>
+            ))}
+          </ul>
+        </article>
+
+        <article class="sitemap-section glass-card">
+          <h2>Trust & Policies</h2>
+          <ul class="sitemap-links">
+            {footerCompanyLinks.map((link) => (
+              <li><a href={link.path}>{link.name}</a></li>
+            ))}
+          </ul>
+        </article>
+      </section>
+
+      <section class="resource-section">
+        <div class="detail-section-head">
+          <h2>Region Hubs</h2>
+          <p>Jump straight into grouped browse pages by region.</p>
+        </div>
+        <div class="resource-link-grid">
+          {regionHubs.map((region) => (
+            <a href={region.path} class="resource-link-card glass-card">
+              <strong>{region.name}</strong>
+              <span>{region.cityCount} indexed cities</span>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      {regionHubs.map((region) => (
+        <section class="resource-section">
+          <div class="detail-section-head">
+            <h2>{region.name}</h2>
+            <p><a href={region.path}>Open the {region.name} hub</a></p>
+          </div>
+          <div class="hub-city-grid">
+            {region.cities.map((city) => (
+              <a href={`/sunrise/${city.slug}/`} class="hub-city-card glass-card">
+                <span class="hub-city-name">{city.name}</span>
+                <span class="hub-city-country">{city.country}</span>
+              </a>
+            ))}
+          </div>
+        </section>
+      ))}
+
+      <section class="resource-callout glass-card-lg">
+        <div>
+          <span class="resource-callout-label">Indexed city pages</span>
+          <h2>{allCities.length} city detail pages are currently listed in the public sitemap.</h2>
+          <p>If you want a faster path than browsing the full list, jump into a guide or regional hub first.</p>
+        </div>
+        <div class="resource-link-row">
+          <a href="/cities/" class="btn-primary-sm">Cities index</a>
+          <a href="/guides/" class="btn-secondary-sm">Guides</a>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <Footer />
+</Base>

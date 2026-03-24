@@ -1,0 +1,114 @@
+---
+import Base from '@layouts/Base.astro';
+import Header from '@components/Header.astro';
+import Footer from '@components/Footer.astro';
+import { legalLastUpdated, supportEmail, supportEmailHref } from '@data/site';
+
+const jsonLd = [
+  {
+    "@type": "WebPage",
+    "name": "Privacy Policy",
+    "description": "Read how SunriseTime handles usage data, cookies, and advertising-related disclosures.",
+    "url": "https://sunrisetime.co/privacy/",
+    "breadcrumb": {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://sunrisetime.co/" },
+        { "@type": "ListItem", "position": 2, "name": "Privacy Policy", "item": "https://sunrisetime.co/privacy/" }
+      ]
+    }
+  }
+];
+---
+
+<Base
+  title="Privacy Policy - SunriseTime"
+  description="Read how SunriseTime handles cookies, limited usage data, and advertising disclosures for an ad-supported utility site."
+  canonical="https://sunrisetime.co/privacy/"
+  keywords="privacy policy, SunriseTime privacy, cookies, advertising disclosure"
+  jsonLd={jsonLd}
+>
+  <Header />
+
+  <main class="resource-page">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/">Home</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <span>Privacy Policy</span>
+      </nav>
+
+      <header class="resource-header">
+        <span class="section-badge">
+          <i data-lucide="shield" class="icon-xs"></i>
+          Privacy Policy
+        </span>
+        <h1>SunriseTime keeps the product simple, and the privacy model is meant to stay simple too.</h1>
+        <p class="resource-subtitle">We aim to collect as little personal information as possible while still operating a fast, public, ad-supported utility. This page explains what information may be processed when you use the site.</p>
+        <div class="resource-meta">
+          <span class="resource-meta-chip">Last updated {legalLastUpdated}</span>
+          <span class="resource-meta-chip">Ad-supported website</span>
+        </div>
+      </header>
+
+      <section class="resource-grid">
+        <article class="resource-card glass-card">
+          <h2>Information we may process</h2>
+          <ul class="resource-list">
+            <li>Basic technical data such as browser type, device type, approximate network location, and page requests.</li>
+            <li>Search terms or city pages you open while using SunriseTime.</li>
+            <li>Location data only when you actively choose a "Use my location" feature in your browser.</li>
+          </ul>
+        </article>
+
+        <article class="resource-card glass-card">
+          <h2>How the information is used</h2>
+          <ul class="resource-list">
+            <li>To deliver the correct city page, calculate the relevant timing data, and improve page performance.</li>
+            <li>To understand which pages are useful and where internal links or page structure should improve.</li>
+            <li>To keep the service secure, monitor abuse, and support routine site operations.</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="resource-grid">
+        <article class="resource-card glass-card">
+          <h2>Cookies, ads, and third-party services</h2>
+          <ul class="resource-list">
+            <li>SunriseTime may use cookies or similar technologies for basic site functionality and advertising support.</li>
+            <li>If Google AdSense is enabled, Google and its partners may use cookies to serve or measure ads.</li>
+            <li>Third-party services may process data according to their own privacy policies when they are active on the site.</li>
+          </ul>
+        </article>
+
+        <article class="resource-card glass-card">
+          <h2>Your choices</h2>
+          <ul class="resource-list">
+            <li>You can block or clear cookies in your browser settings.</li>
+            <li>You can decline browser-level location access at any time.</li>
+            <li>You can stop using the site if you do not want technical or advertising-related processing to occur.</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="resource-grid">
+        <article class="resource-card glass-card">
+          <h2>Data retention and security</h2>
+          <ul class="resource-list">
+            <li>We aim to retain only the information needed to operate, secure, and improve the service.</li>
+            <li>No system can guarantee perfect security, but we design SunriseTime to avoid unnecessary personal-data collection.</li>
+            <li>Operational logs may be retained for troubleshooting, abuse prevention, and platform stability.</li>
+          </ul>
+        </article>
+
+        <article class="resource-card glass-card">
+          <h2>Contact about privacy</h2>
+          <p class="resource-text">If you have a privacy-related question or request, email <a href={supportEmailHref}>{supportEmail}</a>.</p>
+          <p class="resource-text">If SunriseTime adds additional analytics, advertising, or consent tooling later, this policy should be updated to reflect the live setup.</p>
+        </article>
+      </section>
+    </div>
+  </main>
+
+  <Footer />
+</Base>

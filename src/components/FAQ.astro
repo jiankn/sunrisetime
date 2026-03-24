@@ -2,6 +2,7 @@
 /**
  * FAQ Section — 手风琴式常见问题
  */
+import { totalCities } from '@data/site';
 ---
 
 <section class="faq" id="faq">
@@ -32,7 +33,7 @@
           <i data-lucide="chevron-down" class="icon-sm faq-icon"></i>
         </summary>
         <div class="faq-answer">
-          <p>SunriseTime covers over 5,000 cities globally, sourced from the GeoNames geographical database. This includes all major metropolitan areas, popular photography destinations, and cities with over 50,000 population. We're continuously expanding coverage based on user demand.</p>
+          <p>SunriseTime currently publishes timing pages for {totalCities} indexed cities in the public directory. The focus is on major, high-demand cities that are useful for repeat daily planning, travel, photography, and prayer-time lookups.</p>
         </div>
       </details>
 
@@ -52,7 +53,7 @@
           <i data-lucide="chevron-down" class="icon-sm faq-icon"></i>
         </summary>
         <div class="faq-answer">
-          <p>Prayer times are calculated using the PrayTimes algorithm, which supports multiple juristic methods including University of Islamic Sciences (Karachi), Islamic Society of North America (ISNA), Muslim World League, and Umm al-Qura. You can select your preferred calculation method for the most accurate results.</p>
+          <p>The current public SunriseTime experience calculates prayer times using the Muslim World League (MWL) convention, with the Standard (Shafi&apos;i) method for Asr. This keeps the experience consistent across city pages while the broader methodology is documented transparently.</p>
         </div>
       </details>
 
@@ -72,7 +73,7 @@
           <i data-lucide="chevron-down" class="icon-sm faq-icon"></i>
         </summary>
         <div class="faq-answer">
-          <p>Absolutely! SunriseTime is 100% free to use — no account required, no hidden fees. All features including sunrise/sunset times, golden hour tracking, moon phase data, prayer time calculations, and the API are completely free for everyone. We sustain the platform through unobtrusive advertising.</p>
+          <p>Absolutely. SunriseTime is free to use, no account required, and built around fast public access to sunrise, sunset, golden hour, moon phase, and prayer-time information. We plan to keep the core experience free by supporting it with unobtrusive advertising.</p>
         </div>
       </details>
     </div>

@@ -1,0 +1,112 @@
+---
+import Base from '@layouts/Base.astro';
+import Header from '@components/Header.astro';
+import Footer from '@components/Footer.astro';
+import { cityIndexLabel, totalCities } from '@data/site';
+
+const jsonLd = [
+  {
+    "@type": "AboutPage",
+    "name": "About SunriseTime",
+    "description": "Learn what SunriseTime is for, how the site stays free, and how its city pages are built around quick answers.",
+    "url": "https://sunrisetime.co/about/",
+    "breadcrumb": {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://sunrisetime.co/" },
+        { "@type": "ListItem", "position": 2, "name": "About", "item": "https://sunrisetime.co/about/" }
+      ]
+    }
+  }
+];
+---
+
+<Base
+  title="About SunriseTime - Fast Sunrise & Sunset Answers by City"
+  description="Learn how SunriseTime helps people search cities, get today's light fast, and keep the service free through a focused, ad-supported model."
+  canonical="https://sunrisetime.co/about/"
+  keywords="about SunriseTime, sunrise site, sunset tool, ad-supported utility"
+  jsonLd={jsonLd}
+>
+  <Header />
+
+  <main class="resource-page">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/">Home</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <span>About</span>
+      </nav>
+
+      <header class="resource-header">
+        <span class="section-badge">
+          <i data-lucide="sun-medium" class="icon-xs"></i>
+          About SunriseTime
+        </span>
+        <h1>SunriseTime is built for the first question people ask: what time is sunrise, sunset, or the next light window in my city?</h1>
+        <p class="resource-subtitle">The product is intentionally narrow. Search a city, get today's answer fast, and keep moving. That focus makes the site easier to use, easier to trust, and easier to monetize without turning the experience into ad clutter.</p>
+        <div class="resource-meta">
+          <span class="resource-meta-chip">{cityIndexLabel}</span>
+          <span class="resource-meta-chip">No signup required</span>
+          <span class="resource-meta-chip">Free and ad-supported</span>
+        </div>
+      </header>
+
+      <section class="resource-grid">
+        <article class="resource-card glass-card">
+          <h2>What SunriseTime helps you do</h2>
+          <ul class="resource-list">
+            <li>Search a city and get today&apos;s sunrise, sunset, golden hour, moon phase, and prayer timing in seconds.</li>
+            <li>Compare related cities when you travel, shoot, commute, or plan around daylight.</li>
+            <li>Stay in one flow instead of bouncing between separate weather, astronomy, and prayer-time tools.</li>
+          </ul>
+        </article>
+
+        <article class="resource-card glass-card">
+          <h2>Who it is for</h2>
+          <ul class="resource-list">
+            <li>People checking today&apos;s sunrise or sunset before they leave home.</li>
+            <li>Photographers and creators timing dawn, dusk, and golden hour.</li>
+            <li>Travelers and daily planners comparing multiple cities in one session.</li>
+            <li>Users who want prayer times and sun times in a single place.</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="resource-grid">
+        <article class="resource-card glass-card">
+          <h2>Why the product is narrow on purpose</h2>
+          <ul class="resource-list">
+            <li>The highest-value user action is not "read content." It is "get the answer for a city right now."</li>
+            <li>Every page is shaped around that task first, then around internal links that help the user continue browsing.</li>
+            <li>A tighter scope improves clarity, speed, and trust, which matters more than feature sprawl for a utility site.</li>
+          </ul>
+        </article>
+
+        <article class="resource-card glass-card">
+          <h2>How the business model works</h2>
+          <ul class="resource-list">
+            <li>Search-driven traffic lands on city and topic pages with real utility.</li>
+            <li>Strong internal links move users into related cities, regions, and guides, which increases depth per session.</li>
+            <li>Advertising supports the site so SunriseTime can stay free without paywalls or accounts.</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="resource-callout glass-card-lg">
+        <div>
+          <span class="resource-callout-label">Build trust before scale</span>
+          <h2>Useful utility pages outperform vague marketing pages.</h2>
+          <p>That is why SunriseTime invests in methodology, region hubs, use-case guides, and clean internal linking instead of generic growth copy.</p>
+        </div>
+        <div class="resource-link-row">
+          <a href="/methodology/" class="btn-primary-sm">Read methodology</a>
+          <a href="/cities/" class="btn-secondary-sm">Browse {totalCities} cities</a>
+          <a href="/sitemap/" class="btn-secondary-sm">Open HTML sitemap</a>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <Footer />
+</Base>
