@@ -10,18 +10,15 @@
   <!-- 深邃海军蓝底色与金黄色圆形边框 -->
   <circle cx="50" cy="50" r="47" fill="#0B1426" stroke="#FFC947" stroke-width="4" />
 
-  <!-- 半个太阳本体 (调整圆心至 Y=58，半径扩大至 24 显得更饱满) -->
-  <path d="M 26 58 A 24 24 0 0 1 74 58 Z" fill="url(#sun-grad)" />
+  <!-- 半个太阳本体 -->
+  <path d="M 24 62 A 26 26 0 0 1 76 62 Z" fill="url(#sun-grad)" />
 
-  <!-- 地平线 (配合圆心调整) -->
-  <line x1="18" y1="58" x2="82" y2="58" stroke="url(#sun-grad)" stroke-width="4" stroke-linecap="round" />
-
-  <!-- 太阳光芒 (变粗为 7，自带圆角，缩短长度变成胶囊状) -->
-  <g stroke="url(#sun-grad)" stroke-width="7" stroke-linecap="round">
-    <line x1="50" y1="26" x2="50" y2="15" />
-    <line x1="50" y1="26" x2="50" y2="15" transform="rotate(-36 50 58)" />
-    <line x1="50" y1="26" x2="50" y2="15" transform="rotate(-72 50 58)" />
-    <line x1="50" y1="26" x2="50" y2="15" transform="rotate(36 50 58)" />
-    <line x1="50" y1="26" x2="50" y2="15" transform="rotate(72 50 58)" />
+  <!-- 太阳光芒 (不再使用 stroke 避免兼容性 BUG，使用自带圆角的 rect) -->
+  <g fill="url(#sun-grad)">
+    <rect x="46" y="14" width="8" height="17" rx="4" />
+    <rect x="46" y="14" width="8" height="17" rx="4" transform="rotate(-36 50 62)" />
+    <rect x="46" y="14" width="8" height="17" rx="4" transform="rotate(-72 50 62)" />
+    <rect x="46" y="14" width="8" height="17" rx="4" transform="rotate(36 50 62)" />
+    <rect x="46" y="14" width="8" height="17" rx="4" transform="rotate(72 50 62)" />
   </g>
 </svg>
