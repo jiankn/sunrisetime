@@ -99,16 +99,21 @@ const searchCities = cities.cities
     <div class="snapshot-hero-copy">
       <div class="hero-badge">
         <i data-lucide="sun-medium" class="icon-xs"></i>
-        <span>Search first. Answer first.</span>
+        <span>Search + instant answer</span>
       </div>
-      <h1>Search a city and get today&apos;s sunrise, sunset, and next light window instantly.</h1>
-      <p class="hero-subtitle">
-        Built for photographers, travelers, runners, and prayer planning. One fast search,
-        one clear answer, no signup.
-      </p>
 
       <div class="hero-search-panel glass-card-lg" data-hero-search>
-        <label class="hero-search-shell" for="heroCitySearch">
+        <div class="hero-search-head">
+          <div>
+            <span class="hero-search-label">Find today&apos;s answer</span>
+            <strong class="hero-search-title">Type a city or jump in from your current location</strong>
+          </div>
+          <button type="button" class="hero-location-btn" data-use-location>
+            <i data-lucide="locate-fixed" class="icon-sm"></i>
+            <span data-location-label>Use my location</span>
+          </button>
+        </div>
+        <label class="hero-search-shell hero-search-shell-lg" for="heroCitySearch">
           <i data-lucide="search" class="icon-sm"></i>
           <input
             id="heroCitySearch"
@@ -123,48 +128,52 @@ const searchCities = cities.cities
             role="combobox"
           >
         </label>
-        <button type="button" class="hero-location-btn" data-use-location>
-          <i data-lucide="locate-fixed" class="icon-sm"></i>
-          <span data-location-label>Use my location</span>
-        </button>
         <div class="hero-search-results" id="heroSearchResults" data-search-results role="listbox"></div>
+
+        <div class="hero-quick-row">
+          <span class="hero-quick-label">Popular snapshots</span>
+          <div class="hero-preview-switches">
+            {previewCities.map((city, index) => (
+              <button
+                type="button"
+                class={`hero-city-pill ${index === 0 ? 'active' : ''}`}
+                data-hero-city={city.slug}
+              >
+                {city.name}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div class="hero-proof-strip">
+          <div class="hero-proof-item glass-subtle">
+            <strong>5,000+</strong>
+            <span>cities ready to search</span>
+          </div>
+          <div class="hero-proof-item glass-subtle">
+            <strong>NOAA-grade</strong>
+            <span>timing you can trust</span>
+          </div>
+          <div class="hero-proof-item glass-subtle">
+            <strong>No signup</strong>
+            <span>straight to the answer</span>
+          </div>
+        </div>
       </div>
 
-      <div class="hero-quick-row">
-        <span class="hero-quick-label">Popular snapshots</span>
-        <div class="hero-preview-switches">
-          {previewCities.map((city, index) => (
-            <button
-              type="button"
-              class={`hero-city-pill ${index === 0 ? 'active' : ''}`}
-              data-hero-city={city.slug}
-            >
-              {city.name}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div class="hero-proof-strip">
-        <div class="hero-proof-item glass-subtle">
-          <strong>5,000+</strong>
-          <span>cities ready to search</span>
-        </div>
-        <div class="hero-proof-item glass-subtle">
-          <strong>NOAA-grade</strong>
-          <span>timing you can trust</span>
-        </div>
-        <div class="hero-proof-item glass-subtle">
-          <strong>No signup</strong>
-          <span>straight to the answer</span>
-        </div>
+      <div class="hero-search-intro">
+        <span class="hero-search-kicker">Built for the first question</span>
+        <h1>Search a city. See today&apos;s light at a glance.</h1>
+        <p class="hero-subtitle">
+          Fast answers for sunrise, sunset, golden hour, moon phase, and prayer timing.
+        </p>
       </div>
     </div>
 
     <div class="hero-snapshot-panel glass-card-lg">
       <div class="hero-panel-top">
         <div>
-          <span class="hero-panel-label">Today&apos;s snapshot</span>
+          <span class="hero-panel-label">Instant answer preview</span>
           <h2>
             <span data-hero-city-name>{heroCity.name}</span>
             <span class="hero-panel-country" data-hero-country>{heroCity.country}</span>
