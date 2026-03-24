@@ -132,6 +132,10 @@ function initHeroSearch() {
   let matches = [];
   let activeIndex = -1;
 
+  function isInsideSearchRoot(target) {
+    return target instanceof Node && searchRoot.contains(target);
+  }
+
   function closeResults() {
     results.classList.remove('active');
     input.setAttribute('aria-expanded', 'false');
@@ -282,8 +286,14 @@ function initHeroSearch() {
     goToCity(option.dataset.slug);
   });
 
-  document.addEventListener('click', (event) => {
-    if (!searchRoot.contains(event.target)) {
+  document.addEventListener('pointerdown', (event) => {
+    if (!isInsideSearchRoot(event.target)) {
+      closeResults();
+    }
+  });
+
+  document.addEventListener('focusin', (event) => {
+    if (!isInsideSearchRoot(event.target)) {
       closeResults();
     }
   });
