@@ -1,0 +1,141 @@
+---
+import Base from '@layouts/Base.astro';
+import TurkishHeader from '@components/TurkishHeader.astro';
+import TurkishFooter from '@components/TurkishFooter.astro';
+import { regionHubs, useCaseHubs } from '@data/site';
+import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
+import {
+  getTurkishCityLocationLabel,
+  getTurkishCityName,
+  getTurkishGuideContent,
+  getTurkishRegionName,
+} from '@i18n/turkish';
+import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
+
+const pagePath = '/sitemap/';
+const turkishPath = localizePath('tr', pagePath);
+const pageUrl = `https://sunrisetime.co${turkishPath}`;
+const alternates = buildAlternateLinks([
+  { hrefLang: 'en', path: pagePath },
+  { hrefLang: 'tr', path: turkishPath },
+  { hrefLang: 'x-default', path: pagePath },
+]);
+const languageLinks = buildLanguageSwitcherLinks(pagePath);
+
+const jsonLd = [
+  {
+    "@type": "WebPage",
+    "@id": `${pageUrl}#webpage`,
+    "name": "HTML site haritası",
+    "description": "SunriseTime Türkçe sürümündeki ana sayfalar, güven sayfaları ve indeksli şehirler için HTML site haritası.",
+    "url": pageUrl,
+    "inLanguage": "tr",
+    "isPartOf": {
+      "@id": "https://sunrisetime.co/tr/#website"
+    }
+  },
+  buildBreadcrumbJsonLd([
+    { name: 'Ana Sayfa', path: '/tr/' },
+    { name: 'Site Haritası', path: turkishPath },
+  ]),
+];
+---
+
+<Base
+  title="HTML Site Haritası - SunriseTime Türkçe"
+  description="SunriseTime Türkçe sürümündeki ana sayfaları ve indekslenmiş şehirleri keşfedin."
+  canonical={pageUrl}
+  keywords="HTML site haritası, SunriseTime Türkçe"
+  jsonLd={jsonLd}
+  lang="tr"
+  alternates={alternates}
+>
+  <TurkishHeader languageLinks={languageLinks} currentLanguage="tr" />
+
+  <main class="resource-page">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/tr/">Ana Sayfa</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <span>Site Haritası</span>
+      </nav>
+
+      <header class="resource-header">
+        <span class="section-badge">
+          <i data-lucide="map" class="icon-xs"></i>
+          Site Haritası
+        </span>
+        <h1>Türkçe sürümü tek sayfadan gezin.</h1>
+        <p class="resource-subtitle">Bu HTML site haritası hem kullanıcılar hem arama motorları içindir. Faydalı sayfaları, güven sayfalarını ve şehir URL'lerine erişimi tek yerde toplar.</p>
+      </header>
+
+      <section class="sitemap-grid">
+        <article class="sitemap-section glass-card">
+          <h2>Ana sayfalar</h2>
+          <ul class="sitemap-links">
+            <li><a href="/tr/">Ana Sayfa</a></li>
+            <li><a href="/tr/cities/">Şehirler</a></li>
+            <li><a href="/tr/guides/">Rehberler</a></li>
+            <li><a href="/tr/methodology/">Metodoloji</a></li>
+            <li><a href="/tr/about/">SunriseTime Hakkında</a></li>
+            <li><a href="/tr/contact/">İletişim</a></li>
+          </ul>
+        </article>
+
+        <article class="sitemap-section glass-card">
+          <h2>Güven</h2>
+          <ul class="sitemap-links">
+            <li><a href="/tr/privacy/">Gizlilik</a></li>
+            <li><a href="/tr/terms/">Şartlar</a></li>
+            <li><a href="/tr/sitemap/">HTML Site Haritası</a></li>
+            <li><a href="/tr/sitemap.xml">XML Site Haritası</a></li>
+          </ul>
+        </article>
+
+        <article class="sitemap-section glass-card">
+          <h2>Rehberler</h2>
+          <ul class="sitemap-links">
+            {useCaseHubs.map((hub) => {
+              const content = getTurkishGuideContent(hub);
+              return <li><a href={`/tr/guides/${hub.slug}/`}>{content.name}</a></li>;
+            })}
+          </ul>
+        </article>
+      </section>
+
+      <section class="resource-section">
+        <div class="detail-section-head">
+          <h2>Bölgesel hub'lar</h2>
+          <p>Türkçe katman; bölgesel sayfalar, rehberler ve şehir sayfalarını gerçek hreflang kümesiyle birbirine bağlar.</p>
+        </div>
+        <div class="resource-link-grid">
+          {regionHubs.map((region) => (
+            <a href={`/tr/cities/${region.slug}/`} class="resource-link-card glass-card">
+              <strong>{getTurkishRegionName(region.slug, region.name)}</strong>
+              <span>{region.cityCount} şehir indekslendi</span>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      {regionHubs.map((region) => (
+        <section class="resource-section">
+          <div class="detail-section-head">
+            <h2>{getTurkishRegionName(region.slug, region.name)}</h2>
+            <p><a href={`/tr/cities/${region.slug}/`}>Bölgesel hub'ı aç</a></p>
+          </div>
+          <div class="hub-city-grid">
+            {region.cities.map((city) => (
+              <a href={`/tr/sunrise/${city.slug}/`} class="hub-city-card glass-card">
+                <span class="hub-city-name">{getTurkishCityName(city)}</span>
+                <span class="hub-city-country">{getTurkishCityLocationLabel(city, { includeAdmin1: Boolean(city.admin1) })}</span>
+              </a>
+            ))}
+          </div>
+        </section>
+      ))}
+    </div>
+  </main>
+
+  <TurkishFooter />
+</Base>

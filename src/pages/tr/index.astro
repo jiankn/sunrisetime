@@ -1,0 +1,396 @@
+---
+import Base from '@layouts/Base.astro';
+import TurkishHeader from '@components/TurkishHeader.astro';
+import TurkishFooter from '@components/TurkishFooter.astro';
+import { allCities, regionHubs, totalCities } from '@data/site';
+import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
+import {
+  getTurkishCityAliases,
+  getTurkishCityDisplayName,
+  getTurkishCityLocationLabel,
+  getTurkishCityName,
+  getTurkishMoonPhase,
+  getTurkishPrayerName,
+  getTurkishRegionName,
+  turkishHomeFaqs,
+  turkishLocale,
+} from '@i18n/turkish';
+import { getGoldenHour, getSunTimes, formatTime } from '@utils/sun';
+import { getMoonData } from '@utils/moon';
+import { getNextPrayer } from '@utils/prayer-times';
+import { buildAlternateLinks } from '@utils/seo';
+
+const pagePath = '/';
+const alternates = buildAlternateLinks([
+  { hrefLang: 'en', path: pagePath },
+  { hrefLang: 'tr', path: localizePath('tr', pagePath) },
+  { hrefLang: 'x-default', path: pagePath },
+]);
+const languageLinks = buildLanguageSwitcherLinks(pagePath);
+
+const previewSlugs = ['istanbul', 'dubai', 'cairo', 'new-york', 'madrid', 'jakarta'];
+const now = new Date();
+
+function buildPreviewEntry(slug: string) {
+  const city = allCities.find((entry) => entry.slug === slug);
+  if (!city) return null;
+
+  const sun = getSunTimes(now, city.lat, city.lng);
+  const golden = getGoldenHour(now, city.lat, city.lng);
+  const moon = getMoonData(now, city.lat, city.lng);
+  const nextPrayer = getNextPrayer(now, city.lat, city.lng, 'MWL', 'Standard');
+
+  let nextEventLabel = 'Sıradaki gün doğumu';
+  let nextEventTime = formatTime(sun.sunrise, city.timezone, turkishLocale);
+  let nextEventSupport = `Sabah altın saati ${formatTime(golden.morning.end, city.timezone, turkishLocale)}'de biter.`;
+
+  if (now >= sun.sunrise && now < sun.sunset) {
+    nextEventLabel = 'Sıradaki gün batımı';
+    nextEventTime = formatTime(sun.sunset, city.timezone, turkishLocale);
+    nextEventSupport = `Akşam altın saati ${formatTime(golden.evening.start, city.timezone, turkishLocale)}'de başlar.`;
+  } else if (now >= sun.sunset) {
+    const tomorrow = new Date(now);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowSun = getSunTimes(tomorrow, city.lat, city.lng);
+    nextEventLabel = 'Yarının gün doğumu';
+    nextEventTime = formatTime(tomorrowSun.sunrise, city.timezone, turkishLocale);
+    nextEventSupport = `Yarın toplam ${tomorrowSun.daylightFormatted} gün ışığı var.`;
+  }
+
+  return {
+    slug: city.slug,
+    name: city.name,
+    displayName: getTurkishCityDisplayName(city, { includeAdmin1: Boolean(city.admin1) }),
+    country: city.country,
+    countryLabel: getTurkishCityLocationLabel(city, { includeAdmin1: Boolean(city.admin1) }),
+    timezone: city.timezone,
+    aliases: getTurkishCityAliases(city),
+    admin1: city.admin1 ?? '',
+    caption: `${getTurkishCityLocationLabel(city, { includeAdmin1: Boolean(city.admin1) })} · ${now.toLocaleDateString(turkishLocale, {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      timeZone: city.timezone,
+    })}`,
+    sunrise: formatTime(sun.sunrise, city.timezone, turkishLocale),
+    sunset: formatTime(sun.sunset, city.timezone, turkishLocale),
+    daylight: sun.daylightFormatted,
+    golden: `${formatTime(golden.evening.start, city.timezone, turkishLocale)} - ${formatTime(golden.evening.end, city.timezone, turkishLocale)}`,
+    moon: `${getTurkishMoonPhase(moon.phaseName)} · %${moon.illumination}`,
+    prayer: `${getTurkishPrayerName(nextPrayer.name)} ${formatTime(nextPrayer.time, city.timezone, turkishLocale)}`,
+    nextEventLabel,
+    nextEventTime,
+    nextEventSupport,
+  };
+}
+
+const previewCities = previewSlugs
+  .map((slug) => buildPreviewEntry(slug))
+  .filter((entry): entry is NonNullable<ReturnType<typeof buildPreviewEntry>> => Boolean(entry));
+
+const heroCity = previewCities[0];
+
+const searchCities = allCities.map((city) => ({
+  name: city.name,
+  displayName: getTurkishCityDisplayName(city, { includeAdmin1: Boolean(city.admin1) }),
+  slug: city.slug,
+  country: city.country,
+  countryLabel: getTurkishCityLocationLabel(city, { includeAdmin1: Boolean(city.admin1) }),
+  admin1: city.admin1 ?? '',
+  aliases: getTurkishCityAliases(city),
+  lat: city.lat,
+  lng: city.lng,
+  population: city.population,
+}));
+
+const regionGroups = regionHubs.map((region) => ({
+  id: region.slug,
+  name: getTurkishRegionName(region.slug, region.name),
+  cities: region.cities.slice(0, 6).map((city) => ({
+    slug: city.slug,
+    name: getTurkishCityName(city),
+    country: getTurkishCityLocationLabel(city, { includeAdmin1: Boolean(city.admin1) }),
+  })),
+}));
+
+const jsonLd = [
+  {
+    "@type": "WebSite",
+    "@id": "https://sunrisetime.co/tr/#website",
+    "name": "SunriseTime Türkçe",
+    "url": "https://sunrisetime.co/tr/",
+    "description": `${totalCities} indekslenmiş şehir için gün doğumu, gün batımı, altın saat ve namaz vakitlerini tek yerden kontrol edin.`,
+    "inLanguage": "tr",
+    "publisher": {
+      "@id": "https://sunrisetime.co/#organization"
+    }
+  },
+  {
+    "@type": "Organization",
+    "@id": "https://sunrisetime.co/#organization",
+    "name": "SunriseTime",
+    "url": "https://sunrisetime.co/"
+  },
+  {
+    "@type": "FAQPage",
+    "@id": "https://sunrisetime.co/tr/#faq",
+    "mainEntity": turkishHomeFaqs.map((item) => ({
+      "@type": "Question",
+      "name": item.question,
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": item.answer,
+      },
+    })),
+  },
+];
+---
+
+<Base
+  title={`${totalCities} şehir için bugünün gün doğumu ve gün batımı saatleri - SunriseTime`}
+  description={`${totalCities} şehirde gün doğumu, gün batımı, altın saat, ay evresi ve namaz vakitlerini arayın. Türkçe SEO sürümü; indekslenebilir URL'ler ve yerelleştirilmiş ana içerikle yayınlanır.`}
+  canonical="https://sunrisetime.co/tr/"
+  keywords="bugün gün doğumu saati, bugün gün batımı saati, altın saat, namaz vakitleri, şehirler"
+  jsonLd={jsonLd}
+  lang="tr"
+  alternates={alternates}
+>
+  <TurkishHeader languageLinks={languageLinks} currentLanguage="tr" />
+
+  <main class="resource-page">
+    <section class="snapshot-hero" id="search">
+      <div class="container snapshot-hero-shell">
+        <div class="snapshot-hero-copy">
+          <div class="hero-badge">
+            <i data-lucide="languages" class="icon-xs"></i>
+            <span>Türkçe SEO paketi</span>
+          </div>
+
+          <div class="hero-search-panel glass-card-lg" data-hero-search>
+            <div class="hero-search-head">
+              <div>
+                <span class="hero-search-label">Bugünün cevabını bulun</span>
+                <strong class="hero-search-title">Bir şehir arayın ve yerel sayfasını saniyeler içinde açın</strong>
+              </div>
+            </div>
+            <div class="hero-search-shell hero-search-shell-lg">
+              <i data-lucide="search" class="icon-sm"></i>
+              <input
+                id="heroCitySearch"
+                type="text"
+                data-city-search-input
+                placeholder="Örnek: İstanbul, New York, Kahire"
+                autocomplete="off"
+                aria-autocomplete="list"
+                aria-controls="heroSearchResults"
+                aria-expanded="false"
+                aria-label="Şehir ara"
+                role="combobox"
+              >
+              <button type="button" class="hero-location-btn hero-location-btn-inline" data-use-location>
+                <i data-lucide="locate-fixed" class="icon-sm"></i>
+                <span class="hero-location-text" data-location-label aria-live="polite" aria-atomic="true">Konumumu kullan</span>
+              </button>
+            </div>
+            <p class="hero-search-helper">Şehir, ülke veya yaygın bir adla başlayın.</p>
+            <div class="hero-search-results" id="heroSearchResults" data-search-results role="listbox"></div>
+
+            <div class="hero-quick-row">
+              <span class="hero-quick-label">Hızlı önizlemeler</span>
+              <div class="hero-preview-switches">
+                {previewCities.map((city, index) => (
+                  <button
+                    type="button"
+                    class={`hero-city-pill ${index === 0 ? 'active' : ''}`}
+                    data-hero-city={city.slug}
+                  >
+                    {city.displayName}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <header class="resource-header" style="padding-top:0;margin-top:2rem;">
+            <span class="section-badge">
+              <i data-lucide="sun-medium" class="icon-xs"></i>
+              Gün doğumu, gün batımı ve namaz
+            </span>
+            <h1>Bugünün gün doğumu ve gün batımı saatlerine şehir bazında bakın.</h1>
+            <p class="resource-subtitle">SunriseTime Türkçe katmanı önce ana arama niyetine cevap verir: gün doğumu saati, gün batımı saati, gündüz süresi, altın saat, ay evresi ve namaz vakitlerine hızlı geçiş.</p>
+            <div class="resource-meta">
+              <span class="resource-meta-chip">{totalCities} şehir indekslendi</span>
+              <span class="resource-meta-chip">Özel canonical</span>
+              <span class="resource-meta-chip">Gerçek hreflang</span>
+            </div>
+          </header>
+        </div>
+
+        <div class="hero-snapshot-panel glass-card-lg">
+          <div class="hero-panel-top">
+            <div class="hero-panel-copy">
+              <span class="hero-panel-label">Anlık görünüm</span>
+              <h2>
+                <span data-hero-city-name>{heroCity.displayName}</span>
+                <span class="hero-panel-country" data-hero-country>{heroCity.countryLabel}</span>
+              </h2>
+              <p data-hero-caption>{heroCity.caption}</p>
+            </div>
+            <a class="btn-secondary-sm hero-open-link" data-hero-open href={`/tr/sunrise/${heroCity.slug}/`}>
+              <span>Sayfayı aç</span>
+              <i data-lucide="arrow-up-right" class="icon-sm"></i>
+            </a>
+          </div>
+
+          <div class="hero-next-card">
+            <span class="hero-next-label" data-hero-next-label>{heroCity.nextEventLabel}</span>
+            <strong class="hero-next-time" data-hero-next-time>{heroCity.nextEventTime}</strong>
+            <span class="hero-next-sub" data-hero-next-support>{heroCity.nextEventSupport}</span>
+          </div>
+
+          <div class="hero-mini-grid">
+            <div class="hero-mini-card glass-card">
+              <span class="hero-mini-label">Gün doğumu</span>
+              <strong data-hero-sunrise>{heroCity.sunrise}</strong>
+            </div>
+            <div class="hero-mini-card glass-card">
+              <span class="hero-mini-label">Gün batımı</span>
+              <strong data-hero-sunset>{heroCity.sunset}</strong>
+            </div>
+            <div class="hero-mini-card glass-card">
+              <span class="hero-mini-label">Gündüz süresi</span>
+              <strong data-hero-daylight>{heroCity.daylight}</strong>
+            </div>
+            <div class="hero-mini-card glass-card">
+              <span class="hero-mini-label">Altın saat</span>
+              <strong data-hero-golden>{heroCity.golden}</strong>
+            </div>
+            <div class="hero-mini-card glass-card">
+              <span class="hero-mini-label">Ay</span>
+              <strong data-hero-moon>{heroCity.moon}</strong>
+            </div>
+            <div class="hero-mini-card glass-card">
+              <span class="hero-mini-label">Sıradaki vakit</span>
+              <strong data-hero-prayer>{heroCity.prayer}</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <section class="resource-grid">
+        <article class="resource-card glass-card">
+          <h2>Bu sürüm neleri kapsıyor</h2>
+          <ul class="resource-list">
+            <li>`/tr/` altında şehir araması ve indekslenebilir rotalarla yayınlanan Türkçe ana sayfa.</li>
+            <li>Yerelleştirilmiş metadata ile gelen şehir bazlı gün doğumu, gün batımı ve namaz sayfaları.</li>
+            <li>Hakkında, gizlilik, şartlar, iletişim ve HTML site haritası gibi güven sayfaları.</li>
+          </ul>
+        </article>
+
+        <article class="resource-card glass-card">
+          <h2>Google önce ne görüyor</h2>
+          <ul class="resource-list">
+            <li>Türkçe yazılmış title, description, H1 ve ana gövde içeriği.</li>
+            <li>Her Türkçe URL için self-canonical.</li>
+            <li>Diğer gerçek dil sürümleriyle tutarlı hreflang kümesi.</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="resource-section" id="top-cities">
+        <div class="detail-section-head">
+          <h2>Öne çıkan şehirler</h2>
+          <p>Popüler bir şehri açın ve günün cevabına doğrudan gidin.</p>
+        </div>
+
+        <div class="cities-grid">
+          {regionGroups.map((group) => (
+            <div class="city-group glass-card" id={`tr-${group.id}`}>
+              <h3>
+                <i data-lucide="globe" class="icon-sm"></i>
+                {group.name}
+              </h3>
+              <ul class="city-list">
+                {group.cities.map((city) => (
+                  <li>
+                    <a href={`/tr/sunrise/${city.slug}/`} class="city-link">
+                      <span class="city-name">{city.name}</span>
+                      <span class="city-country">{city.country}</span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+
+        <div class="cities-cta">
+          <a href="/tr/cities/" class="btn-secondary">
+            <i data-lucide="globe" class="icon-xs"></i>
+            Tüm şehir dizinini aç
+          </a>
+        </div>
+      </section>
+
+      <section class="faq" id="faq">
+        <div class="section-header">
+          <span class="section-badge">
+            <i data-lucide="help-circle" class="icon-xs"></i>
+            SSS
+          </span>
+          <h2>Türkçe sürüm hakkında sık sorulan sorular</h2>
+          <p class="section-subtitle">Bu katman sadece arayüzü çevirmek için değil, indekslenebilir ve tıklanabilir yeni Türkçe URL\'ler üretmek için yayınlanır.</p>
+        </div>
+
+        <div class="faq-list">
+          {turkishHomeFaqs.map((item, index) => (
+            <details class="faq-item glass-card" id={`tr-faq-${index + 1}`}>
+              <summary>
+                <span>{item.question}</span>
+                <i data-lucide="chevron-down" class="icon-sm faq-icon"></i>
+              </summary>
+              <div class="faq-answer">
+                <p>{item.answer}</p>
+              </div>
+            </details>
+          ))}
+        </div>
+      </section>
+
+      <section class="resource-callout glass-card-lg" style="margin-top:2rem;">
+        <div>
+          <span class="resource-callout-label">Sonraki adım</span>
+          <h2>Önce şehrinizi seçin, sonra doğru URL\'yi ilk aramada açın.</h2>
+          <p>Şehri biliyorsanız gün doğumu ya da namaz sayfasını açın. Hâlâ kıyaslama yapıyorsanız şehir dizini veya rehberlerle devam edin.</p>
+        </div>
+        <div class="resource-link-row">
+          <a href="/tr/cities/" class="btn-primary-sm">Şehir dizini</a>
+          <a href="/tr/guides/" class="btn-secondary-sm">Rehberler</a>
+          <a href="/tr/methodology/" class="btn-secondary-sm">Metodoloji</a>
+          <a href="/tr/about/" class="btn-secondary-sm">SunriseTime hakkında</a>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <TurkishFooter />
+
+  <script type="application/json" id="heroPreviewData" set:html={JSON.stringify(previewCities)} />
+  <script type="application/json" id="heroSearchData" set:html={JSON.stringify(searchCities)} />
+  <script
+    type="application/json"
+    id="heroSearchConfig"
+    set:html={JSON.stringify({
+      noMatchTitle: 'Bu şehir bulunamadı',
+      noMatchSubtitle: 'Farklı bir yazım veya yakın bir şehir deneyin',
+      openCityPage: 'Sayfayı aç',
+      useMyLocation: 'Konumumu kullan',
+      locationUnavailable: 'Konum alınamadı',
+      locating: 'Konum aranıyor...',
+      nearestUnavailable: 'Yakın şehir bulunamadı',
+      locationBlocked: 'İzin engellendi',
+    })}
+  />
+</Base>

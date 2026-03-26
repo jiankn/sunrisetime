@@ -1,0 +1,60 @@
+---
+import { featuredFooterCities } from '@data/site';
+import { turkishFooter } from '@i18n/turkish';
+import { getTurkishCityName } from '@i18n/turkish';
+---
+
+<footer class="footer">
+  <div class="container footer-grid">
+    <div class="footer-brand">
+      <div class="nav-logo">
+        <span class="logo-icon"><img src="/logo.svg" alt="SunriseTime" width="28" height="28"></span>
+        <span class="logo-text">Sunrise<span class="logo-accent">Time</span></span>
+      </div>
+      <p>{turkishFooter.summary}</p>
+      <div class="footer-chip-list" style="margin-top:1rem;">
+        {featuredFooterCities.map((city) => (
+          <a href={`/tr/sunrise/${city.slug}/`} class="footer-chip">
+            {getTurkishCityName(city)}
+          </a>
+        ))}
+      </div>
+    </div>
+
+    <div class="footer-links">
+      <h4>Devam Et</h4>
+      <ul>
+        {turkishFooter.coreLinks.map((link) => (
+          <li><a href={link.path}>{link.name}</a></li>
+        ))}
+      </ul>
+    </div>
+
+    <div class="footer-links">
+      <h4>Güven</h4>
+      <ul>
+        {turkishFooter.trustLinks.map((link) => (
+          <li><a href={link.path}>{link.name}</a></li>
+        ))}
+      </ul>
+    </div>
+  </div>
+
+  <div class="container footer-bottom">
+    <div class="footer-bottom-copy">
+      <p>&copy; {new Date().getFullYear()} SunriseTime. Türkçe sürüm; indekslenebilir URL, gerçek hreflang ve yerelleştirilmiş ana içerikle yayınlanır.</p>
+    </div>
+
+    <div class="footer-bottom-links">
+      <a href="/tr/about/">Hakkında</a>
+      <a href="/tr/methodology/">Metodoloji</a>
+      <a href="/tr/privacy/">Gizlilik</a>
+      <a href="/tr/terms/">Şartlar</a>
+      <a href="/tr/contact/">İletişim</a>
+      <a href="/tr/guides/">Rehberler</a>
+      <a href="/tr/sitemap/">Site Haritası</a>
+    </div>
+  </div>
+</footer>
+
+

@@ -1,0 +1,94 @@
+---
+import Base from '@layouts/Base.astro';
+import TurkishHeader from '@components/TurkishHeader.astro';
+import TurkishFooter from '@components/TurkishFooter.astro';
+import { cityIndexLabel, totalCities } from '@data/site';
+import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
+import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
+
+const pagePath = '/about/';
+const turkishPath = localizePath('tr', pagePath);
+const pageUrl = `https://sunrisetime.co${turkishPath}`;
+const alternates = buildAlternateLinks([
+  { hrefLang: 'en', path: pagePath },
+  { hrefLang: 'tr', path: turkishPath },
+  { hrefLang: 'x-default', path: pagePath },
+]);
+const languageLinks = buildLanguageSwitcherLinks(pagePath);
+
+const jsonLd = [
+  {
+    "@type": "AboutPage",
+    "@id": `${pageUrl}#webpage`,
+    "name": "SunriseTime Hakkında",
+    "description": "SunriseTime'ın neyi çözdüğü, şehir sayfalarını nasıl yapılandırdığı ve Türkçe sürümün neden bağımsız SEO varlığı olarak yayınlandığı.",
+    "url": pageUrl,
+    "inLanguage": "tr",
+    "isPartOf": {
+      "@id": "https://sunrisetime.co/tr/#website"
+    }
+  },
+  buildBreadcrumbJsonLd([
+    { name: 'Ana Sayfa', path: '/tr/' },
+    { name: 'SunriseTime Hakkında', path: turkishPath },
+  ]),
+];
+---
+
+<Base
+  title="SunriseTime Hakkında - Şehre göre gün doğumu, gün batımı ve namaz"
+  description="SunriseTime'ın şehir bazlı gün doğumu, gün batımı, altın saat ve namaz sayfalarını nasıl düzenlediğini ve Türkçe sürümün neden ayrı SEO katmanı olarak yayınlandığını öğrenin."
+  canonical={pageUrl}
+  keywords="SunriseTime hakkında, şehre göre gün doğumu, çok dilli SEO"
+  jsonLd={jsonLd}
+  lang="tr"
+  alternates={alternates}
+>
+  <TurkishHeader languageLinks={languageLinks} currentLanguage="tr" />
+
+  <main class="resource-page">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/tr/">Ana Sayfa</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <span>SunriseTime Hakkında</span>
+      </nav>
+
+      <header class="resource-header">
+        <span class="section-badge">
+          <i data-lucide="sun-medium" class="icon-xs"></i>
+          SunriseTime Hakkında
+        </span>
+        <h1>SunriseTime tek bir soruya hızlı cevap vermek için tasarlandı: bir şehirde güneş ne zaman doğuyor, batıyor veya sıradaki namaz vakti ne zaman?</h1>
+        <p class="resource-subtitle">Türkçe sürüm kozmetik çeviri değildir. Kendi URL yapısı, kendi canonical'ı, gerçek hreflang kümesi ve yerelleştirilmiş ana içeriğiyle yayınlanır; böylece arama motorları onu bağımsız bir SEO varlığı olarak değerlendirir.</p>
+        <div class="resource-meta">
+          <span class="resource-meta-chip">{cityIndexLabel}</span>
+          <span class="resource-meta-chip">{totalCities} şehir</span>
+          <span class="resource-meta-chip">Üyeliksiz kullanım</span>
+        </div>
+      </header>
+
+      <section class="resource-grid">
+        <article class="resource-card glass-card">
+          <h2>SunriseTime ne yapar?</h2>
+          <ul class="resource-list">
+            <li>Şehir bazlı gün doğumu, gün batımı, gündüz süresi, altın saat, ay evresi ve namaz sayfaları yayınlar.</li>
+            <li>Şişirilmiş içerik yerine hızlı ve doğrudan cevabı öne çıkarır.</li>
+            <li>Şehir sayfaları, güven sayfaları ve site haritaları arasında güçlü iç bağlantı kurar.</li>
+          </ul>
+        </article>
+
+        <article class="resource-card glass-card">
+          <h2>Kimler için faydalı?</h2>
+          <ul class="resource-list">
+            <li>Dışarı çıkmadan önce tam gün doğumu veya gün batımı saatini görmek isteyen kullanıcılar.</li>
+            <li>Altın saat ve ışık değişimine göre plan yapan fotoğrafçılar, gezginler ve içerik üreticileri.</li>
+            <li>Namaz ve güneş verisini aynı akışta görmek isteyen kullanıcılar.</li>
+          </ul>
+        </article>
+      </section>
+    </div>
+  </main>
+
+  <TurkishFooter />
+</Base>

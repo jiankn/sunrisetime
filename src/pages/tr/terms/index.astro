@@ -1,0 +1,105 @@
+---
+import Base from '@layouts/Base.astro';
+import TurkishHeader from '@components/TurkishHeader.astro';
+import TurkishFooter from '@components/TurkishFooter.astro';
+import { legalLastUpdated, supportEmail, supportEmailHref } from '@data/site';
+import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
+import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
+
+const pagePath = '/terms/';
+const turkishPath = localizePath('tr', pagePath);
+const pageUrl = `https://sunrisetime.co${turkishPath}`;
+const alternates = buildAlternateLinks([
+  { hrefLang: 'en', path: pagePath },
+  { hrefLang: 'tr', path: turkishPath },
+  { hrefLang: 'x-default', path: pagePath },
+]);
+const languageLinks = buildLanguageSwitcherLinks(pagePath);
+
+const jsonLd = [
+  {
+    "@type": "WebPage",
+    "@id": `${pageUrl}#webpage`,
+    "name": "Kullanım Şartları",
+    "description": "SunriseTime'ı herkese açık bilgi aracı olarak kullanmak için temel kurallar.",
+    "url": pageUrl,
+    "inLanguage": "tr",
+    "isPartOf": {
+      "@id": "https://sunrisetime.co/tr/#website"
+    }
+  },
+  buildBreadcrumbJsonLd([
+    { name: 'Ana Sayfa', path: '/tr/' },
+    { name: 'Şartlar', path: turkishPath },
+  ]),
+];
+---
+
+<Base
+  title="Kullanım Şartları - SunriseTime"
+  description="SunriseTime'ı gün doğumu, gün batımı ve namaz bilgisi için kullanırken geçerli olan temel şartları okuyun."
+  canonical={pageUrl}
+  keywords="SunriseTime şartlar, site kullanımı, bilgilendirme uyarısı"
+  jsonLd={jsonLd}
+  lang="tr"
+  alternates={alternates}
+>
+  <TurkishHeader languageLinks={languageLinks} currentLanguage="tr" />
+
+  <main class="resource-page">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/tr/">Ana Sayfa</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <span>Şartlar</span>
+      </nav>
+
+      <header class="resource-header">
+        <span class="section-badge">
+          <i data-lucide="file-text" class="icon-xs"></i>
+          Şartlar
+        </span>
+        <h1>SunriseTime'ı kritik profesyonel kararların yerine geçen otorite olarak değil, planlama ve bilgi aracı olarak kullanın.</h1>
+        <p class="resource-subtitle">Bu şartlar, herkese açık sürümde izin verilen kullanım biçimini, sorumluluk sınırlarını ve reklam ya da dış hizmetlerle ilişkiyi özetler.</p>
+        <div class="resource-meta">
+          <span class="resource-meta-chip">Güncelleme: {legalLastUpdated}</span>
+          <span class="resource-meta-chip">Herkese açık hizmet</span>
+        </div>
+      </header>
+
+      <section class="resource-grid">
+        <article class="resource-card glass-card">
+          <h2>İzin verilen kullanım</h2>
+          <ul class="resource-list">
+            <li>SunriseTime'ı kişisel veya profesyonel planlama için görüntüleyebilir, bağlayabilir ve kullanabilirsiniz.</li>
+            <li>Hizmeti bozmak, altyapıyı kötüye kullanmak veya orantısız şekilde taramak için kullanamazsınız.</li>
+            <li>İçerik ve tasarım, aksi belirtilmedikçe SunriseTime'a aittir.</li>
+          </ul>
+        </article>
+
+        <article class="resource-card glass-card">
+          <h2>Sınırlar ve uyarılar</h2>
+          <ul class="resource-list">
+            <li>Yayınlanan veriler faydalı referanslardır; güvenlik, yasal uyum veya dini uygulama için mutlak garanti değildir.</li>
+            <li>Sitenin erişilebilirliği değişebilir; kesintisiz ve hatasız çalışma garanti edilmez.</li>
+            <li>Reklamlar veya dış bağlantılar, açıkça belirtilmedikçe tavsiye anlamına gelmez.</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="resource-callout glass-card-lg">
+        <div>
+          <span class="resource-callout-label">Yasal iletişim</span>
+          <h2>Bu şartlarla ilgili sorunuz mu var?</h2>
+          <p>Kullanım, politikalar veya taleplerle ilgili her soru için {supportEmail} adresine yazın.</p>
+        </div>
+        <div class="resource-link-row">
+          <a href={supportEmailHref} class="btn-primary-sm">E-posta gönder</a>
+          <a href="/tr/privacy/" class="btn-secondary-sm">Gizliliği gör</a>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <TurkishFooter />
+</Base>

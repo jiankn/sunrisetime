@@ -1,0 +1,110 @@
+---
+import Base from '@layouts/Base.astro';
+import TurkishHeader from '@components/TurkishHeader.astro';
+import TurkishFooter from '@components/TurkishFooter.astro';
+import { legalLastUpdated, supportEmail, supportEmailHref } from '@data/site';
+import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
+import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
+
+const pagePath = '/privacy/';
+const turkishPath = localizePath('tr', pagePath);
+const pageUrl = `https://sunrisetime.co${turkishPath}`;
+const alternates = buildAlternateLinks([
+  { hrefLang: 'en', path: pagePath },
+  { hrefLang: 'tr', path: turkishPath },
+  { hrefLang: 'x-default', path: pagePath },
+]);
+const languageLinks = buildLanguageSwitcherLinks(pagePath);
+
+const jsonLd = [
+  {
+    "@type": "WebPage",
+    "@id": `${pageUrl}#webpage`,
+    "name": "Gizlilik",
+    "description": "SunriseTime'ın teknik verileri, çerezleri ve gizlilik taleplerini Türkçe sürümde nasıl ele aldığı.",
+    "url": pageUrl,
+    "inLanguage": "tr",
+    "isPartOf": {
+      "@id": "https://sunrisetime.co/tr/#website"
+    }
+  },
+  buildBreadcrumbJsonLd([
+    { name: 'Ana Sayfa', path: '/tr/' },
+    { name: 'Gizlilik', path: turkishPath },
+  ]),
+];
+---
+
+<Base
+  title="Gizlilik - SunriseTime"
+  description="SunriseTime'ın teknik verileri, çerezleri, isteğe bağlı tarayıcı konumunu ve gizlilik taleplerini nasıl işlediğini okuyun."
+  canonical={pageUrl}
+  keywords="SunriseTime gizlilik, çerezler, tarayıcı konumu"
+  jsonLd={jsonLd}
+  lang="tr"
+  alternates={alternates}
+>
+  <TurkishHeader languageLinks={languageLinks} currentLanguage="tr" />
+
+  <main class="resource-page">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/tr/">Ana Sayfa</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <span>Gizlilik</span>
+      </nav>
+
+      <header class="resource-header">
+        <span class="section-badge">
+          <i data-lucide="shield" class="icon-xs"></i>
+          Gizlilik
+        </span>
+        <h1>SunriseTime, sunduğu ürün tipine uygun, sade ve ölçülü bir gizlilik modeli izlemeye çalışır.</h1>
+        <p class="resource-subtitle">Site kullanıcı hesabı gerektirmeyen herkese açık bir hizmettir. Bu sayfa hangi teknik verilerin işlenebileceğini, isteğe bağlı konum özelliğinin nasıl çalıştığını ve reklam araçları etkinleşirse neyin değişeceğini açıklar.</p>
+        <div class="resource-meta">
+          <span class="resource-meta-chip">Güncelleme: {legalLastUpdated}</span>
+          <span class="resource-meta-chip">Herkese açık site</span>
+        </div>
+      </header>
+
+      <section class="resource-grid">
+        <article class="resource-card glass-card">
+          <h2>Hangi veriler işlenebilir?</h2>
+          <ul class="resource-list">
+            <li>Tarayıcı, cihaz, yaklaşık ağ bölgesi ve sayfa istekleri gibi temel teknik veriler.</li>
+            <li>SunriseTime içinde yaptığınız şehir aramaları ve açtığınız sayfalar.</li>
+            <li>Yalnızca "Konumumu kullan" özelliğini seçerseniz tarayıcı konumu.</li>
+          </ul>
+        </article>
+
+        <article class="resource-card glass-card">
+          <h2>Bu veriler ne için kullanılır?</h2>
+          <ul class="resource-list">
+            <li>Doğru şehri göstermek, güneş verilerini hesaplamak ve performansı korumak için.</li>
+            <li>Faydalı sayfaları görmek ve yapı veya iç link hatalarını düzeltmek için.</li>
+            <li>Hizmeti işletmek, kötüye kullanımı azaltmak ve teknik tabanı istikrarlı tutmak için.</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="resource-grid">
+        <article class="resource-card glass-card">
+          <h2>Çerezler ve üçüncü taraf hizmetler</h2>
+          <ul class="resource-list">
+            <li>Site temel işlevler ve reklam desteği için çerezler veya benzer teknolojiler kullanabilir.</li>
+            <li>Bir reklam sağlayıcı etkinse kendi politikasını uygulayabilir.</li>
+            <li>Dış hizmetler, aktif olduklarında verileri kendi koşullarına göre işler.</li>
+          </ul>
+        </article>
+
+        <article class="resource-card glass-card">
+          <h2>Gizlilik iletişimi</h2>
+          <p class="resource-text">Gizlilikle ilgili her soru veya talep için <a href={supportEmailHref}>{supportEmail}</a> adresine yazabilirsiniz.</p>
+          <p class="resource-text">Site altyapısı anlamlı biçimde değişirse bu sayfa gerçek ürünle uyumlu kalacak şekilde güncellenmelidir.</p>
+        </article>
+      </section>
+    </div>
+  </main>
+
+  <TurkishFooter />
+</Base>

@@ -1,0 +1,187 @@
+---
+import Base from '@layouts/Base.astro';
+import TurkishHeader from '@components/TurkishHeader.astro';
+import TurkishFooter from '@components/TurkishFooter.astro';
+import AdUnit from '@components/AdUnit.astro';
+import { getRegionHub, regionHubs, useCaseHubs } from '@data/site';
+import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
+import {
+  getTurkishCityLocationLabel,
+  getTurkishCityName,
+  getTurkishGuideContent,
+  getTurkishRegionContent,
+  getTurkishRegionName,
+} from '@i18n/turkish';
+import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
+
+export function getStaticPaths() {
+  return regionHubs.map((region) => ({
+    params: { region: region.slug },
+  }));
+}
+
+const region = getRegionHub(Astro.params.region ?? '');
+
+if (!region) {
+  throw new Error(`Unknown region hub: ${Astro.params.region}`);
+}
+
+const content = getTurkishRegionContent(region);
+const relatedGuides = useCaseHubs.filter((hub) => hub.relatedRegionSlugs.includes(region.slug));
+const otherRegions = regionHubs.filter((entry) => entry.slug !== region.slug);
+const leadCity = region.featuredCities[0] ?? region.cities[0];
+const pagePath = region.path;
+const turkishPath = localizePath('tr', pagePath);
+const pageUrl = `https://sunrisetime.co${turkishPath}`;
+const alternates = buildAlternateLinks([
+  { hrefLang: 'en', path: pagePath },
+  { hrefLang: 'tr', path: turkishPath },
+  { hrefLang: 'x-default', path: pagePath },
+]);
+const languageLinks = buildLanguageSwitcherLinks(pagePath);
+const regionName = getTurkishRegionName(region.slug, region.name);
+
+const jsonLd = [
+  {
+    "@type": "CollectionPage",
+    "@id": `${pageUrl}#webpage`,
+    "name": `${regionName} gün doğumu ve gün batımı`,
+    "description": content.description,
+    "url": pageUrl,
+    "inLanguage": "tr",
+    "isPartOf": {
+      "@id": "https://sunrisetime.co/tr/#website"
+    }
+  },
+  buildBreadcrumbJsonLd([
+    { name: 'Ana Sayfa', path: '/tr/' },
+    { name: 'Şehirler', path: '/tr/cities/' },
+    { name: regionName, path: turkishPath },
+  ]),
+];
+---
+
+<Base
+  title={`${regionName} için gün doğumu ve gün batımı | SunriseTime Türkçe`}
+  description={content.description}
+  canonical={pageUrl}
+  keywords={`${regionName.toLowerCase()} gün doğumu, ${regionName.toLowerCase()} gün batımı`}
+  jsonLd={jsonLd}
+  lang="tr"
+  alternates={alternates}
+>
+  <TurkishHeader languageLinks={languageLinks} currentLanguage="tr" />
+
+  <main class="resource-page">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/tr/">Ana Sayfa</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <a href="/tr/cities/">Şehirler</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <span>{regionName}</span>
+      </nav>
+
+      <header class="resource-header">
+        <span class="section-badge">
+          <i data-lucide="globe-2" class="icon-xs"></i>
+          {regionName}
+        </span>
+        <h1>{content.description}</h1>
+        <p class="resource-subtitle">{content.intro}</p>
+        <div class="resource-meta">
+          <span class="resource-meta-chip">{region.cityCount} şehir indekslendi</span>
+          {leadCity && <span class="resource-meta-chip">Başlangıç noktası: {getTurkishCityName(leadCity)}</span>}
+          <span class="resource-meta-chip">Türkçe bölge hub'ı</span>
+        </div>
+      </header>
+
+      <section class="resource-grid">
+        <article class="resource-card glass-card">
+          <h2>Neden bu bölgeden gezilmeli?</h2>
+          <ul class="resource-list">
+            {content.reasons.map((item) => (
+              <li>{item}</li>
+            ))}
+          </ul>
+        </article>
+
+        <article class="resource-card glass-card">
+          <h2>Bu hub kimler için uygun?</h2>
+          <ul class="resource-list">
+            {content.audiences.map((item) => (
+              <li>{item}</li>
+            ))}
+          </ul>
+        </article>
+      </section>
+
+      <section class="resource-section">
+        <div class="detail-section-head">
+          <h2>Öne çıkan şehirler</h2>
+          <p>Bölgesel gezinmeden yerel cevaba hızlı geçmek istiyorsanız bunlar güçlü giriş noktalarıdır.</p>
+        </div>
+        <div class="hub-city-grid">
+          {region.featuredCities.map((city) => (
+            <a href={`/tr/sunrise/${city.slug}/`} class="hub-city-card glass-card">
+              <span class="hub-city-name">{getTurkishCityName(city)}</span>
+              <span class="hub-city-country">{getTurkishCityLocationLabel(city, { includeAdmin1: Boolean(city.admin1) })}</span>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <AdUnit id={`ad-tr-region-${region.slug}`} />
+
+      <section class="resource-section">
+        <div class="detail-section-head">
+          <h2>{regionName} içindeki tüm indeksli şehirler</h2>
+          <p>Aynı bölge içinde daha derine inmek veya daha fazla karşılaştırma yapmak istiyorsanız tam listeyi kullanın.</p>
+        </div>
+        <div class="hub-city-grid">
+          {region.cities.map((city) => (
+            <a href={`/tr/sunrise/${city.slug}/`} class="hub-city-card glass-card">
+              <span class="hub-city-name">{getTurkishCityName(city)}</span>
+              <span class="hub-city-country">{getTurkishCityLocationLabel(city, { includeAdmin1: Boolean(city.admin1) })}</span>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <section class="resource-section">
+        <div class="detail-section-head">
+          <h2>İlgili rehberler</h2>
+          <p>Rehberler daha geniş bir arama niyetini yakalar ve kullanıcıyı şehir sayfalarına ya da bölgesel hub'lara geri taşır.</p>
+        </div>
+        <div class="resource-link-grid">
+          {relatedGuides.map((hub) => {
+            const guideContent = getTurkishGuideContent(hub);
+            return (
+              <a href={`/tr/guides/${hub.slug}/`} class="resource-link-card glass-card">
+                <strong>{guideContent.name}</strong>
+                <span>{guideContent.description}</span>
+              </a>
+            );
+          })}
+        </div>
+      </section>
+
+      <section class="resource-section">
+        <div class="detail-section-head">
+          <h2>Diğer bölgeler</h2>
+          <p>Karşılaştırma yön değiştirirse başa dönmek yerine başka bir bölge hub'ına geçin.</p>
+        </div>
+        <div class="resource-link-grid">
+          {otherRegions.map((entry) => (
+            <a href={`/tr/cities/${entry.slug}/`} class="resource-link-card glass-card">
+              <strong>{getTurkishRegionName(entry.slug, entry.name)}</strong>
+              <span>{entry.cityCount} şehir indekslendi</span>
+            </a>
+          ))}
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <TurkishFooter />
+</Base>

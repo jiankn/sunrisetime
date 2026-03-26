@@ -1,0 +1,363 @@
+---
+import Base from '@layouts/Base.astro';
+import TurkishHeader from '@components/TurkishHeader.astro';
+import TurkishFooter from '@components/TurkishFooter.astro';
+import cities from '@data/cities.json';
+import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
+import {
+  getTurkishCityLocationLabel,
+  getTurkishCityName,
+  getTurkishPrayerName,
+  turkishLocale,
+} from '@i18n/turkish';
+import { getSunTimes, formatTime } from '@utils/sun';
+import { getNextPrayer, getPrayerTimes } from '@utils/prayer-times';
+import type { AsrJuristic, CalculationMethod } from '@utils/prayer-times';
+import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
+
+export function getStaticPaths() {
+  return cities.cities.map((city) => ({
+    params: { city: city.slug },
+    props: { city },
+  }));
+}
+
+type City = typeof cities.cities[0];
+const { city } = Astro.props as { city: City };
+
+const today = new Date();
+const cityName = getTurkishCityName(city);
+const cityLocationLabel = getTurkishCityLocationLabel(city, { includeAdmin1: Boolean(city.admin1) });
+const sun = getSunTimes(today, city.lat, city.lng);
+const prayers = getPrayerTimes(today, city.lat, city.lng, 'MWL', 'Standard');
+const nextPrayer = getNextPrayer(today, city.lat, city.lng, 'MWL', 'Standard');
+
+function formatCountdown(ms: number) {
+  const totalMinutes = Math.max(1, Math.round(ms / 60000));
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  if (hours && minutes) return `${hours} sa ${minutes} dk`;
+  if (hours) return `${hours} sa`;
+  return `${minutes} dk`;
+}
+
+const nextPrayerCountdown = nextPrayer.time > today
+  ? formatCountdown(nextPrayer.time.getTime() - today.getTime())
+  : '';
+
+const localDateLabel = today.toLocaleDateString(turkishLocale, {
+  weekday: 'long',
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+  timeZone: city.timezone,
+});
+const localTimeLabel = today.toLocaleTimeString(turkishLocale, {
+  hour: 'numeric',
+  minute: '2-digit',
+  timeZone: city.timezone,
+});
+
+const nearbyCities = cities.cities
+  .filter((entry) => entry.continent === city.continent && entry.slug !== city.slug)
+  .slice(0, 6);
+
+const otherCities = cities.cities
+  .filter((entry) => entry.continent !== city.continent)
+  .slice(0, 4);
+
+const pagePath = `/prayer-times/${city.slug}/`;
+const turkishPath = localizePath('tr', pagePath);
+const pageUrl = `https://sunrisetime.co${turkishPath}`;
+const alternates = buildAlternateLinks([
+  { hrefLang: 'en', path: pagePath },
+  { hrefLang: 'tr', path: turkishPath },
+  { hrefLang: 'x-default', path: pagePath },
+]);
+const languageLinks = buildLanguageSwitcherLinks(pagePath);
+
+const calculationMethods: { value: CalculationMethod; label: string; detail: string }[] = [
+  { value: 'MWL', label: 'Muslim World League', detail: 'İmsak 18° · Yatsı 17°' },
+  { value: 'ISNA', label: 'ISNA', detail: 'İmsak 15° · Yatsı 15°' },
+  { value: 'Egypt', label: 'Mısır Genel Otoritesi', detail: 'İmsak 19.5° · Yatsı 17.5°' },
+  { value: 'Makkah', label: 'Umm al-Qura', detail: 'İmsak 18.5° · Yatsı 90 dk' },
+  { value: 'Karachi', label: 'Karachi', detail: 'İmsak 18° · Yatsı 18°' },
+];
+
+const juristicMethods: { value: AsrJuristic; label: string; detail: string }[] = [
+  { value: 'Standard', label: 'Standart (Şafii)', detail: 'Gölge = yükseklik + öğle gölgesi' },
+  { value: 'Hanafi', label: 'Hanefi', detail: 'Gölge = 2x yükseklik + öğle gölgesi' },
+];
+
+const prayerList = [
+  { name: 'Fajr', time: prayers.fajr, desc: 'Şafak öncesi vakit', icon: 'cloud-moon' },
+  { name: 'Sunrise', time: prayers.sunrise, desc: 'Güneş doğumu', icon: 'sunrise' },
+  { name: 'Dhuhr', time: prayers.dhuhr, desc: 'Öğle vakti', icon: 'sun' },
+  { name: 'Asr', time: prayers.asr, desc: 'İkindi vakti', icon: 'cloud-sun' },
+  { name: 'Maghrib', time: prayers.maghrib, desc: 'Akşam vakti', icon: 'sunset' },
+  { name: 'Isha', time: prayers.isha, desc: 'Yatsı vakti', icon: 'moon' },
+];
+
+const pageTitle = `${cityName} bugün namaz vakitleri - SunriseTime`;
+const pageDesc = `Bugün ${cityName} için namaz vakitleri: İmsak ${formatTime(prayers.fajr, city.timezone, turkishLocale)}, Öğle ${formatTime(prayers.dhuhr, city.timezone, turkishLocale)}, İkindi ${formatTime(prayers.asr, city.timezone, turkishLocale)}, Akşam ${formatTime(prayers.maghrib, city.timezone, turkishLocale)} ve Yatsı ${formatTime(prayers.isha, city.timezone, turkishLocale)}.`;
+
+const jsonLd = [
+  {
+    "@type": "WebPage",
+    "@id": `${pageUrl}#webpage`,
+    "name": pageTitle,
+    "description": pageDesc,
+    "url": pageUrl,
+    "inLanguage": "tr",
+    "isPartOf": {
+      "@id": "https://sunrisetime.co/tr/#website"
+    }
+  },
+  buildBreadcrumbJsonLd([
+    { name: 'Ana Sayfa', path: '/tr/' },
+    { name: 'Namaz Vakitleri', path: '/tr/guides/prayer-times/' },
+    { name: cityName, path: turkishPath },
+  ]),
+  {
+    "@type": "FAQPage",
+    "@id": `${pageUrl}#faq`,
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": `Bugün ${cityName} için namaz vakitleri nedir?`,
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": `Bugün ${cityName} için İmsak ${formatTime(prayers.fajr, city.timezone, turkishLocale)}, Öğle ${formatTime(prayers.dhuhr, city.timezone, turkishLocale)}, İkindi ${formatTime(prayers.asr, city.timezone, turkishLocale)}, Akşam ${formatTime(prayers.maghrib, city.timezone, turkishLocale)} ve Yatsı ${formatTime(prayers.isha, city.timezone, turkishLocale)}.`
+        }
+      },
+      {
+        "@type": "Question",
+        "name": `${cityName} için hangi hesap yöntemi kullanılıyor?`,
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": `Bu sayfa varsayılan olarak Muslim World League (MWL) yöntemini kullanır. İmsak 18 derece, Yatsı 17 derece güneş altı açı ve ikindi için standart hesap temel alınır.`
+        }
+      }
+    ]
+  }
+];
+---
+
+<Base
+  title={pageTitle}
+  description={pageDesc}
+  canonical={pageUrl}
+  keywords={`${cityName} namaz vakitleri, ${cityName} imsak, ${cityName} akşam, ${cityName} gün doğumu`}
+  jsonLd={jsonLd}
+  lang="tr"
+  alternates={alternates}
+>
+  <TurkishHeader languageLinks={languageLinks} currentLanguage="tr" />
+
+  <main class="city-page prayer-page">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/tr/">Ana Sayfa</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <a href="/tr/guides/prayer-times/">Namaz Vakitleri</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <span>{cityName}</span>
+      </nav>
+
+      <section class="prayer-hero glass-card-lg">
+        <div class="prayer-hero-copy">
+          <span class="city-kicker">{localDateLabel}</span>
+          <h1><span class="gradient-text">{cityName}</span> namaz vakitleri</h1>
+          <p class="city-lead">
+            Yerel saat {localTimeLabel}. Sıradaki vakit <strong>{getTurkishPrayerName(nextPrayer.name)}</strong> ve saat {formatTime(nextPrayer.time, city.timezone, turkishLocale)}{nextPrayerCountdown ? `, yani ${nextPrayerCountdown} sonra` : ''}.
+            Bu URL tam namaz çizelgesini, hesaplama yöntemini ve vakitlerin güneş döngüsüyle bağlantısını aynı akışta toplar.
+          </p>
+
+          <div class="city-chip-row">
+            <span class="city-chip city-country-badge">{cityLocationLabel}</span>
+            <span class="city-chip">{city.timezone}</span>
+            <span class="city-chip">MWL · Standart</span>
+          </div>
+
+          <div class="city-action-row">
+            <a href={`/tr/sunrise/${city.slug}/`} class="btn-secondary">
+              <i data-lucide="sun" class="icon-xs"></i>
+              Gün doğumu ve batımı
+            </a>
+            <a href="#methods" class="btn-secondary">
+              <i data-lucide="settings" class="icon-xs"></i>
+              Yöntemi gör
+            </a>
+          </div>
+        </div>
+
+        <div class="prayer-hero-panel">
+          <div class="prayer-next-hero glass-card">
+            <span class="prayer-next-label">Sıradaki vakit</span>
+            <strong class="prayer-next-name">{getTurkishPrayerName(nextPrayer.name)}</strong>
+            <span class="prayer-next-time">{formatTime(nextPrayer.time, city.timezone, turkishLocale)}</span>
+            {nextPrayerCountdown && (
+              <span class="prayer-next-countdown">{nextPrayerCountdown} kaldı</span>
+            )}
+          </div>
+        </div>
+      </section>
+
+      <section class="detail-section" id="schedule" aria-label="Bugünün namaz vakitleri">
+        <div class="detail-section-head">
+          <h2><i data-lucide="clock" class="icon-md"></i> Bugünün namaz vakitleri</h2>
+          <p>{cityName} vakitleri {localDateLabel} için {city.timezone} saat diliminde gösterilir.</p>
+        </div>
+
+        <div class="prayer-grid">
+          {prayerList.map((entry) => (
+            <div class={`prayer-card glass-card ${nextPrayer.name === entry.name ? 'prayer-card-active' : ''}`}>
+              <i data-lucide={entry.icon} class="icon-md"></i>
+              <span class="prayer-name">{getTurkishPrayerName(entry.name)}</span>
+              <span class="prayer-time">{formatTime(entry.time, city.timezone, turkishLocale)}</span>
+              <span class="prayer-desc">{entry.desc}</span>
+            </div>
+          ))}
+        </div>
+        <p class="prayer-note">
+          Varsayılan: Muslim World League (MWL) ve ikindi için standart hesap.
+          <a href="#methods"> Kullanılan yöntemleri gör.</a>
+        </p>
+      </section>
+
+      <section class="detail-section" aria-label="Güneş verileri">
+        <div class="detail-section-head">
+          <h2><i data-lucide="sun" class="icon-md"></i> Namaza bağlı gün doğumu ve gün batımı</h2>
+          <p>İmsak gün doğumundan önce başlar, akşam vakti ise gün batımından hemen sonra gelir. Bu yüzden güneş takvimi ile namaz vakitlerini birlikte okumak en pratik akıştır.</p>
+        </div>
+
+        <div class="detail-grid">
+          <div class="detail-card glass-card">
+            <h3>Gün doğumu ve gün batımı</h3>
+            <div class="detail-time">
+              <div>
+                <span class="data-label">Gün doğumu</span>
+                <span class="detail-time-value">{formatTime(sun.sunrise, city.timezone, turkishLocale)}</span>
+              </div>
+              <div>
+                <span class="data-label">Gün batımı</span>
+                <span class="detail-time-value">{formatTime(sun.sunset, city.timezone, turkishLocale)}</span>
+              </div>
+            </div>
+            <span class="detail-duration">Bugün toplam {sun.daylightFormatted} gün ışığı var</span>
+          </div>
+
+          <div class="detail-card glass-card">
+            <h3>Güneş referans noktaları</h3>
+            <div class="detail-time">
+              <div>
+                <span class="data-label">Sivil tan</span>
+                <span class="detail-time-value">{formatTime(sun.dawn, city.timezone, turkishLocale)}</span>
+              </div>
+              <div>
+                <span class="data-label">Alacakaranlık</span>
+                <span class="detail-time-value">{formatTime(sun.dusk, city.timezone, turkishLocale)}</span>
+              </div>
+            </div>
+            <span class="detail-duration">Güneş öğlesi {formatTime(sun.solarNoon, city.timezone, turkishLocale)}</span>
+          </div>
+        </div>
+
+        <div class="prayer-sun-cta">
+          <a href={`/tr/sunrise/${city.slug}/`} class="btn-primary">
+            <i data-lucide="arrow-right" class="icon-xs"></i>
+            Gün doğumu ve gün batımı sayfasını aç
+          </a>
+        </div>
+      </section>
+
+      <section class="detail-section" id="methods" aria-label="Hesap yöntemleri">
+        <div class="detail-section-head">
+          <h2><i data-lucide="settings" class="icon-md"></i> Hesap yöntemleri</h2>
+          <p>Namaz vakitleri güneşin konumundan türetilir. Bölgeye göre imsak, yatsı ve ikindi hesaplarında farklı gelenekler kullanılabilir.</p>
+        </div>
+
+        <div class="method-grid">
+          {calculationMethods.map((method) => (
+            <div class={`method-card glass-card ${method.value === 'MWL' ? 'method-card-active' : ''}`}>
+              <strong>{method.label}</strong>
+              <span class="method-detail">{method.detail}</span>
+              {method.value === 'MWL' && <span class="method-badge">Geçerli</span>}
+            </div>
+          ))}
+        </div>
+
+        <div class="method-subsection">
+          <h3>İkindi için fıkhi yaklaşım</h3>
+          <div class="method-grid method-grid-narrow">
+            {juristicMethods.map((method) => (
+              <div class={`method-card glass-card ${method.value === 'Standard' ? 'method-card-active' : ''}`}>
+                <strong>{method.label}</strong>
+                <span class="method-detail">{method.detail}</span>
+                {method.value === 'Standard' && <span class="method-badge">Geçerli</span>}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section class="detail-section seo-content" aria-label="Namaz vakti açıklaması">
+        <h2><i data-lucide="info" class="icon-md"></i> {cityName} için namaz vakitleri nasıl hesaplanır?</h2>
+        <div class="seo-text glass-card">
+          <p>
+            {cityName} namaz vakitleri güneşin ufka göre konumundan hesaplanır. Bugün {localDateLabel} için İmsak {formatTime(prayers.fajr, city.timezone, turkishLocale)}, Öğle {formatTime(prayers.dhuhr, city.timezone, turkishLocale)}, İkindi {formatTime(prayers.asr, city.timezone, turkishLocale)}, Akşam {formatTime(prayers.maghrib, city.timezone, turkishLocale)} ve Yatsı {formatTime(prayers.isha, city.timezone, turkishLocale)} saatindedir.
+          </p>
+
+          <h3>Sayfanın teknik temeli</h3>
+          <p>
+            Bu sayfa {cityName} koordinatlarını (enlem {city.lat.toFixed(4)}, boylam {city.lng.toFixed(4)}) ve NOAA uyumlu güneş modelini kullanır. Varsayılan olarak SunriseTime, Muslim World League yöntemini; yani imsak için 18 derece, yatsı için 17 derece güneş altı açıyı uygular.
+          </p>
+
+          <h3>Namaz, gün doğumu ve gün batımı arasındaki ilişki</h3>
+          <p>
+            İmsak {formatTime(prayers.sunrise, city.timezone, turkishLocale)} gün doğumundan önce biter; akşam vakti ise {formatTime(sun.sunset, city.timezone, turkishLocale)} gün batımından hemen sonra başlar. Altın saat, gündüz süresi ve ay verilerine de ihtiyacınız varsa <a href={`/tr/sunrise/${city.slug}/`}>{cityName} gün doğumu ve gün batımı sayfasını</a> açın.
+          </p>
+        </div>
+      </section>
+
+      <section class="detail-section" id="nearby" aria-label="Yakın şehirler">
+        <div class="detail-section-head">
+          <h2><i data-lucide="map-pin" class="icon-md"></i> Yakındaki şehirlerde namaz vakitleri</h2>
+          <p>{cityName} vakitlerini aynı bölgedeki diğer şehirlerle karşılaştırın.</p>
+        </div>
+
+        <div class="nearby-grid">
+          {nearbyCities.map((entry) => (
+            <a href={`/tr/prayer-times/${entry.slug}/`} class="nearby-card glass-card">
+              <span class="nearby-name">{getTurkishCityName(entry)}</span>
+              <span class="nearby-country">{getTurkishCityLocationLabel(entry, { includeAdmin1: Boolean(entry.admin1) })}</span>
+            </a>
+          ))}
+        </div>
+
+        {otherCities.length > 0 && (
+          <>
+            <h3 class="other-cities-title">Diğer popüler şehirler</h3>
+            <div class="nearby-grid">
+              {otherCities.map((entry) => (
+                <a href={`/tr/prayer-times/${entry.slug}/`} class="nearby-card glass-card">
+                  <span class="nearby-name">{getTurkishCityName(entry)}</span>
+                  <span class="nearby-country">{getTurkishCityLocationLabel(entry, { includeAdmin1: Boolean(entry.admin1) })}</span>
+                </a>
+              ))}
+            </div>
+          </>
+        )}
+
+        <div class="cities-cta" style="margin-top:2rem;">
+          <a href="/tr/cities/" class="btn-secondary">
+            <i data-lucide="globe" class="icon-xs"></i>
+            Tüm şehirleri gör
+          </a>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <TurkishFooter />
+</Base>

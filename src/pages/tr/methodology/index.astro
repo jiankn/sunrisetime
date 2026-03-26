@@ -1,0 +1,149 @@
+---
+import Base from '@layouts/Base.astro';
+import TurkishHeader from '@components/TurkishHeader.astro';
+import TurkishFooter from '@components/TurkishFooter.astro';
+import { cityIndexLabel, legalLastUpdated, totalCities } from '@data/site';
+import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
+import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
+
+const pagePath = '/methodology/';
+const turkishPath = localizePath('tr', pagePath);
+const pageUrl = `https://sunrisetime.co${turkishPath}`;
+const alternates = buildAlternateLinks([
+  { hrefLang: 'en', path: pagePath },
+  { hrefLang: 'tr', path: turkishPath },
+  { hrefLang: 'x-default', path: pagePath },
+]);
+const languageLinks = buildLanguageSwitcherLinks(pagePath);
+
+const jsonLd = [
+  {
+    "@type": "TechArticle",
+    "@id": `${pageUrl}#article`,
+    "headline": "SunriseTime metodolojisi",
+    "description": "SunriseTime'ın Türkçe sürümde gün doğumu, gün batımı, ay ve namaz vakitlerini nasıl hesapladığının açık açıklaması.",
+    "url": pageUrl,
+    "inLanguage": "tr",
+    "isPartOf": {
+      "@id": "https://sunrisetime.co/tr/#website"
+    }
+  },
+  buildBreadcrumbJsonLd([
+    { name: 'Ana Sayfa', path: '/tr/' },
+    { name: 'Metodoloji', path: turkishPath },
+  ]),
+];
+---
+
+<Base
+  title="Metodoloji - SunriseTime güneş, ay ve namaz vakitlerini nasıl hesaplar?"
+  description="SunriseTime'ın güneş hesapları, ay evresi katmanı, namaz vakitleri ve şehir dizini yapısı için kullandığı metodolojiyi inceleyin."
+  canonical={pageUrl}
+  keywords="gün doğumu metodolojisi, gün batımı hesabı, namaz vakitleri metodolojisi"
+  jsonLd={jsonLd}
+  lang="tr"
+  alternates={alternates}
+>
+  <TurkishHeader languageLinks={languageLinks} currentLanguage="tr" />
+
+  <main class="resource-page">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/tr/">Ana Sayfa</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <span>Metodoloji</span>
+      </nav>
+
+      <header class="resource-header">
+        <span class="section-badge">
+          <i data-lucide="flask-conical" class="icon-xs"></i>
+          Metodoloji
+        </span>
+        <h1>SunriseTime ancak verinin kaynağı açık kaldığında faydalı olur.</h1>
+        <p class="resource-subtitle">Bu sayfa, gün doğumu, gün batımı, altın saat, ay evresi, namaz vakitleri ve Türkçe şehir dizini yapısı için kullanılan mevcut açık metodolojiyi özetler.</p>
+        <div class="resource-meta">
+          <span class="resource-meta-chip">Güncelleme: {legalLastUpdated}</span>
+          <span class="resource-meta-chip">{cityIndexLabel}</span>
+        </div>
+      </header>
+
+      <section class="resource-grid">
+        <article class="resource-card glass-card">
+          <h2>Güneş hesabı</h2>
+          <p class="resource-text">SunriseTime; enlem, boylam ve tarihten gün doğumu, gün batımı, güneş öğlesi, alacakaranlık ve altın saat değerlerini üretmek için NOAA uyumlu güneş hesaplarını kullanır.</p>
+          <ul class="resource-list">
+            <li>Saatler her şehrin koordinatları için hesaplanır.</li>
+            <li>Altın saat ve alacakaranlık aynı günlük güneş modelinden türetilir.</li>
+            <li>Sonuçlar her zaman şehrin yerel saat diliminde gösterilir.</li>
+          </ul>
+        </article>
+
+        <article class="resource-card glass-card">
+          <h2>Ay verileri</h2>
+          <p class="resource-text">Ay evresi, aydınlanma ve ay doğuşu-batışı tahminleri şehir sayfalarında kullanılan aynı astronomik katman üzerinden üretilir.</p>
+          <ul class="resource-list">
+            <li>Evre adları o andaki ay kesri temel alınarak atanır.</li>
+            <li>Aydınlanma okunabilirlik için yuvarlanır.</li>
+            <li>Bu ay katmanı planlama içindir; profesyonel gözlem aracı değildir.</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="resource-grid">
+        <article class="resource-card glass-card">
+          <h2>Namaz vakitleri</h2>
+          <p class="resource-text">Mevcut herkese açık deneyim, imsak ve yatsı için varsayılan olarak Muslim World League (MWL), ikindi için ise standart hesabı kullanır.</p>
+          <ul class="resource-list">
+            <li>İmsak 18 derece güneş altı açıyla hesaplanır.</li>
+            <li>Yatsı 17 derece güneş altı açıyla hesaplanır.</li>
+            <li>İkindi mevcut genel arayüzde standart gölge kuralını kullanır.</li>
+          </ul>
+        </article>
+
+        <article class="resource-card glass-card">
+          <h2>Şehir dizini</h2>
+          <p class="resource-text">Herkese açık dizin şu anda {totalCities} önemli şehri kapsar. Taban veri GeoNames'ten gelir; ardından arama, gezinme ve iç link değeri yüksek şehirler lehine düzenlenir.</p>
+          <ul class="resource-list">
+            <li>Her şehir canonical slug, ülke bilgisi, saat dilimi, koordinat ve arama takma adlarını korur.</li>
+            <li>Belirsizlik olduğunda idari bölge bilgisi de kullanılır.</li>
+            <li>Bölgesel hub'lar yeni arama zorlamadan iç derinliği artırır.</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="resource-grid">
+        <article class="resource-card glass-card">
+          <h2>Site nasıl güncellenir?</h2>
+          <ul class="resource-list">
+            <li>Sayfalar mevcut yardımcı katmanla her build sırasında yeniden hesaplanır.</li>
+            <li>Kapsama, metin ya da hesap değişirse site yeniden build edilip deploy edilmelidir.</li>
+            <li>Metodoloji ve politika sayfaları, üretimde ürün değiştiğinde güncellenmelidir.</li>
+          </ul>
+        </article>
+
+        <article class="resource-card glass-card">
+          <h2>Bilinen sınırlar</h2>
+          <ul class="resource-list">
+            <li>Sonuçlar planlamaya yardım eder; yasal, dini veya navigasyonel otoritenin yerini almaz.</li>
+            <li>Hava, topoğrafya, binalar ve yerel gözlem koşulları hesaplanan çıktıyı değiştirmez.</li>
+            <li>Bölgesel namaz hesabı tercihleri genel arayüzde henüz kullanıcı tarafından seçilebilir değildir.</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="resource-callout glass-card-lg">
+        <div>
+          <span class="resource-callout-label">Sonraki adım</span>
+          <h2>Metodoloji, ancak gerçek sayfalara bağlandığında değer üretir.</h2>
+          <p>Bu sayfadan sonra normal akış; hesapları bağlam içinde görmek için bir şehir, bir rehber ya da bir bölge hub'ı açmaktır.</p>
+        </div>
+        <div class="resource-link-row">
+          <a href="/tr/cities/" class="btn-primary-sm">Şehirler</a>
+          <a href="/tr/guides/" class="btn-secondary-sm">Rehberler</a>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <TurkishFooter />
+</Base>

@@ -1,0 +1,119 @@
+---
+import Base from '@layouts/Base.astro';
+import TurkishHeader from '@components/TurkishHeader.astro';
+import TurkishFooter from '@components/TurkishFooter.astro';
+import { getCitySearchText, regionHubs, totalCities } from '@data/site';
+import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
+import {
+  getTurkishCityAliases,
+  getTurkishCityDisplayName,
+  getTurkishCityLocationLabel,
+  getTurkishCityName,
+  getTurkishRegionName,
+} from '@i18n/turkish';
+import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
+
+const pagePath = '/cities/';
+const alternates = buildAlternateLinks([
+  { hrefLang: 'en', path: pagePath },
+  { hrefLang: 'tr', path: localizePath('tr', pagePath) },
+  { hrefLang: 'x-default', path: pagePath },
+]);
+const languageLinks = buildLanguageSwitcherLinks(pagePath);
+const pageUrl = 'https://sunrisetime.co/tr/cities/';
+
+const jsonLd = [
+  {
+    "@type": "CollectionPage",
+    "@id": `${pageUrl}#webpage`,
+    "name": "SunriseTime şehir dizini",
+    "description": `${totalCities} şehir için Türkçe gün doğumu ve gün batımı sayfalarını keşfedin.`,
+    "url": pageUrl,
+    "inLanguage": "tr",
+    "isPartOf": {
+      "@id": "https://sunrisetime.co/tr/#website"
+    }
+  },
+  buildBreadcrumbJsonLd([
+    { name: 'Ana Sayfa', path: '/tr/' },
+    { name: 'Şehirler', path: '/tr/cities/' },
+  ]),
+];
+---
+
+<Base
+  title={`${totalCities} şehir için gün doğumu ve gün batımı dizini - SunriseTime`}
+  description={`${totalCities} şehir için gün doğumu, gün batımı ve gündüz süresi verilerini keşfedin. Türkçe dizin; her şehir için indekslenebilir sayfalara bağlanır.`}
+  canonical={pageUrl}
+  keywords="şehir dizini, şehre göre gün doğumu, şehre göre gün batımı"
+  jsonLd={jsonLd}
+  lang="tr"
+  alternates={alternates}
+>
+  <TurkishHeader languageLinks={languageLinks} currentLanguage="tr" />
+
+  <main class="cities-hub">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/tr/">Ana Sayfa</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <span>Şehirler</span>
+      </nav>
+
+      <header class="cities-hub-header">
+        <h1><span class="gradient-text">{totalCities} şehir</span> için gün doğumu ve gün batımı dizini</h1>
+        <p>Bir şehir arayın ya da bölgelere göre gezinin. Tüm URL\'ler Türkçe içerik, self-canonical ve gerçek hreflang ile yayınlanır.</p>
+        <div class="hub-search">
+          <i data-lucide="search" class="icon-sm" style="color:var(--text-tertiary);flex-shrink:0;"></i>
+          <input type="text" id="hubCitySearch" placeholder="Şehir ara..." autocomplete="off" />
+        </div>
+      </header>
+
+      {regionHubs.map((region) => (
+        <section class="continent-section" data-continent={region.slug}>
+          <h2>
+            <i data-lucide="globe" class="icon-md"></i>
+            {getTurkishRegionName(region.slug, region.name)}
+          </h2>
+          <div class="hub-city-grid">
+            {region.cities.map((city) => (
+              <a
+                href={`/tr/sunrise/${city.slug}/`}
+                class="hub-city-card glass-card"
+                data-city-search={`${getTurkishCityDisplayName(city, { includeAdmin1: Boolean(city.admin1) })} ${getCitySearchText(city)} ${getTurkishCityAliases(city).join(' ')}`.toLowerCase()}
+              >
+                <span class="hub-city-name">{getTurkishCityName(city)}</span>
+                <span class="hub-city-country">{getTurkishCityLocationLabel(city, { includeAdmin1: Boolean(city.admin1) })}</span>
+              </a>
+            ))}
+          </div>
+        </section>
+      ))}
+    </div>
+  </main>
+
+  <TurkishFooter />
+</Base>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const input = document.getElementById('hubCitySearch');
+    if (!input) return;
+
+    input.addEventListener('input', (event) => {
+      const query = (event.target as HTMLInputElement).value.toLowerCase().trim();
+      const cards = document.querySelectorAll<HTMLElement>('.hub-city-card');
+      const sections = document.querySelectorAll<HTMLElement>('.continent-section');
+
+      cards.forEach((card) => {
+        const name = card.dataset.citySearch || '';
+        card.style.display = name.includes(query) ? '' : 'none';
+      });
+
+      sections.forEach((section) => {
+        const visible = section.querySelectorAll<HTMLElement>('.hub-city-card:not([style*="display: none"])');
+        section.style.display = visible.length > 0 ? '' : 'none';
+      });
+    });
+  });
+</script>

@@ -1,0 +1,488 @@
+---
+import Base from '@layouts/Base.astro';
+import TurkishHeader from '@components/TurkishHeader.astro';
+import TurkishFooter from '@components/TurkishFooter.astro';
+import cities from '@data/cities.json';
+import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
+import {
+  getTurkishCityLocationLabel,
+  getTurkishCityName,
+  getTurkishMoonPhase,
+  getTurkishPrayerName,
+  turkishLocale,
+} from '@i18n/turkish';
+import { getDaylightSeries, getGoldenHour, getSunTimes, formatTime, getSunriseDelta, getSunsetDelta } from '@utils/sun';
+import { getMoonData, getNextMoonEvent } from '@utils/moon';
+import { getNextPrayer } from '@utils/prayer-times';
+import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
+
+export function getStaticPaths() {
+  return cities.cities.map((city) => ({
+    params: { city: city.slug },
+    props: { city },
+  }));
+}
+
+type City = typeof cities.cities[0];
+const { city } = Astro.props as { city: City };
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(Math.max(value, min), max);
+}
+
+function formatCountdown(ms: number) {
+  const totalMinutes = Math.max(1, Math.round(ms / 60000));
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+
+  if (hours && minutes) return `${hours} sa ${minutes} dk`;
+  if (hours) return `${hours} sa`;
+  return `${minutes} dk`;
+}
+
+function formatMinuteShift(delta: number) {
+  if (delta === 0) return 'Düne göre aynı';
+  return `Düne göre ${Math.abs(delta)} dk ${delta > 0 ? 'daha geç' : 'daha erken'}`;
+}
+
+function formatMinuteShiftSentence(delta: number) {
+  if (delta === 0) return 'dünle aynı yerel saatte';
+  return `düne göre ${Math.abs(delta)} dakika ${delta > 0 ? 'daha geç' : 'daha erken'}`;
+}
+
+function formatDaylightTrend(minutes: number) {
+  if (minutes === 0) return '7 günde sabit';
+  return `7 günde ${Math.abs(minutes)} dk ${minutes > 0 ? 'daha uzun' : 'daha kısa'}`;
+}
+
+const today = new Date();
+const cityName = getTurkishCityName(city);
+const cityLocationLabel = getTurkishCityLocationLabel(city, { includeAdmin1: Boolean(city.admin1) });
+const sun = getSunTimes(today, city.lat, city.lng);
+const golden = getGoldenHour(today, city.lat, city.lng);
+const moon = getMoonData(today, city.lat, city.lng);
+const nextMoonEvent = getNextMoonEvent(today);
+const nextPrayer = getNextPrayer(today, city.lat, city.lng, 'MWL', 'Standard');
+const sunriseDelta = getSunriseDelta(today, city.lat, city.lng, city.timezone);
+const sunsetDelta = getSunsetDelta(today, city.lat, city.lng, city.timezone);
+const series = getDaylightSeries(today, 7, city.lat, city.lng);
+const lightProgress = clamp(
+  ((today.getTime() - sun.dawn.getTime()) / (sun.dusk.getTime() - sun.dawn.getTime())) * 100,
+  0,
+  100,
+);
+const daylightTrendMinutes = Math.round((series[series.length - 1].hours - series[0].hours) * 60);
+const daylightTrendCopy = formatDaylightTrend(daylightTrendMinutes);
+const nextMoonEventLabel = nextMoonEvent.type === 'Full Moon' ? 'dolunay' : 'yeni ay';
+const daysUntilMoonEvent = Math.max(1, Math.ceil((nextMoonEvent.date.getTime() - today.getTime()) / 86400000));
+
+function getNextSunEvent() {
+  if (today < sun.sunrise) {
+    return {
+      label: 'Gün doğumuna kalan',
+      countdown: formatCountdown(sun.sunrise.getTime() - today.getTime()),
+      time: formatTime(sun.sunrise, city.timezone, turkishLocale),
+      support: `Sabah altın saati ${formatTime(golden.morning.end, city.timezone, turkishLocale)}'de biter.`,
+    };
+  }
+
+  if (today < sun.sunset) {
+    return {
+      label: 'Gün batımına kalan',
+      countdown: formatCountdown(sun.sunset.getTime() - today.getTime()),
+      time: formatTime(sun.sunset, city.timezone, turkishLocale),
+      support: `Akşam altın saati ${formatTime(golden.evening.start, city.timezone, turkishLocale)}'de başlar.`,
+    };
+  }
+
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const tomorrowSun = getSunTimes(tomorrow, city.lat, city.lng);
+
+  return {
+    label: 'Yarının gün doğumu',
+    countdown: formatCountdown(tomorrowSun.sunrise.getTime() - today.getTime()),
+    time: formatTime(tomorrowSun.sunrise, city.timezone, turkishLocale),
+    support: `Yarın toplam ${tomorrowSun.daylightFormatted} gün ışığı var.`,
+  };
+}
+
+const nextSunEvent = getNextSunEvent();
+const localDateLabel = today.toLocaleDateString(turkishLocale, {
+  weekday: 'long',
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+  timeZone: city.timezone,
+});
+const localTimeLabel = today.toLocaleTimeString(turkishLocale, {
+  hour: 'numeric',
+  minute: '2-digit',
+  timeZone: city.timezone,
+});
+const lightStatus = today < sun.dawn
+  ? 'Gece hâlâ baskın.'
+  : today < sun.sunrise
+    ? 'Sivil tan başladı.'
+    : today < sun.sunset
+      ? 'Şu anda gün ışığı aktif.'
+      : today < sun.dusk
+        ? 'Sivil alacakaranlık sürüyor.'
+        : 'Gece yeniden başladı.';
+
+const nearbyCities = cities.cities
+  .filter((entry) => entry.continent === city.continent && entry.slug !== city.slug)
+  .slice(0, 6);
+
+const otherCities = cities.cities
+  .filter((entry) => entry.continent !== city.continent)
+  .slice(0, 4);
+
+const pagePath = `/sunrise/${city.slug}/`;
+const turkishPath = localizePath('tr', pagePath);
+const pageUrl = `https://sunrisetime.co${turkishPath}`;
+const alternates = buildAlternateLinks([
+  { hrefLang: 'en', path: pagePath },
+  { hrefLang: 'tr', path: turkishPath },
+  { hrefLang: 'x-default', path: pagePath },
+]);
+const languageLinks = buildLanguageSwitcherLinks(pagePath);
+
+const pageTitle = `${cityName} bugün gün doğumu ve gün batımı saatleri - SunriseTime`;
+const pageDesc = `Bugün ${cityName} için gün doğumu ${formatTime(sun.sunrise, city.timezone, turkishLocale)}, gün batımı ${formatTime(sun.sunset, city.timezone, turkishLocale)}. ${sun.daylightFormatted} gündüz süresi, altın saat, ay evresi ve namaz sayfasına hızlı geçiş burada.`;
+
+const jsonLd = [
+  {
+    "@type": "WebPage",
+    "@id": `${pageUrl}#webpage`,
+    "name": pageTitle,
+    "description": pageDesc,
+    "url": pageUrl,
+    "inLanguage": "tr",
+    "isPartOf": {
+      "@id": "https://sunrisetime.co/tr/#website"
+    }
+  },
+  buildBreadcrumbJsonLd([
+    { name: 'Ana Sayfa', path: '/tr/' },
+    { name: 'Şehirler', path: '/tr/cities/' },
+    { name: cityName, path: turkishPath },
+  ]),
+  {
+    "@type": "FAQPage",
+    "@id": `${pageUrl}#faq`,
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": `Bugün ${cityName} için gün doğumu saat kaçta?`,
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": `Bugün ${cityName} için gün doğumu ${formatTime(sun.sunrise, city.timezone, turkishLocale)}.`
+        }
+      },
+      {
+        "@type": "Question",
+        "name": `Bugün ${cityName} için gün batımı saat kaçta?`,
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": `Bugün ${cityName} için gün batımı ${formatTime(sun.sunset, city.timezone, turkishLocale)} ve toplam gündüz süresi ${sun.daylightFormatted}.`
+        }
+      },
+      {
+        "@type": "Question",
+        "name": `${cityName} sayfasında altın saat ve namaz vakitleri de var mı?`,
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": `Evet. Sayfa altın saat, ay evresi ve ${cityName} namaz vakitlerine doğrudan geçişi birlikte gösterir.`
+        }
+      }
+    ]
+  }
+];
+---
+
+<Base
+  title={pageTitle}
+  description={pageDesc}
+  canonical={pageUrl}
+  keywords={`${cityName} gün doğumu saati, ${cityName} gün batımı saati, ${cityName} altın saat, ${cityName} namaz vakitleri`}
+  jsonLd={jsonLd}
+  lang="tr"
+  alternates={alternates}
+>
+  <TurkishHeader languageLinks={languageLinks} currentLanguage="tr" />
+
+  <main class="city-page">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/tr/">Ana Sayfa</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <a href="/tr/cities/">Şehirler</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <span>{cityName}</span>
+      </nav>
+
+      <section class="city-snapshot glass-card-lg">
+        <div class="city-snapshot-copy">
+          <span class="city-kicker">{cityName} için gün ışığı özeti</span>
+          <h1><span class="gradient-text">{cityName}</span> için gün doğumu ve gün batımı saatleri</h1>
+          <p class="city-lead">
+            Bugün {localDateLabel}, yerel saat {localTimeLabel}. {cityName} için gün doğumu {formatTime(sun.sunrise, city.timezone, turkishLocale)}, gün batımı ise {formatTime(sun.sunset, city.timezone, turkishLocale)}.
+            Bu sayfa gündüz süresi, altın saat, ay evresi ve namaz vakitlerine hızlı geçişi aynı ekranda verir.
+          </p>
+
+          <div class="city-chip-row">
+            <span class="city-chip city-country-badge">{cityLocationLabel}</span>
+            <span class="city-chip">{city.timezone}</span>
+            <span class="city-chip">{sun.daylightFormatted} gün ışığı</span>
+          </div>
+
+          <div class="city-action-row">
+            <a href="/tr/cities/" class="btn-primary">
+              <i data-lucide="search" class="icon-xs"></i>
+              Başka şehir ara
+            </a>
+            <a href="#golden" class="btn-secondary">
+              <i data-lucide="camera" class="icon-xs"></i>
+              Altın saati gör
+            </a>
+            <a href={`/tr/prayer-times/${city.slug}/`} class="btn-secondary">
+              <i data-lucide="clock" class="icon-xs"></i>
+              Namaz vakitleri
+            </a>
+          </div>
+        </div>
+
+        <div class="city-snapshot-panel">
+          <div class="city-next-event glass-card">
+            <span class="city-next-label">{nextSunEvent.label}</span>
+            <strong>{nextSunEvent.countdown}</strong>
+            <span class="city-next-time">{nextSunEvent.time} yerel saat</span>
+            <p>{nextSunEvent.support}</p>
+          </div>
+
+          <div class="city-light-track glass-card">
+            <div class="city-track-head">
+              <span>Tan {formatTime(sun.dawn, city.timezone, turkishLocale)}</span>
+              <strong>{lightStatus}</strong>
+              <span>Alacakaranlık {formatTime(sun.dusk, city.timezone, turkishLocale)}</span>
+            </div>
+            <div class="city-track-bar">
+              <span class="city-track-fill" style={`width:${lightProgress}%`}></span>
+              <span class="city-track-marker" style={`left:${lightProgress}%`}></span>
+            </div>
+            <div class="city-track-points">
+              <span>Gün doğumu {formatTime(sun.sunrise, city.timezone, turkishLocale)}</span>
+              <span>Güneş öğlesi {formatTime(sun.solarNoon, city.timezone, turkishLocale)}</span>
+              <span>Gün batımı {formatTime(sun.sunset, city.timezone, turkishLocale)}</span>
+            </div>
+          </div>
+
+          <div class="city-snapshot-metrics">
+            <div class="city-metric-card glass-card accent-sunrise">
+              <span class="city-metric-visual" aria-hidden="true"></span>
+              <span class="city-metric-label">Gün doğumu</span>
+              <strong class="city-metric-value">{formatTime(sun.sunrise, city.timezone, turkishLocale)}</strong>
+              <small class="city-metric-note">{formatMinuteShift(sunriseDelta)}</small>
+            </div>
+            <div class="city-metric-card glass-card accent-sunset">
+              <span class="city-metric-visual" aria-hidden="true"></span>
+              <span class="city-metric-label">Gün batımı</span>
+              <strong class="city-metric-value">{formatTime(sun.sunset, city.timezone, turkishLocale)}</strong>
+              <small class="city-metric-note">{formatMinuteShift(sunsetDelta)}</small>
+            </div>
+            <div class="city-metric-card glass-card accent-daylight">
+              <span class="city-metric-visual" aria-hidden="true"></span>
+              <span class="city-metric-label">Gündüz süresi</span>
+              <strong class="city-metric-value">{sun.daylightFormatted}</strong>
+              <small class="city-metric-note">{daylightTrendCopy}</small>
+            </div>
+            <div class="city-metric-card glass-card accent-moon">
+              <span class="city-metric-visual" aria-hidden="true"></span>
+              <span class="city-metric-label">Ay</span>
+              <strong class="city-metric-value">{getTurkishMoonPhase(moon.phaseName)}</strong>
+              <small class="city-metric-note">Bu akşam aydınlanma %{moon.illumination}</small>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="city-highlight-grid" aria-label="Hızlı geçişler">
+        <a href="#golden" class="city-highlight-card glass-card">
+          <span class="city-highlight-label">Altın saat</span>
+          <strong>{formatTime(golden.morning.start, city.timezone, turkishLocale)} - {formatTime(golden.morning.end, city.timezone, turkishLocale)}</strong>
+          <p>Akşam penceresi {formatTime(golden.evening.start, city.timezone, turkishLocale)}'de başlar.</p>
+        </a>
+        <a href="#moon" class="city-highlight-card glass-card">
+          <span class="city-highlight-label">Ay</span>
+          <strong>{getTurkishMoonPhase(moon.phaseName)}</strong>
+          <p>Aydınlanma %{moon.illumination}. Sonraki {nextMoonEventLabel} {daysUntilMoonEvent} gün içinde.</p>
+        </a>
+        <a href={`/tr/prayer-times/${city.slug}/`} class="city-highlight-card glass-card">
+          <span class="city-highlight-label">Namaz</span>
+          <strong>{getTurkishPrayerName(nextPrayer.name)} {formatTime(nextPrayer.time, city.timezone, turkishLocale)}</strong>
+          <p>{cityName} için tam namaz çizelgesini açın.</p>
+        </a>
+      </section>
+
+      <section class="detail-section" id="golden" aria-label="Altın saat">
+        <div class="detail-section-head">
+          <h2><i data-lucide="camera" class="icon-md"></i> {cityName} için altın saat ve alacakaranlık</h2>
+          <p>Fotoğraf, yürüyüş ya da planlama yapıyorsanız en kritik pencereler bunlardır: altın saat, alacakaranlık ve bu haftaki ışık eğilimi.</p>
+        </div>
+
+        <div class="detail-grid">
+          <div class="detail-card glass-card">
+            <h3>Sabah altın saati</h3>
+            <div class="detail-time">
+              <span class="detail-time-value">{formatTime(golden.morning.start, city.timezone, turkishLocale)}</span>
+              <i data-lucide="arrow-right" class="icon-sm"></i>
+              <span class="detail-time-value">{formatTime(golden.morning.end, city.timezone, turkishLocale)}</span>
+            </div>
+            <span class="detail-duration">{golden.morning.durationMin} dakika</span>
+          </div>
+          <div class="detail-card glass-card">
+            <h3>Akşam altın saati</h3>
+            <div class="detail-time">
+              <span class="detail-time-value">{formatTime(golden.evening.start, city.timezone, turkishLocale)}</span>
+              <i data-lucide="arrow-right" class="icon-sm"></i>
+              <span class="detail-time-value">{formatTime(golden.evening.end, city.timezone, turkishLocale)}</span>
+            </div>
+            <span class="detail-duration">{golden.evening.durationMin} dakika</span>
+          </div>
+        </div>
+
+        <div class="city-secondary-grid">
+          <div class="twilight-table glass-card">
+            <table>
+              <thead>
+                <tr><th>Faz</th><th>Sabah</th><th>Akşam</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Sivil alacakaranlık</td>
+                  <td>{formatTime(sun.dawn, city.timezone, turkishLocale)}</td>
+                  <td>{formatTime(sun.dusk, city.timezone, turkishLocale)}</td>
+                </tr>
+                <tr>
+                  <td>Denizcilik alacakaranlığı</td>
+                  <td>{formatTime(sun.nauticalDawn, city.timezone, turkishLocale)}</td>
+                  <td>{formatTime(sun.nauticalDusk, city.timezone, turkishLocale)}</td>
+                </tr>
+                <tr>
+                  <td>Astronomik alacakaranlık</td>
+                  <td>{formatTime(sun.nightEnd, city.timezone, turkishLocale)}</td>
+                  <td>{formatTime(sun.night, city.timezone, turkishLocale)}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="daylight-chart glass-card">
+            <div class="demo-chart-title">7 günlük gün ışığı eğilimi</div>
+            <div class="chart-bars-static">
+              {series.map((entry, index) => {
+                const pct = Math.round((entry.hours / 16) * 100);
+                const dayName = entry.date.toLocaleDateString(turkishLocale, { weekday: 'short', timeZone: city.timezone });
+                return (
+                  <div class={`chart-col ${index === 0 ? 'active' : ''}`}>
+                    <span class="chart-val">{entry.hours.toFixed(1)} sa</span>
+                    <div class="chart-fill" style={`height:${pct}%`}></div>
+                    <span class="chart-day">{dayName}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="detail-section" id="moon" aria-label="Ay verileri">
+        <div class="detail-section-head">
+          <h2><i data-lucide="moon" class="icon-md"></i> {cityName} için ay evresi ve ay saatleri</h2>
+          <p>Planınız gün batımından sonra devam ediyorsa veya ayın sahneye yardım edip etmediğini görmek istiyorsanız bu blok işinizi hızlandırır.</p>
+        </div>
+
+        <div class="detail-grid">
+          <div class="detail-card glass-card">
+            <h3>Ay evresi</h3>
+            <span class="detail-time-value">{getTurkishMoonPhase(moon.phaseName)}</span>
+            <span class="detail-duration">Aydınlanma %{moon.illumination}</span>
+          </div>
+          <div class="detail-card glass-card">
+            <h3>Ay doğuşu ve batışı</h3>
+            <div class="detail-time">
+              <div>
+                <span class="data-label">Doğuş</span>
+                <span class="detail-time-value">{moon.rise ? formatTime(moon.rise, city.timezone, turkishLocale) : '—'}</span>
+              </div>
+              <div>
+                <span class="data-label">Batış</span>
+                <span class="detail-time-value">{moon.set ? formatTime(moon.set, city.timezone, turkishLocale) : '—'}</span>
+              </div>
+            </div>
+            <span class="detail-duration">Sonraki {nextMoonEventLabel} {daysUntilMoonEvent} gün içinde.</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="detail-section seo-content" aria-label="SEO açıklaması">
+        <h2><i data-lucide="info" class="icon-md"></i> Bugün {cityName} için gün doğumu ve gün batımı</h2>
+        <div class="seo-text glass-card">
+          <p>
+            Bugün {cityName} için güneş {formatTime(sun.sunrise, city.timezone, turkishLocale)}'de doğuyor ve {formatTime(sun.sunset, city.timezone, turkishLocale)}'de batıyor. Toplam kullanılabilir gün ışığı {sun.daylightFormatted}. Güneş öğlesi {formatTime(sun.solarNoon, city.timezone, turkishLocale)}'de gerçekleşiyor; sivil tan ile akşam alacakaranlığı arasındaki pencere ise {formatTime(sun.dawn, city.timezone, turkishLocale)} ile {formatTime(sun.dusk, city.timezone, turkishLocale)} arasında uzanıyor.
+          </p>
+
+          <h3>Bu saatler nasıl hesaplanıyor</h3>
+          <p>
+            SunriseTime, {cityName} koordinatlarını (enlem {city.lat.toFixed(4)}, boylam {city.lng.toFixed(4)}) ve yerel saat dilimini {city.timezone} kullanarak NOAA uyumlu güneş modeliyle gün doğumu ve gün batımı saatlerini üretir. Düne kıyasla gün doğumu {formatMinuteShiftSentence(sunriseDelta)}, gün batımı ise {formatMinuteShiftSentence(sunsetDelta)} gerçekleşir.
+          </p>
+
+          <h3>Aynı sayfada altın saat, ay ve namaz</h3>
+          <p>
+            Sabah altın saati {formatTime(golden.morning.start, city.timezone, turkishLocale)} ile {formatTime(golden.morning.end, city.timezone, turkishLocale)} arasında, akşam altın saati ise {formatTime(golden.evening.start, city.timezone, turkishLocale)} ile {formatTime(golden.evening.end, city.timezone, turkishLocale)} arasındadır. Aynı akış içinde ay evresini görebilir ve {cityName} namaz vakitleri sayfasına geçebilirsiniz.
+          </p>
+        </div>
+      </section>
+
+      <section class="detail-section" id="nearby" aria-label="Yakın şehirler">
+        <div class="detail-section-head">
+          <h2><i data-lucide="map-pin" class="icon-md"></i> Yakındaki şehirlerde gün doğumu</h2>
+          <p>{cityName} saatini gördükten sonra en faydalı sonraki adım çoğu zaman yakın bir şehir veya komşu bir destinasyonla kıyaslamaktır.</p>
+        </div>
+
+        <div class="nearby-grid">
+          {nearbyCities.map((entry) => (
+            <a href={`/tr/sunrise/${entry.slug}/`} class="nearby-card glass-card">
+              <span class="nearby-name">{getTurkishCityName(entry)}</span>
+              <span class="nearby-country">{getTurkishCityLocationLabel(entry, { includeAdmin1: Boolean(entry.admin1) })}</span>
+            </a>
+          ))}
+        </div>
+
+        {otherCities.length > 0 && (
+          <>
+            <h3 class="other-cities-title">Diğer popüler şehirler</h3>
+            <div class="nearby-grid">
+              {otherCities.map((entry) => (
+                <a href={`/tr/sunrise/${entry.slug}/`} class="nearby-card glass-card">
+                  <span class="nearby-name">{getTurkishCityName(entry)}</span>
+                  <span class="nearby-country">{getTurkishCityLocationLabel(entry, { includeAdmin1: Boolean(entry.admin1) })}</span>
+                </a>
+              ))}
+            </div>
+          </>
+        )}
+
+        <div class="cities-cta" style="margin-top:2rem;">
+          <a href="/tr/cities/" class="btn-secondary">
+            <i data-lucide="globe" class="icon-xs"></i>
+            Tüm şehirleri gör
+          </a>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <TurkishFooter />
+</Base>

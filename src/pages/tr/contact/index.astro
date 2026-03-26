@@ -1,0 +1,105 @@
+---
+import Base from '@layouts/Base.astro';
+import TurkishHeader from '@components/TurkishHeader.astro';
+import TurkishFooter from '@components/TurkishFooter.astro';
+import { supportEmail, supportEmailHref } from '@data/site';
+import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
+import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
+
+const pagePath = '/contact/';
+const turkishPath = localizePath('tr', pagePath);
+const pageUrl = `https://sunrisetime.co${turkishPath}`;
+const alternates = buildAlternateLinks([
+  { hrefLang: 'en', path: pagePath },
+  { hrefLang: 'tr', path: turkishPath },
+  { hrefLang: 'x-default', path: pagePath },
+]);
+const languageLinks = buildLanguageSwitcherLinks(pagePath);
+
+const jsonLd = [
+  {
+    "@type": "ContactPage",
+    "@id": `${pageUrl}#webpage`,
+    "name": "SunriseTime İletişim",
+    "description": "Şehir düzeltmeleri, gizlilik soruları, ticari talepler veya ürün geri bildirimi için iletişim sayfası.",
+    "url": pageUrl,
+    "inLanguage": "tr",
+    "isPartOf": {
+      "@id": "https://sunrisetime.co/tr/#website"
+    }
+  },
+  buildBreadcrumbJsonLd([
+    { name: 'Ana Sayfa', path: '/tr/' },
+    { name: 'İletişim', path: turkishPath },
+  ]),
+];
+---
+
+<Base
+  title="İletişim - SunriseTime"
+  description="Şehir düzeltmeleri, gizlilik talepleri, reklam soruları veya ürün geri bildirimi için SunriseTime ile iletişime geçin."
+  canonical={pageUrl}
+  keywords="SunriseTime iletişim, şehir düzeltmesi, destek"
+  jsonLd={jsonLd}
+  lang="tr"
+  alternates={alternates}
+>
+  <TurkishHeader languageLinks={languageLinks} currentLanguage="tr" />
+
+  <main class="resource-page">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/tr/">Ana Sayfa</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <span>İletişim</span>
+      </nav>
+
+      <header class="resource-header">
+        <span class="section-badge">
+          <i data-lucide="mail" class="icon-xs"></i>
+          İletişim
+        </span>
+        <h1>Düzeltmeler, gizlilik, iş talepleri ve geri bildirim için tek e-posta kanalı.</h1>
+        <p class="resource-subtitle">Yanlış şehir, hatalı saat dilimi veya Türkçe ve İngilizce sayfalar arasında tutarsızlık görürseniz, lütfen tam URL ve kısa açıklama ile yazın.</p>
+        <div class="resource-meta">
+          <span class="resource-meta-chip">Ana e-posta: {supportEmail}</span>
+        </div>
+      </header>
+
+      <section class="resource-grid">
+        <article class="resource-card glass-card">
+          <h2>Ne zaman yazmalısınız?</h2>
+          <ul class="resource-list">
+            <li>Şehir, koordinat veya saat dilimi düzeltmeleri için.</li>
+            <li>Şehir veya dil önceliklendirme talepleri için.</li>
+            <li>Gizlilik, şartlar veya editoryal politika soruları için.</li>
+            <li>Ticari, reklam veya ortaklık talepleri için.</li>
+          </ul>
+        </article>
+
+        <article class="resource-card glass-card">
+          <h2>Yanıtı ne hızlandırır?</h2>
+          <ul class="resource-list">
+            <li>İlgili sayfanın tam URL'si.</li>
+            <li>Mesajın hangi şehir veya dille ilgili olduğu.</li>
+            <li>Sorun ekrandaki saatle ilgiliyse tarih ve bağlam bilgisi.</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="resource-callout glass-card-lg">
+        <div>
+          <span class="resource-callout-label">Ana kanal</span>
+          <h2>Doğrudan SunriseTime'a yazın.</h2>
+          <p>{supportEmail}</p>
+        </div>
+        <div class="resource-link-row">
+          <a href={supportEmailHref} class="btn-primary-sm">E-posta gönder</a>
+          <a href="/tr/sitemap/" class="btn-secondary-sm">Site haritası</a>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <TurkishFooter />
+</Base>

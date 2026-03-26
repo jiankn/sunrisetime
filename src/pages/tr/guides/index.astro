@@ -1,0 +1,97 @@
+---
+import Base from '@layouts/Base.astro';
+import TurkishHeader from '@components/TurkishHeader.astro';
+import TurkishFooter from '@components/TurkishFooter.astro';
+import { regionHubs, useCaseHubs } from '@data/site';
+import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
+import { getTurkishGuideContent, getTurkishRegionName } from '@i18n/turkish';
+import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
+
+const pagePath = '/guides/';
+const turkishPath = localizePath('tr', pagePath);
+const pageUrl = `https://sunrisetime.co${turkishPath}`;
+const alternates = buildAlternateLinks([
+  { hrefLang: 'en', path: pagePath },
+  { hrefLang: 'tr', path: turkishPath },
+  { hrefLang: 'x-default', path: pagePath },
+]);
+const languageLinks = buildLanguageSwitcherLinks(pagePath);
+
+const jsonLd = [
+  {
+    "@type": "CollectionPage",
+    "@id": `${pageUrl}#webpage`,
+    "name": "SunriseTime rehberleri",
+    "description": "Altın saat, ay evresi, namaz vakitleri ve gündüz süresi için Türkçe rehberler.",
+    "url": pageUrl,
+    "inLanguage": "tr",
+    "isPartOf": {
+      "@id": "https://sunrisetime.co/tr/#website"
+    }
+  },
+  buildBreadcrumbJsonLd([
+    { name: 'Ana Sayfa', path: '/tr/' },
+    { name: 'Rehberler', path: turkishPath },
+  ]),
+];
+---
+
+<Base
+  title="Planlama rehberleri - SunriseTime Türkçe"
+  description="Altın saat, ay evresi, namaz vakitleri ve gündüz süresi için SunriseTime Türkçe rehberlerini inceleyin."
+  canonical={pageUrl}
+  keywords="altın saat rehberi, ay evresi rehberi, namaz vakitleri rehberi"
+  jsonLd={jsonLd}
+  lang="tr"
+  alternates={alternates}
+>
+  <TurkishHeader languageLinks={languageLinks} currentLanguage="tr" />
+
+  <main class="resource-page">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/tr/">Ana Sayfa</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <span>Rehberler</span>
+      </nav>
+
+      <header class="resource-header">
+        <span class="section-badge">
+          <i data-lucide="compass" class="icon-xs"></i>
+          Rehberler
+        </span>
+        <h1>Soru tek bir şehrin ötesine geçiyorsa rehberlerle başlayın.</h1>
+        <p class="resource-subtitle">Rehberler geniş niyeti yerel cevaba bağlar. Önce doğru konuyu bulmak, sonra doğru şehre inmek istiyorsanız başlangıç noktası burasıdır.</p>
+      </header>
+
+      <section class="resource-link-grid">
+        {useCaseHubs.map((hub) => {
+          const content = getTurkishGuideContent(hub);
+          return (
+            <a href={`/tr/guides/${hub.slug}/`} class="resource-link-card resource-link-card-rich glass-card">
+              <strong>{content.name}</strong>
+              <span>{content.description}</span>
+            </a>
+          );
+        })}
+      </section>
+
+      <section class="resource-section">
+        <div class="detail-section-head">
+          <h2>Rehberleri bölge hub'larıyla birleştirin</h2>
+          <p>Tematik arama, kullanıcı aynı anda birkaç yakın şehri karşılaştırabildiğinde çok daha faydalı hale gelir.</p>
+        </div>
+        <div class="resource-link-grid">
+          {regionHubs.map((region) => (
+            <a href={`/tr/cities/${region.slug}/`} class="resource-link-card glass-card">
+              <strong>{getTurkishRegionName(region.slug, region.name)}</strong>
+              <span>{region.cityCount} şehir indekslendi</span>
+            </a>
+          ))}
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <TurkishFooter />
+</Base>

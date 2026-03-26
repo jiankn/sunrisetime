@@ -9,6 +9,7 @@ export const GET: APIRoute = () => {
     '<sitemap><loc>https://sunrisetime.co/ar/sitemap.xml</loc></sitemap>',
     '<sitemap><loc>https://sunrisetime.co/zh-cn/sitemap.xml</loc></sitemap>',
     '<sitemap><loc>https://sunrisetime.co/fr/sitemap.xml</loc></sitemap>',
+    '<sitemap><loc>https://sunrisetime.co/tr/sitemap.xml</loc></sitemap>',
     '</sitemapindex>',
   ].join('');
 
