@@ -1,0 +1,152 @@
+---
+import Base from '@layouts/Base.astro';
+import ArabicHeader from '@components/ArabicHeader.astro';
+import ArabicFooter from '@components/ArabicFooter.astro';
+import { cityIndexLabel, totalCities } from '@data/site';
+import { arabicLegalLastUpdated } from '@i18n/arabic';
+import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
+import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
+
+const pagePath = '/methodology/';
+const arabicPath = localizePath('ar', pagePath);
+const pageUrl = `https://sunrisetime.co${arabicPath}`;
+const alternates = buildAlternateLinks([
+  { hrefLang: 'en', path: pagePath },
+  { hrefLang: 'es', path: localizePath('es', pagePath) },
+  { hrefLang: 'ar', path: arabicPath },
+  { hrefLang: 'x-default', path: pagePath },
+]);
+const languageLinks = buildLanguageSwitcherLinks(pagePath);
+
+const jsonLd = [
+  {
+    "@type": "TechArticle",
+    "@id": `${pageUrl}#article`,
+    "headline": "منهجية SunriseTime",
+    "description": "شرح عام لكيف يحسب SunriseTime الشروق والغروب والقمر ومواقيت الصلاة في النسخة العربية.",
+    "url": pageUrl,
+    "inLanguage": "ar",
+    "isPartOf": {
+      "@id": "https://sunrisetime.co/ar/#website"
+    }
+  },
+  buildBreadcrumbJsonLd([
+    { name: 'الرئيسية', path: '/ar/' },
+    { name: 'المنهجية', path: arabicPath },
+  ]),
+];
+---
+
+<Base
+  title="المنهجية - كيف يحسب SunriseTime الشروق والقمر والصلاة"
+  description="راجع منهجية SunriseTime لحسابات الشمس ومرحلة القمر ومواقيت الصلاة وبنية دليل المدن في النسخة العربية."
+  canonical={pageUrl}
+  keywords="منهجية الشروق, حساب الغروب, منهجية مواقيت الصلاة"
+  jsonLd={jsonLd}
+  lang="ar"
+  dir="rtl"
+  alternates={alternates}
+>
+  <ArabicHeader languageLinks={languageLinks} currentLanguage="ar" />
+
+  <main class="resource-page">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/ar/">الرئيسية</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <span>المنهجية</span>
+      </nav>
+
+      <header class="resource-header">
+        <span class="section-badge">
+          <i data-lucide="flask-conical" class="icon-xs"></i>
+          المنهجية
+        </span>
+        <h1>يفقد SunriseTime قيمته إذا لم يكن واضحًا من أين تأتي الحسابات.</h1>
+        <p class="resource-subtitle">تلخص هذه الصفحة المنهجية العامة الحالية لحساب الشروق والغروب والساعة الذهبية ومرحلة القمر ومواقيت الصلاة وبنية دليل المدن العربي.</p>
+        <div class="resource-meta">
+          <span class="resource-meta-chip">آخر تحديث {arabicLegalLastUpdated}</span>
+          <span class="resource-meta-chip">{cityIndexLabel}</span>
+        </div>
+      </header>
+
+      <section class="resource-grid">
+        <article class="resource-card glass-card">
+          <h2>الحسابات الشمسية</h2>
+          <p class="resource-text">يعتمد SunriseTime على طبقة حسابات شمسية متسقة مع منهج NOAA لاشتقاق الشروق والغروب والظهر الشمسي والشفق والساعة الذهبية من خط العرض وخط الطول والتاريخ.</p>
+          <ul class="resource-list">
+            <li>تُحسب الأوقات لكل زوج إحداثيات خاص بالمدينة.</li>
+            <li>الساعة الذهبية والشفق يخرجان من النموذج اليومي نفسه للشمس.</li>
+            <li>تُعرض النتائج دائمًا في المنطقة الزمنية المحلية للمدينة.</li>
+          </ul>
+        </article>
+
+        <article class="resource-card glass-card">
+          <h2>بيانات القمر</h2>
+          <p class="resource-text">تُولد مرحلة القمر والإضاءة وتقديرات طلوعه وغروبه من الطبقة الفلكية نفسها المستخدمة في صفحات المدن.</p>
+          <ul class="resource-list">
+            <li>تُسند أسماء المراحل وفق جزء الإضاءة الحالي من الدورة القمرية.</li>
+            <li>تُقرب نسبة الإضاءة لتسهيل القراءة.</li>
+            <li>طبقة القمر مصممة للتخطيط العام لا كخدمة رصد احترافية.</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="resource-grid">
+        <article class="resource-card glass-card">
+          <h2>مواقيت الصلاة</h2>
+          <p class="resource-text">التجربة العامة الحالية تستخدم افتراضيًا طريقة Muslim World League لحساب الفجر والعشاء مع معيار Asr القياسي.</p>
+          <ul class="resource-list">
+            <li>يحسب الفجر عند 18 درجة تحت الأفق.</li>
+            <li>يحسب العشاء عند 17 درجة تحت الأفق.</li>
+            <li>يعتمد العصر على معيار الظل القياسي في الواجهة الحالية.</li>
+          </ul>
+        </article>
+
+        <article class="resource-card glass-card">
+          <h2>دليل المدن</h2>
+          <p class="resource-text">يغطي الفهرس العام الآن {totalCities} مدينة مهمة. تنطلق القاعدة من GeoNames ثم تُعدّل لتفضيل المدن الأعلى فائدة في البحث والتصفح والربط الداخلي.</p>
+          <ul class="resource-list">
+            <li>لكل مدينة slug قانوني وبلد ومنطقة زمنية وإحداثيات وaliases للبحث.</li>
+            <li>عند الحاجة إلى إزالة الالتباس تُستخدم أيضًا المنطقة الإدارية.</li>
+            <li>تساعد المراكز الإقليمية على زيادة العمق الداخلي بدون الاعتماد على عمليات بحث جديدة.</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="resource-grid">
+        <article class="resource-card glass-card">
+          <h2>كيف يتحدث الموقع</h2>
+          <ul class="resource-list">
+            <li>تُعاد الحسابات مع كل build باستخدام الطبقة الحالية للأدوات.</li>
+            <li>عند تغير التغطية أو النصوص أو الحسابات يجب إعادة البناء والنشر.</li>
+            <li>يجب تحديث صفحات المنهجية والسياسات عندما يتغير المنتج الحي.</li>
+          </ul>
+        </article>
+
+        <article class="resource-card glass-card">
+          <h2>الحدود المعروفة</h2>
+          <ul class="resource-list">
+            <li>النتائج أداة مساعدة للتخطيط وليست مرجعًا قانونيًا أو دينيًا أو ملاحيًا.</li>
+            <li>الطقس والتضاريس والمباني وظروف الرؤية المحلية لا تغير الناتج المحسوب.</li>
+            <li>تفضيلات الحساب الإقليمية للصلاة ليست قابلة للتخصيص بعد في الواجهة العامة.</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="resource-callout glass-card-lg">
+        <div>
+          <span class="resource-callout-label">الخطوة التالية</span>
+          <h2>تظهر قيمة المنهجية عندما تقود إلى صفحات مفيدة.</h2>
+          <p>بعد قراءة هذه الصفحة، افتح مدينة أو دليلًا أو مركزًا إقليميًا لترى الحسابات في سياقها الفعلي.</p>
+        </div>
+        <div class="resource-link-row">
+          <a href="/ar/cities/" class="btn-primary-sm">المدن</a>
+          <a href="/ar/guides/" class="btn-secondary-sm">الأدلة</a>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <ArabicFooter />
+</Base>

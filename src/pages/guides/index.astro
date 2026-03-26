@@ -3,9 +3,17 @@ import Base from '@layouts/Base.astro';
 import Header from '@components/Header.astro';
 import Footer from '@components/Footer.astro';
 import { regionHubs, useCaseHubs } from '@data/site';
-import { buildBreadcrumbJsonLd } from '@utils/seo';
+import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
+import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
 
 const pageUrl = 'https://sunrisetime.co/guides/';
+const pagePath = '/guides/';
+const alternates = buildAlternateLinks([
+  { hrefLang: 'en', path: pagePath },
+  { hrefLang: 'es', path: localizePath('es', pagePath) },
+  { hrefLang: 'x-default', path: pagePath },
+]);
+const languageLinks = buildLanguageSwitcherLinks(pagePath);
 
 const jsonLd = [
   {
@@ -31,8 +39,10 @@ const jsonLd = [
   canonical={pageUrl}
   keywords="golden hour guide, moon phase guide, prayer times guide, daylight length guide"
   jsonLd={jsonLd}
+  lang="en"
+  alternates={alternates}
 >
-  <Header />
+  <Header languageLinks={languageLinks} currentLanguage="en" />
 
   <main class="resource-page">
     <div class="container">

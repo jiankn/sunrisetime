@@ -1,13 +1,17 @@
 ---
 /**
  * Planner Section — 按使用场景组织内容
+ * 左栏: 3 张场景卡片 (Photography / Travel / Prayer)
+ * 右栏: Example Rhythm + Popular Right Now + Quick Prayer Check
  */
 import cities from '@data/cities.json';
 import { getSunTimes, getGoldenHour, getDaylightSeries, formatTime } from '@utils/sun';
-import { getNextPrayer } from '@utils/prayer-times';
+import { getNextPrayer, getPrayerTimes } from '@utils/prayer-times';
 
-const plannerCity = cities.cities.find(city => city.slug === 'new-york') ?? cities.cities[0];
 const plannerNow = new Date();
+
+// --- Example Rhythm (New York) ---
+const plannerCity = cities.cities.find(city => city.slug === 'new-york') ?? cities.cities[0];
 const plannerSun = getSunTimes(plannerNow, plannerCity.lat, plannerCity.lng);
 const plannerGolden = getGoldenHour(plannerNow, plannerCity.lat, plannerCity.lng);
 const plannerPrayer = getNextPrayer(plannerNow, plannerCity.lat, plannerCity.lng, 'MWL', 'Standard');
@@ -29,6 +33,34 @@ const plannerMoments = [
     value: formatTime(plannerSun.sunset, plannerCity.timezone),
     detail: `Next prayer ${plannerPrayer.name} at ${formatTime(plannerPrayer.time, plannerCity.timezone)}`,
   },
+];
+
+// --- Popular Right Now (4 diverse cities) ---
+const popularSlugs = ['london', 'dubai', 'tokyo', 'sydney'];
+const popularCities = popularSlugs
+  .map(slug => cities.cities.find(c => c.slug === slug))
+  .filter(Boolean)
+  .map(city => {
+    const sun = getSunTimes(plannerNow, city!.lat, city!.lng);
+    return {
+      name: city!.name,
+      slug: city!.slug,
+      country: city!.country,
+      sunrise: formatTime(sun.sunrise, city!.timezone),
+      sunset: formatTime(sun.sunset, city!.timezone),
+    };
+  });
+
+// --- Quick Prayer Check (Dubai) ---
+const prayerCity = cities.cities.find(c => c.slug === 'dubai') ?? cities.cities[0];
+const prayerCityTimes = getPrayerTimes(plannerNow, prayerCity.lat, prayerCity.lng, 'MWL', 'Standard');
+const prayerCityNext = getNextPrayer(plannerNow, prayerCity.lat, prayerCity.lng, 'MWL', 'Standard');
+const prayerSchedule = [
+  { name: 'Fajr',    time: prayerCityTimes.fajr },
+  { name: 'Dhuhr',   time: prayerCityTimes.dhuhr },
+  { name: 'Asr',     time: prayerCityTimes.asr },
+  { name: 'Maghrib', time: prayerCityTimes.maghrib },
+  { name: 'Isha',    time: prayerCityTimes.isha },
 ];
 ---
 
@@ -69,41 +101,88 @@ const plannerMoments = [
           </div>
           <h3>Prayer support</h3>
           <p>Keep prayer times present but secondary, so they are easy to reach when relevant without crowding the main sunrise and sunset answer.</p>
-          <a href="#faq" class="feature-link">See how it works <i data-lucide="arrow-right" class="icon-xs"></i></a>
+          <a href="/guides/prayer-times/" class="feature-link">See how it works <i data-lucide="arrow-right" class="icon-xs"></i></a>
         </article>
       </div>
 
-      <div class="planner-rhythm glass-card-lg">
-        <div class="planner-rhythm-head">
-          <div>
-            <span class="planner-rhythm-kicker">Example rhythm</span>
-            <h3>{plannerCity.name} today</h3>
+      <div class="planner-right-stack">
+        <!-- Panel 1: Example Rhythm -->
+        <div class="planner-rhythm glass-card-lg">
+          <div class="planner-rhythm-head">
+            <div>
+              <span class="planner-rhythm-kicker">Example rhythm</span>
+              <h3>{plannerCity.name} today</h3>
+            </div>
+            <span class="planner-rhythm-trend">
+              {plannerTrendDelta >= 0 ? '+' : ''}{plannerTrendDelta}m daylight this week
+            </span>
           </div>
-          <span class="planner-rhythm-trend">
-            {plannerTrendDelta >= 0 ? '+' : ''}{plannerTrendDelta}m daylight this week
-          </span>
-        </div>
 
-        <div class="planner-rhythm-list">
-          {plannerMoments.map(moment => (
-            <div class="planner-rhythm-row">
-              <div>
-                <span class="planner-rhythm-label">{moment.label}</span>
-                <strong>{moment.value}</strong>
+          <div class="planner-rhythm-list">
+            {plannerMoments.map(moment => (
+              <div class="planner-rhythm-row">
+                <div>
+                  <span class="planner-rhythm-label">{moment.label}</span>
+                  <strong>{moment.value}</strong>
+                </div>
+                <span class="planner-rhythm-detail">{moment.detail}</span>
               </div>
-              <span class="planner-rhythm-detail">{moment.detail}</span>
-            </div>
-          ))}
+            ))}
+          </div>
+
+          <div class="planner-bar-group">
+            {plannerTrend.map(point => (
+              <div class="planner-bar-col">
+                <span>{point.hours.toFixed(1)}h</span>
+                <div class="planner-bar" style={`height:${Math.round((point.hours / 16) * 100)}%`}></div>
+                <small>{point.date.toLocaleDateString('en-US', { weekday: 'short', timeZone: plannerCity.timezone })}</small>
+              </div>
+            ))}
+          </div>
         </div>
 
-        <div class="planner-bar-group">
-          {plannerTrend.map(point => (
-            <div class="planner-bar-col">
-              <span>{point.hours.toFixed(1)}h</span>
-              <div class="planner-bar" style={`height:${Math.round((point.hours / 16) * 100)}%`}></div>
-              <small>{point.date.toLocaleDateString('en-US', { weekday: 'short', timeZone: plannerCity.timezone })}</small>
+        <!-- Panel 2: Popular Right Now -->
+        <div class="planner-popular glass-card-lg">
+          <div class="planner-popular-head">
+            <i data-lucide="trending-up" class="icon-sm"></i>
+            <span>Popular right now</span>
+          </div>
+          <div class="planner-popular-list">
+            {popularCities.map(city => (
+              <a href={`/sunrise/${city.slug}/`} class="planner-popular-row">
+                <span class="planner-popular-name">{city.name}</span>
+                <span class="planner-popular-times">
+                  <span class="planner-pop-rise">↑ {city.sunrise}</span>
+                  <span class="planner-pop-set">↓ {city.sunset}</span>
+                </span>
+              </a>
+            ))}
+          </div>
+        </div>
+
+        <!-- Panel 3: Quick Prayer Check -->
+        <div class="planner-prayer-check glass-card-lg">
+          <div class="planner-prayer-head">
+            <div>
+              <span class="planner-rhythm-kicker">Quick prayer check</span>
+              <h3>{prayerCity.name}</h3>
             </div>
-          ))}
+            <span class="planner-prayer-next-badge">
+              {prayerCityNext.name} · {formatTime(prayerCityNext.time, prayerCity.timezone)}
+            </span>
+          </div>
+          <div class="planner-prayer-row-grid">
+            {prayerSchedule.map(p => (
+              <div class={`planner-prayer-pill ${prayerCityNext.name === p.name ? 'active' : ''}`}>
+                <span class="planner-prayer-pill-name">{p.name}</span>
+                <span class="planner-prayer-pill-time">{formatTime(p.time, prayerCity.timezone)}</span>
+              </div>
+            ))}
+          </div>
+          <a href={`/prayer-times/${prayerCity.slug}/`} class="feature-link">
+            Full schedule for {prayerCity.name}
+            <i data-lucide="arrow-right" class="icon-xs"></i>
+          </a>
         </div>
       </div>
     </div>

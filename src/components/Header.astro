@@ -2,6 +2,14 @@
 /**
  * Header — 浮动导航栏 + 移动端汉堡菜单
  */
+import LanguageSwitcher from '@components/LanguageSwitcher.astro';
+
+interface Props {
+  languageLinks?: { code: string; label: string; href: string }[];
+  currentLanguage?: string;
+}
+
+const { languageLinks = [], currentLanguage = 'en' } = Astro.props;
 ---
 
 <!-- ===== FLOATING NAVBAR ===== -->
@@ -20,6 +28,7 @@
       <li><a href="/#faq">FAQ</a></li>
     </ul>
     <div class="nav-actions">
+      <LanguageSwitcher links={languageLinks} currentLanguage={currentLanguage} />
       <a href="/#search" class="btn-secondary-sm">Search City</a>
       <a href="/cities/" class="btn-primary-sm">Browse Cities</a>
     </div>
@@ -36,6 +45,11 @@
     <li><a href="/#planner">Plan Your Day</a></li>
     <li><a href="/#cities">Popular Cities</a></li>
     <li><a href="/#faq">FAQ</a></li>
+    {languageLinks.length > 1 && (
+      <li>
+        <LanguageSwitcher links={languageLinks} currentLanguage={currentLanguage} />
+      </li>
+    )}
     <li><a href="/#search" class="btn-primary-sm" style="display:inline-block;margin-top:1rem;">Search Your City</a></li>
   </ul>
 </div>

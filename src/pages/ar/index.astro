@@ -1,0 +1,288 @@
+---
+import Base from '@layouts/Base.astro';
+import ArabicHeader from '@components/ArabicHeader.astro';
+import ArabicFooter from '@components/ArabicFooter.astro';
+import { allCities, regionHubs, totalCities } from '@data/site';
+import {
+  arabicHomeFaqs,
+  arabicLocale,
+  getArabicCityAliases,
+  getArabicCityDisplayName,
+  getArabicCityLocationLabel,
+  getArabicCityName,
+  getArabicMoonPhase,
+  getArabicPrayerName,
+  getArabicRegionName,
+} from '@i18n/arabic';
+import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
+import { getGoldenHour, getSunTimes, formatTime } from '@utils/sun';
+import { getMoonData } from '@utils/moon';
+import { getNextPrayer } from '@utils/prayer-times';
+import { buildAlternateLinks } from '@utils/seo';
+
+const pagePath = '/';
+const arabicPath = localizePath('ar', pagePath);
+const pageUrl = `https://sunrisetime.co${arabicPath}`;
+const alternates = buildAlternateLinks([
+  { hrefLang: 'en', path: pagePath },
+  { hrefLang: 'es', path: localizePath('es', pagePath) },
+  { hrefLang: 'ar', path: arabicPath },
+  { hrefLang: 'x-default', path: pagePath },
+]);
+const languageLinks = buildLanguageSwitcherLinks(pagePath);
+
+const previewSlugs = ['dubai', 'cairo', 'london', 'new-york', 'istanbul', 'tokyo'];
+const now = new Date();
+
+function buildPreviewEntry(slug: string) {
+  const city = allCities.find((entry) => entry.slug === slug);
+  if (!city) return null;
+
+  const sun = getSunTimes(now, city.lat, city.lng);
+  const golden = getGoldenHour(now, city.lat, city.lng);
+  const moon = getMoonData(now, city.lat, city.lng);
+  const nextPrayer = getNextPrayer(now, city.lat, city.lng, 'MWL', 'Standard');
+
+  return {
+    slug: city.slug,
+    displayName: getArabicCityDisplayName(city, { includeAdmin1: Boolean(city.admin1) }),
+    country: getArabicCityLocationLabel(city, { includeAdmin1: Boolean(city.admin1) }),
+    countryLabel: getArabicCityLocationLabel(city, { includeAdmin1: Boolean(city.admin1) }),
+    caption: `${getArabicCityLocationLabel(city, { includeAdmin1: Boolean(city.admin1) })} · ${now.toLocaleDateString(arabicLocale, {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      timeZone: city.timezone,
+    })}`,
+    sunrise: formatTime(sun.sunrise, city.timezone, arabicLocale),
+    sunset: formatTime(sun.sunset, city.timezone, arabicLocale),
+    golden: `${formatTime(golden.evening.start, city.timezone, arabicLocale)} - ${formatTime(golden.evening.end, city.timezone, arabicLocale)}`,
+    moon: `${getArabicMoonPhase(moon.phaseName)} · ${moon.illumination}%`,
+    prayer: `${getArabicPrayerName(nextPrayer.name)} ${formatTime(nextPrayer.time, city.timezone, arabicLocale)}`,
+  };
+}
+
+const previewCities = previewSlugs
+  .map((slug) => buildPreviewEntry(slug))
+  .filter((entry): entry is NonNullable<ReturnType<typeof buildPreviewEntry>> => Boolean(entry));
+
+const heroCity = previewCities[0];
+const searchCities = allCities.map((city) => ({
+  name: city.name,
+  displayName: getArabicCityDisplayName(city, { includeAdmin1: Boolean(city.admin1) }),
+  slug: city.slug,
+  country: city.country,
+  countryLabel: getArabicCityLocationLabel(city, { includeAdmin1: Boolean(city.admin1) }),
+  admin1: city.admin1 ?? '',
+  aliases: getArabicCityAliases(city),
+  lat: city.lat,
+  lng: city.lng,
+  population: city.population,
+}));
+
+const regionGroups = regionHubs.map((region) => ({
+  id: region.slug,
+  name: getArabicRegionName(region.slug, region.name),
+  cities: region.cities.slice(0, 6).map((city) => ({
+    slug: city.slug,
+    name: getArabicCityName(city),
+    country: getArabicCityLocationLabel(city, { includeAdmin1: Boolean(city.admin1) }),
+  })),
+}));
+---
+
+<Base
+  title={`الشروق والغروب اليوم في ${totalCities} مدينة - SunriseTime العربية`}
+  description={`واجهة عربية كاملة لمعرفة الشروق والغروب والساعة الذهبية ومرحلة القمر ومواقيت الصلاة في ${totalCities} مدينة.`}
+  canonical={pageUrl}
+  keywords="الشروق اليوم, الغروب اليوم, الساعة الذهبية, مواقيت الصلاة"
+  lang="ar"
+  dir="rtl"
+  alternates={alternates}
+>
+  <ArabicHeader languageLinks={languageLinks} currentLanguage="ar" />
+
+  <main class="resource-page">
+    <section class="snapshot-hero" id="search">
+      <div class="container snapshot-hero-shell">
+        <div class="snapshot-hero-copy">
+          <div class="hero-badge">
+            <i data-lucide="languages" class="icon-xs"></i>
+            <span>العربية</span>
+          </div>
+
+          <div class="hero-search-panel glass-card-lg" data-hero-search>
+            <div class="hero-search-head">
+              <div>
+                <span class="hero-search-label">ابحث عن إجابة اليوم</span>
+                <strong class="hero-search-title">اكتب مدينة وافتح صفحة الشروق أو الصلاة مباشرة</strong>
+              </div>
+            </div>
+            <div class="hero-search-shell hero-search-shell-lg">
+              <i data-lucide="search" class="icon-sm"></i>
+              <input
+                id="heroCitySearch"
+                type="text"
+                data-city-search-input
+                placeholder="مثال: دبي، القاهرة، London"
+                autocomplete="off"
+                aria-autocomplete="list"
+                aria-controls="heroSearchResults"
+                aria-expanded="false"
+                aria-label="ابحث عن مدينة"
+                role="combobox"
+              >
+              <button type="button" class="hero-location-btn hero-location-btn-inline" data-use-location>
+                <i data-lucide="locate-fixed" class="icon-sm"></i>
+                <span class="hero-location-text" data-location-label aria-live="polite" aria-atomic="true">استخدم موقعي</span>
+              </button>
+            </div>
+            <div class="hero-search-results" id="heroSearchResults" data-search-results role="listbox"></div>
+
+            <div class="hero-quick-row">
+              <span class="hero-quick-label">مدن سريعة</span>
+              <div class="hero-preview-switches">
+                {previewCities.map((city, index) => (
+                  <button type="button" class={`hero-city-pill ${index === 0 ? 'active' : ''}`} data-hero-city={city.slug}>
+                    {city.displayName}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <header class="resource-header" style="padding-top:0;margin-top:2rem;">
+            <span class="section-badge">
+              <i data-lucide="sun-medium" class="icon-xs"></i>
+              الشروق والغروب والصلاة
+            </span>
+            <h1>اعرف وقت الشروق والغروب اليوم حسب المدينة.</h1>
+            <p class="resource-subtitle">النسخة العربية الآن تشمل RTL، بحثًا مباشرًا، صفحات مدينة، مراكز إقليمية، وأدلة قابلة للفهرسة.</p>
+            <div class="resource-meta">
+              <span class="resource-meta-chip">{totalCities} مدينة</span>
+              <span class="resource-meta-chip">واجهة RTL</span>
+              <span class="resource-meta-chip">حزمة SEO كاملة</span>
+            </div>
+          </header>
+        </div>
+
+        <div class="hero-snapshot-panel glass-card-lg">
+          <div class="hero-panel-top">
+            <div class="hero-panel-copy">
+              <span class="hero-panel-label">معاينة فورية</span>
+              <h2>
+                <span data-hero-city-name>{heroCity.displayName}</span>
+                <span class="hero-panel-country" data-hero-country>{heroCity.countryLabel}</span>
+              </h2>
+              <p data-hero-caption>{heroCity.caption}</p>
+            </div>
+            <a class="btn-secondary-sm hero-open-link" data-hero-open href={`/ar/sunrise/${heroCity.slug}/`}>
+              <span>افتح الصفحة</span>
+              <i data-lucide="arrow-up-right" class="icon-sm"></i>
+            </a>
+          </div>
+
+          <div class="hero-mini-grid">
+            <div class="hero-mini-card glass-card">
+              <span class="hero-mini-label">الشروق</span>
+              <strong data-hero-sunrise>{heroCity.sunrise}</strong>
+            </div>
+            <div class="hero-mini-card glass-card">
+              <span class="hero-mini-label">الغروب</span>
+              <strong data-hero-sunset>{heroCity.sunset}</strong>
+            </div>
+            <div class="hero-mini-card glass-card">
+              <span class="hero-mini-label">الساعة الذهبية</span>
+              <strong data-hero-golden>{heroCity.golden}</strong>
+            </div>
+            <div class="hero-mini-card glass-card">
+              <span class="hero-mini-label">القمر</span>
+              <strong data-hero-moon>{heroCity.moon}</strong>
+            </div>
+            <div class="hero-mini-card glass-card">
+              <span class="hero-mini-label">الصلاة القادمة</span>
+              <strong data-hero-prayer>{heroCity.prayer}</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <section class="resource-section" id="top-cities">
+        <div class="detail-section-head">
+          <h2>مدن بارزة</h2>
+          <p>ابدأ بمدينة معروفة للوصول بسرعة إلى الشروق والغروب أو مواقيت الصلاة.</p>
+        </div>
+        <div class="cities-grid">
+          {regionGroups.map((group) => (
+            <div class="city-group glass-card" id={`ar-${group.id}`}>
+              <h3>
+                <i data-lucide="globe" class="icon-sm"></i>
+                {group.name}
+              </h3>
+              <ul class="city-list">
+                {group.cities.map((city) => (
+                  <li>
+                    <a href={`/ar/sunrise/${city.slug}/`} class="city-link">
+                      <span class="city-name">{city.name}</span>
+                      <span class="city-country">{city.country}</span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+        <div class="cities-cta">
+          <a href="/ar/cities/" class="btn-secondary">
+            <i data-lucide="globe" class="icon-xs"></i>
+            افتح فهرس المدن
+          </a>
+        </div>
+      </section>
+
+      <section class="faq" id="faq">
+        <div class="section-header">
+          <span class="section-badge">
+            <i data-lucide="help-circle" class="icon-xs"></i>
+            الأسئلة الشائعة
+          </span>
+          <h2>أسئلة شائعة عن النسخة العربية</h2>
+        </div>
+        <div class="faq-list">
+          {arabicHomeFaqs.map((item, index) => (
+            <details class="faq-item glass-card" id={`ar-faq-${index + 1}`}>
+              <summary>
+                <span>{item.question}</span>
+                <i data-lucide="chevron-down" class="icon-sm faq-icon"></i>
+              </summary>
+              <div class="faq-answer">
+                <p>{item.answer}</p>
+              </div>
+            </details>
+          ))}
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <ArabicFooter />
+
+  <script type="application/json" id="heroPreviewData" set:html={JSON.stringify(previewCities)} />
+  <script type="application/json" id="heroSearchData" set:html={JSON.stringify(searchCities)} />
+  <script
+    type="application/json"
+    id="heroSearchConfig"
+    set:html={JSON.stringify({
+      noMatchTitle: 'لا توجد مدينة مطابقة',
+      noMatchSubtitle: 'جرّب تهجئة أخرى',
+      openCityPage: 'افتح الصفحة',
+      useMyLocation: 'استخدم موقعي',
+      locationUnavailable: 'الموقع غير متاح',
+      locating: 'جاري التحديد...',
+      nearestUnavailable: 'تعذر العثور على مدينة قريبة',
+      locationBlocked: 'تم رفض الإذن',
+    })}
+  />
+</Base>

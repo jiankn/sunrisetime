@@ -111,20 +111,25 @@ export function getDaylightSeries(
 /**
  * Format a Date to local time string like "6:42 AM"
  */
-export function formatTime(date: Date, timezone: string): string {
+export function formatTime(
+  date: Date,
+  timezone: string,
+  locale = 'en-US',
+  hour12?: boolean,
+): string {
   try {
-    return date.toLocaleTimeString('en-US', {
+    return date.toLocaleTimeString(locale, {
       hour: 'numeric',
       minute: '2-digit',
-      hour12: true,
       timeZone: timezone,
+      ...(hour12 === undefined ? {} : { hour12 }),
     });
   } catch {
     // Fallback if timezone is invalid
-    return date.toLocaleTimeString('en-US', {
+    return date.toLocaleTimeString(locale, {
       hour: 'numeric',
       minute: '2-digit',
-      hour12: true,
+      ...(hour12 === undefined ? {} : { hour12 }),
     });
   }
 }

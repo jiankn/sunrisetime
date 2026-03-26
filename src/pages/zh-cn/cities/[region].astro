@@ -1,0 +1,187 @@
+---
+import Base from '@layouts/Base.astro';
+import ChineseHeader from '@components/ChineseHeader.astro';
+import ChineseFooter from '@components/ChineseFooter.astro';
+import AdUnit from '@components/AdUnit.astro';
+import { getRegionHub, regionHubs, useCaseHubs } from '@data/site';
+import {
+  getChineseCityLocationLabel,
+  getChineseCityName,
+  getChineseGuideContent,
+  getChineseRegionContent,
+  getChineseRegionName,
+} from '@i18n/chinese';
+import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
+import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
+
+export function getStaticPaths() {
+  return regionHubs.map((region) => ({
+    params: { region: region.slug },
+  }));
+}
+
+const region = getRegionHub(Astro.params.region ?? '');
+
+if (!region) {
+  throw new Error(`Unknown region hub: ${Astro.params.region}`);
+}
+
+const localizedRegion = getChineseRegionContent(region);
+const relatedGuides = useCaseHubs.filter((hub) => hub.relatedRegionSlugs.includes(region.slug));
+const otherRegions = regionHubs.filter((entry) => entry.slug !== region.slug);
+const leadCity = region.featuredCities[0] ?? region.cities[0];
+const pagePath = region.path;
+const chinesePath = localizePath('zh-cn', pagePath);
+const pageUrl = `https://sunrisetime.co${chinesePath}`;
+const alternates = buildAlternateLinks([
+  { hrefLang: 'en', path: pagePath },
+  { hrefLang: 'es', path: localizePath('es', pagePath) },
+  { hrefLang: 'zh-cn', path: chinesePath },
+  { hrefLang: 'x-default', path: pagePath },
+]);
+const languageLinks = buildLanguageSwitcherLinks(pagePath);
+const regionName = getChineseRegionName(region.slug, region.name);
+
+const jsonLd = [
+  {
+    "@type": "CollectionPage",
+    "@id": `${pageUrl}#webpage`,
+    "name": `${regionName}日出日落时间`,
+    "description": localizedRegion.description,
+    "url": pageUrl,
+    "inLanguage": "zh-CN",
+  },
+  buildBreadcrumbJsonLd([
+    { name: '首页', path: '/zh-cn/' },
+    { name: '城市索引', path: '/zh-cn/cities/' },
+    { name: regionName, path: chinesePath },
+  ]),
+];
+---
+
+<Base
+  title={`${regionName}日出日落时间 - SunriseTime 简体中文`}
+  description={localizedRegion.description}
+  canonical={pageUrl}
+  keywords={`${regionName} 日出时间, ${regionName} 日落时间, ${regionName} 礼拜时间`}
+  jsonLd={jsonLd}
+  lang="zh-CN"
+  langPrefix="/zh-cn"
+  alternates={alternates}
+>
+  <ChineseHeader languageLinks={languageLinks} currentLanguage="zh-cn" />
+
+  <main class="resource-page">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="面包屑导航">
+        <a href="/zh-cn/">首页</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <a href="/zh-cn/cities/">城市索引</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <span>{regionName}</span>
+      </nav>
+
+      <header class="resource-header">
+        <span class="section-badge">
+          <i data-lucide="globe-2" class="icon-xs"></i>
+          {regionName}
+        </span>
+        <h1>{localizedRegion.description}</h1>
+        <p class="resource-subtitle">{localizedRegion.intro}</p>
+        <div class="resource-meta">
+          <span class="resource-meta-chip">{region.cityCount} 座城市已索引</span>
+          {leadCity && <span class="resource-meta-chip">可先看 {getChineseCityName(leadCity)}</span>}
+          <span class="resource-meta-chip">区域比较入口</span>
+        </div>
+      </header>
+
+      <section class="resource-grid">
+        <article class="resource-card glass-card">
+          <h2>为什么先看这个区域页</h2>
+          <ul class="resource-list">
+            {localizedRegion.reasons.map((item) => (
+              <li>{item}</li>
+            ))}
+          </ul>
+        </article>
+
+        <article class="resource-card glass-card">
+          <h2>最适合哪些人使用</h2>
+          <ul class="resource-list">
+            {localizedRegion.audiences.map((item) => (
+              <li>{item}</li>
+            ))}
+          </ul>
+        </article>
+      </section>
+
+      <section class="resource-section">
+        <div class="detail-section-head">
+          <h2>推荐先看的城市</h2>
+          <p>如果你想最快拿到结果，先从这些代表性城市进入会更直接。</p>
+        </div>
+        <div class="hub-city-grid">
+          {region.featuredCities.map((city) => (
+            <a href={`/zh-cn/sunrise/${city.slug}/`} class="hub-city-card glass-card">
+              <span class="hub-city-name">{getChineseCityName(city)}</span>
+              <span class="hub-city-country">{getChineseCityLocationLabel(city)}</span>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <AdUnit id={`ad-zh-region-${region.slug}`} />
+
+      <section class="resource-section">
+        <div class="detail-section-head">
+          <h2>这个区域下的全部城市</h2>
+          <p>当你要做更细的比较时，直接从这里进入完整城市页。</p>
+        </div>
+        <div class="hub-city-grid">
+          {region.cities.map((city) => (
+            <a href={`/zh-cn/sunrise/${city.slug}/`} class="hub-city-card glass-card">
+              <span class="hub-city-name">{getChineseCityName(city)}</span>
+              <span class="hub-city-country">{getChineseCityLocationLabel(city)}</span>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <section class="resource-section">
+        <div class="detail-section-head">
+          <h2>相关主题指南</h2>
+          <p>如果你还想换个角度比较，比如礼拜时间、月相或黄金时刻，可以继续看这些主题页。</p>
+        </div>
+        <div class="resource-link-grid">
+          {relatedGuides.map((hub) => {
+            const guideContent = getChineseGuideContent(hub);
+            return (
+              <a href={`/zh-cn/guides/${hub.slug}/`} class="resource-link-card glass-card">
+                <strong>{guideContent.name}</strong>
+                <span>{guideContent.description}</span>
+              </a>
+            );
+          })}
+        </div>
+      </section>
+
+      <section class="resource-section">
+        <div class="detail-section-head">
+          <h2>其他区域</h2>
+          <p>比较完一个区域后，可以直接跳去其他区域，不需要回首页重新开始。</p>
+        </div>
+        <div class="resource-link-grid">
+          {otherRegions.map((entry) => (
+            <a href={`/zh-cn/cities/${entry.slug}/`} class="resource-link-card glass-card">
+              <strong>{getChineseRegionName(entry.slug, entry.name)}</strong>
+              <span>{entry.cityCount} 座城市已索引</span>
+            </a>
+          ))}
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <ChineseFooter />
+</Base>
+

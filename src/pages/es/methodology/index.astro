@@ -1,0 +1,149 @@
+---
+import Base from '@layouts/Base.astro';
+import LocalizedHeader from '@components/LocalizedHeader.astro';
+import LocalizedFooter from '@components/LocalizedFooter.astro';
+import { cityIndexLabel, legalLastUpdated, totalCities } from '@data/site';
+import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
+import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
+
+const pagePath = '/methodology/';
+const spanishPath = localizePath('es', pagePath);
+const pageUrl = `https://sunrisetime.co${spanishPath}`;
+const alternates = buildAlternateLinks([
+  { hrefLang: 'en', path: pagePath },
+  { hrefLang: 'es', path: spanishPath },
+  { hrefLang: 'x-default', path: pagePath },
+]);
+const languageLinks = buildLanguageSwitcherLinks(pagePath);
+
+const jsonLd = [
+  {
+    "@type": "TechArticle",
+    "@id": `${pageUrl}#article`,
+    "headline": "Metodología de SunriseTime",
+    "description": "Explicación pública de cómo SunriseTime calcula amanecer, atardecer, luna y horarios de oración en la versión en español.",
+    "url": pageUrl,
+    "inLanguage": "es",
+    "isPartOf": {
+      "@id": "https://sunrisetime.co/es/#website"
+    }
+  },
+  buildBreadcrumbJsonLd([
+    { name: 'Inicio', path: '/es/' },
+    { name: 'Metodología', path: spanishPath },
+  ]),
+];
+---
+
+<Base
+  title="Metodología - Cómo calcula SunriseTime el amanecer, la luna y la oración"
+  description="Consulta la metodología de SunriseTime para cálculos solares, fase lunar, horarios de oración y estructura del directorio de ciudades."
+  canonical={pageUrl}
+  keywords="metodología amanecer, cálculo atardecer, metodología horarios de oración"
+  jsonLd={jsonLd}
+  lang="es"
+  alternates={alternates}
+>
+  <LocalizedHeader languageLinks={languageLinks} currentLanguage="es" />
+
+  <main class="resource-page">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/es/">Inicio</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <span>Metodología</span>
+      </nav>
+
+      <header class="resource-header">
+        <span class="section-badge">
+          <i data-lucide="flask-conical" class="icon-xs"></i>
+          Metodología
+        </span>
+        <h1>SunriseTime solo sirve si queda claro de dónde salen los datos.</h1>
+        <p class="resource-subtitle">Esta página resume la metodología pública actual para amanecer, atardecer, hora dorada, fase lunar, horarios de oración y estructura del índice de ciudades en español.</p>
+        <div class="resource-meta">
+          <span class="resource-meta-chip">Actualizado el {legalLastUpdated}</span>
+          <span class="resource-meta-chip">{cityIndexLabel}</span>
+        </div>
+      </header>
+
+      <section class="resource-grid">
+        <article class="resource-card glass-card">
+          <h2>Cálculo solar</h2>
+          <p class="resource-text">SunriseTime usa cálculos solares alineados con NOAA para derivar amanecer, atardecer, mediodía solar, crepúsculos y hora dorada a partir de latitud, longitud y fecha.</p>
+          <ul class="resource-list">
+            <li>Las horas se calculan para el par de coordenadas de cada ciudad.</li>
+            <li>La hora dorada y los crepúsculos salen del mismo modelo diario del sol.</li>
+            <li>La salida se muestra siempre en la zona horaria local de la ciudad.</li>
+          </ul>
+        </article>
+
+        <article class="resource-card glass-card">
+          <h2>Datos lunares</h2>
+          <p class="resource-text">La fase lunar, la iluminación y las estimaciones de salida o puesta de la luna se generan con la misma capa astronómica usada en las páginas de ciudad.</p>
+          <ul class="resource-list">
+            <li>Los nombres de fase se asignan según la fracción lunar actual.</li>
+            <li>La iluminación se redondea para mejorar la lectura.</li>
+            <li>La capa lunar sirve para planificación, no como pronóstico observacional profesional.</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="resource-grid">
+        <article class="resource-card glass-card">
+          <h2>Horarios de oración</h2>
+          <p class="resource-text">La experiencia pública actual usa por defecto el método Muslim World League (MWL) para Fajr e Isha, junto con el cálculo estándar de Asr.</p>
+          <ul class="resource-list">
+            <li>Fajr se calcula a 18 grados bajo el horizonte.</li>
+            <li>Isha se calcula a 17 grados bajo el horizonte.</li>
+            <li>Asr usa la convención estándar de sombra en la interfaz pública actual.</li>
+          </ul>
+        </article>
+
+        <article class="resource-card glass-card">
+          <h2>Directorio de ciudades</h2>
+          <p class="resource-text">El índice público cubre ahora {totalCities} ciudades importantes. La base parte de GeoNames y se ajusta para favorecer ciudades con alta utilidad de búsqueda, navegación y enlazado interno.</p>
+          <ul class="resource-list">
+            <li>Cada ciudad guarda slug canónico, metadatos de país, zona horaria, coordenadas y aliases de búsqueda.</li>
+            <li>Cuando hace falta desambiguar, también se usa la región administrativa.</li>
+            <li>Los hubs regionales mejoran comparación y profundidad interna sin depender de búsquedas nuevas.</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="resource-grid">
+        <article class="resource-card glass-card">
+          <h2>Cómo se actualiza el sitio</h2>
+          <ul class="resource-list">
+            <li>Las páginas se recalculan en cada build con la capa utilitaria actual.</li>
+            <li>Cuando cambian cobertura, copy o cálculo, el sitio debe volver a construirse y desplegarse.</li>
+            <li>Las páginas de metodología y políticas deben actualizarse cuando cambia el producto en vivo.</li>
+          </ul>
+        </article>
+
+        <article class="resource-card glass-card">
+          <h2>Límites conocidos</h2>
+          <ul class="resource-list">
+            <li>Los resultados son una ayuda de planificación, no una autoridad legal, religiosa o de navegación.</li>
+            <li>Clima, relieve, edificios y condiciones locales de observación no alteran la salida calculada.</li>
+            <li>Las preferencias regionales de cálculo de oración todavía no son configurables en la interfaz pública.</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="resource-callout glass-card-lg">
+        <div>
+          <span class="resource-callout-label">Siguiente paso</span>
+          <h2>La metodología importa más cuando conecta con páginas útiles.</h2>
+          <p>Después de leer esta página, lo normal es abrir una ciudad, una guía o un hub regional para ver los cálculos en contexto.</p>
+        </div>
+        <div class="resource-link-row">
+          <a href="/es/cities/" class="btn-primary-sm">Ciudades</a>
+          <a href="/es/guides/" class="btn-secondary-sm">Guías</a>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <LocalizedFooter />
+</Base>

@@ -1,0 +1,108 @@
+---
+import Base from '@layouts/Base.astro';
+import ArabicHeader from '@components/ArabicHeader.astro';
+import ArabicFooter from '@components/ArabicFooter.astro';
+import { supportEmail, supportEmailHref } from '@data/site';
+import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
+import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
+
+const pagePath = '/contact/';
+const arabicPath = localizePath('ar', pagePath);
+const pageUrl = `https://sunrisetime.co${arabicPath}`;
+const alternates = buildAlternateLinks([
+  { hrefLang: 'en', path: pagePath },
+  { hrefLang: 'es', path: localizePath('es', pagePath) },
+  { hrefLang: 'ar', path: arabicPath },
+  { hrefLang: 'x-default', path: pagePath },
+]);
+const languageLinks = buildLanguageSwitcherLinks(pagePath);
+
+const jsonLd = [
+  {
+    "@type": "ContactPage",
+    "@id": `${pageUrl}#webpage`,
+    "name": "اتصل بـ SunriseTime",
+    "description": "تواصل مع SunriseTime بشأن تصحيحات المدن أو أسئلة الخصوصية أو الاستفسارات التجارية أو الملاحظات العامة.",
+    "url": pageUrl,
+    "inLanguage": "ar",
+    "isPartOf": {
+      "@id": "https://sunrisetime.co/ar/#website"
+    }
+  },
+  buildBreadcrumbJsonLd([
+    { name: 'الرئيسية', path: '/ar/' },
+    { name: 'اتصل بنا', path: arabicPath },
+  ]),
+];
+---
+
+<Base
+  title="اتصل بـ SunriseTime"
+  description="تواصل مع SunriseTime بخصوص تصحيحات البيانات، وملاحظات المنتج، وأسئلة الإعلانات، وطلبات الخصوصية."
+  canonical={pageUrl}
+  keywords="اتصل بـ SunriseTime, تصحيح مدينة, دعم"
+  jsonLd={jsonLd}
+  lang="ar"
+  dir="rtl"
+  alternates={alternates}
+>
+  <ArabicHeader languageLinks={languageLinks} currentLanguage="ar" />
+
+  <main class="resource-page">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/ar/">الرئيسية</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <span>اتصل بنا</span>
+      </nav>
+
+      <header class="resource-header">
+        <span class="section-badge">
+          <i data-lucide="mail" class="icon-xs"></i>
+          اتصل بنا
+        </span>
+        <h1>صندوق بريد واحد للتصحيحات والخصوصية والأسئلة التجارية والملاحظات العامة.</h1>
+        <p class="resource-subtitle">أسرع طريقة للوصول إلى SunriseTime هي البريد الإلكتروني. إذا كان الطلب متعلقًا بمدينة غير صحيحة أو منطقة زمنية أو تفصيلة منهجية، فأرسل رابط الصفحة ووصفًا قصيرًا للمشكلة.</p>
+        <div class="resource-meta">
+          <span class="resource-meta-chip">البريد الرئيسي: {supportEmail}</span>
+        </div>
+      </header>
+
+      <section class="resource-grid">
+        <article class="resource-card glass-card">
+          <h2>متى يفضل أن تراسلنا</h2>
+          <ul class="resource-list">
+            <li>تصحيحات المدينة أو الإحداثيات أو المنطقة الزمنية.</li>
+            <li>طلبات إضافة مدينة أو رفع أولويتها.</li>
+            <li>أسئلة الخصوصية أو الشروط أو السياسة التحريرية أو المنهجية.</li>
+            <li>الاستفسارات التجارية أو الإعلانية أو الإعلامية.</li>
+          </ul>
+        </article>
+
+        <article class="resource-card glass-card">
+          <h2>ما الذي يسرع الرد</h2>
+          <ul class="resource-list">
+            <li>رابط الصفحة الدقيق أو اسم المدينة المقصودة.</li>
+            <li>وصف قصير وواضح للمشكلة أو الطلب.</li>
+            <li>التاريخ والوقت المحلي والسياق إذا كان السؤال عن ناتج التوقيت.</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="resource-callout glass-card-lg">
+        <div>
+          <span class="resource-callout-label">وسيلة التواصل الأساسية</span>
+          <h2>راسل SunriseTime مباشرة عبر البريد.</h2>
+          <p>{supportEmail}</p>
+        </div>
+        <div class="resource-link-row">
+          <a href={supportEmailHref} class="btn-primary-sm">إرسال بريد</a>
+          <a href="/ar/methodology/" class="btn-secondary-sm">المنهجية</a>
+          <a href="/ar/sitemap/" class="btn-secondary-sm">خريطة الموقع</a>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <ArabicFooter />
+</Base>

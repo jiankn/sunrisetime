@@ -1,0 +1,155 @@
+---
+import Base from '@layouts/Base.astro';
+import ArabicHeader from '@components/ArabicHeader.astro';
+import ArabicFooter from '@components/ArabicFooter.astro';
+import { allCities, regionHubs, useCaseHubs } from '@data/site';
+import {
+  getArabicCityLocationLabel,
+  getArabicCityName,
+  getArabicGuideContent,
+  getArabicRegionName,
+} from '@i18n/arabic';
+import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
+import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
+
+const pagePath = '/sitemap/';
+const arabicPath = localizePath('ar', pagePath);
+const pageUrl = `https://sunrisetime.co${arabicPath}`;
+const alternates = buildAlternateLinks([
+  { hrefLang: 'en', path: pagePath },
+  { hrefLang: 'es', path: localizePath('es', pagePath) },
+  { hrefLang: 'ar', path: arabicPath },
+  { hrefLang: 'x-default', path: pagePath },
+]);
+const languageLinks = buildLanguageSwitcherLinks(pagePath);
+
+const jsonLd = [
+  {
+    "@type": "WebPage",
+    "@id": `${pageUrl}#webpage`,
+    "name": "خريطة الموقع HTML",
+    "description": "قائمة HTML بالصفحات الأساسية وصفحات الثقة والأدلة والمدن المفهرسة في النسخة العربية من SunriseTime.",
+    "url": pageUrl,
+    "inLanguage": "ar",
+    "isPartOf": {
+      "@id": "https://sunrisetime.co/ar/#website"
+    }
+  },
+  buildBreadcrumbJsonLd([
+    { name: 'الرئيسية', path: '/ar/' },
+    { name: 'خريطة الموقع', path: arabicPath },
+  ]),
+];
+---
+
+<Base
+  title="خريطة الموقع HTML - SunriseTime العربية"
+  description="استكشف الصفحات الأساسية والمدن المفهرسة في النسخة العربية من SunriseTime."
+  canonical={pageUrl}
+  keywords="خريطة الموقع HTML, SunriseTime العربية"
+  jsonLd={jsonLd}
+  lang="ar"
+  dir="rtl"
+  alternates={alternates}
+>
+  <ArabicHeader languageLinks={languageLinks} currentLanguage="ar" />
+
+  <main class="resource-page">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/ar/">الرئيسية</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <span>خريطة الموقع</span>
+      </nav>
+
+      <header class="resource-header">
+        <span class="section-badge">
+          <i data-lucide="map" class="icon-xs"></i>
+          خريطة الموقع
+        </span>
+        <h1>تصفح النسخة العربية كاملة من صفحة واحدة.</h1>
+        <p class="resource-subtitle">تخدم هذه الخريطة المستخدمين ومحركات البحث معًا. وهي تضع الصفحات المهمة وصفحات الثقة ثم المراكز الإقليمية وصفحات المدن في بنية واضحة.</p>
+      </header>
+
+      <section class="sitemap-grid">
+        <article class="sitemap-section glass-card">
+          <h2>الصفحات الأساسية</h2>
+          <ul class="sitemap-links">
+            <li><a href="/ar/">الرئيسية</a></li>
+            <li><a href="/ar/cities/">المدن</a></li>
+            <li><a href="/ar/guides/">الأدلة</a></li>
+            <li><a href="/ar/methodology/">المنهجية</a></li>
+            <li><a href="/ar/about/">عن SunriseTime</a></li>
+            <li><a href="/ar/contact/">اتصل بنا</a></li>
+          </ul>
+        </article>
+
+        <article class="sitemap-section glass-card">
+          <h2>الثقة</h2>
+          <ul class="sitemap-links">
+            <li><a href="/ar/privacy/">الخصوصية</a></li>
+            <li><a href="/ar/terms/">الشروط</a></li>
+            <li><a href="/ar/sitemap/">خريطة الموقع HTML</a></li>
+            <li><a href="/ar/sitemap.xml">خريطة الموقع XML</a></li>
+          </ul>
+        </article>
+
+        <article class="sitemap-section glass-card">
+          <h2>الأدلة</h2>
+          <ul class="sitemap-links">
+            {useCaseHubs.map((hub) => {
+              const content = getArabicGuideContent(hub);
+              return <li><a href={`/ar/guides/${hub.slug}/`}>{content.name}</a></li>;
+            })}
+          </ul>
+        </article>
+      </section>
+
+      <section class="resource-section">
+        <div class="detail-section-head">
+          <h2>المراكز الإقليمية</h2>
+          <p>تتضمن الطبقة العربية الآن صفحات إقليمية وأدلة وصفحات مدينة متصلة عبر hreflang.</p>
+        </div>
+        <div class="resource-link-grid">
+          {regionHubs.map((region) => (
+            <a href={`/ar/cities/${region.slug}/`} class="resource-link-card glass-card">
+              <strong>{getArabicRegionName(region.slug, region.name)}</strong>
+              <span>{region.cityCount} مدينة مفهرسة</span>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      {regionHubs.map((region) => (
+        <section class="resource-section">
+          <div class="detail-section-head">
+            <h2>{getArabicRegionName(region.slug, region.name)}</h2>
+            <p><a href={`/ar/cities/${region.slug}/`}>افتح المركز الإقليمي</a></p>
+          </div>
+          <div class="hub-city-grid">
+            {region.cities.map((city) => (
+              <a href={`/ar/sunrise/${city.slug}/`} class="hub-city-card glass-card">
+                <span class="hub-city-name">{getArabicCityName(city)}</span>
+                <span class="hub-city-country">{getArabicCityLocationLabel(city, { includeAdmin1: Boolean(city.admin1) })}</span>
+              </a>
+            ))}
+          </div>
+        </section>
+      ))}
+
+      <section class="resource-callout glass-card-lg">
+        <div>
+          <span class="resource-callout-label">صفحات المدن المفهرسة</span>
+          <h2>{allCities.length} صفحة مدينة عامة متاحة الآن ضمن خريطة الموقع العربية.</h2>
+          <p>إذا كنت تريد طريقًا أسرع من تصفح القائمة الكاملة، ابدأ بدليل أو مركز إقليمي أولًا.</p>
+        </div>
+        <div class="resource-link-row">
+          <a href="/ar/cities/" class="btn-primary-sm">فهرس المدن</a>
+          <a href="/ar/guides/" class="btn-secondary-sm">الأدلة</a>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <ArabicFooter />
+</Base>

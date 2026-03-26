@@ -92,21 +92,82 @@ function initScrollAnimations() {
   document.querySelectorAll('.fade-in').forEach(element => observer.observe(element));
 }
 
+function normalizeText(value) {
+  return (value || '')
+    .toString()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim();
+}
+
+function getLanguagePrefix() {
+  const prefix = document.body?.dataset?.langPrefix || '';
+  return prefix === '/' ? '' : prefix.replace(/\/$/, '');
+}
+
+function buildSunrisePath(slug) {
+  return `${getLanguagePrefix()}/sunrise/${slug}/`;
+}
+
 function goToCity(slug) {
   if (!slug) return;
-  window.location.href = `/sunrise/${slug}/`;
+  window.location.href = buildSunrisePath(slug);
+}
+
+function getSearchableFields(city) {
+  return [
+    city.name,
+    city.displayName,
+    city.country,
+    city.countryLabel,
+    city.admin1,
+    ...(city.aliases || []),
+  ].filter(Boolean);
+}
+
+function getCityMatchRank(normalizedQuery, city) {
+  const normalizedName = normalizeText(city.name);
+  const normalizedDisplayName = normalizeText(city.displayName || city.name);
+  const normalizedFields = getSearchableFields(city).map((field) => normalizeText(field));
+
+  if (normalizedDisplayName === normalizedQuery || normalizedName === normalizedQuery) {
+    return 0;
+  }
+
+  if (normalizedDisplayName.startsWith(normalizedQuery)) {
+    return 1;
+  }
+
+  if (normalizedName.startsWith(normalizedQuery)) {
+    return 2;
+  }
+
+  if (normalizedFields.some((field) => field.startsWith(normalizedQuery))) {
+    return 3;
+  }
+
+  if (normalizedDisplayName.includes(normalizedQuery)) {
+    return 4;
+  }
+
+  if (normalizedFields.some((field) => field.includes(normalizedQuery))) {
+    return 5;
+  }
+
+  return Number.POSITIVE_INFINITY;
 }
 
 function getRankedCityMatches(query, searchData, limit = 8) {
-  const normalizedQuery = query.toLowerCase().trim();
+  const normalizedQuery = normalizeText(query);
   if (!normalizedQuery) return [];
 
   return searchData
-    .filter(city => city.name.toLowerCase().includes(normalizedQuery))
+    .filter((city) => getCityMatchRank(normalizedQuery, city) !== Number.POSITIVE_INFINITY)
     .sort((a, b) => {
-      const aStarts = a.name.toLowerCase().startsWith(normalizedQuery) ? 0 : 1;
-      const bStarts = b.name.toLowerCase().startsWith(normalizedQuery) ? 0 : 1;
-      if (aStarts !== bStarts) return aStarts - bStarts;
+      const aRank = getCityMatchRank(normalizedQuery, a);
+      const bRank = getCityMatchRank(normalizedQuery, b);
+      if (aRank !== bRank) return aRank - bRank;
       return b.population - a.population;
     })
     .slice(0, limit);
@@ -124,6 +185,17 @@ function initHeroSearch() {
   const previewButtons = document.querySelectorAll('[data-hero-city]');
   const searchData = readJsonScript('heroSearchData');
   const previewData = readJsonScript('heroPreviewData');
+  const config = {
+    noMatchTitle: 'No matching city',
+    noMatchSubtitle: 'Try another spelling',
+    openCityPage: 'Open city page',
+    useMyLocation: 'Use my location',
+    locationUnavailable: 'Location unavailable',
+    locating: 'Locating...',
+    nearestUnavailable: 'Nearest city unavailable',
+    locationBlocked: 'Location blocked',
+    ...readJsonScript('heroSearchConfig'),
+  };
 
   if (!input || !results || !Array.isArray(searchData) || !Array.isArray(previewData)) {
     return;
@@ -151,7 +223,7 @@ function initHeroSearch() {
 
   function renderResults(items) {
     if (!items.length) {
-      results.innerHTML = '<div class="hero-search-option empty"><span>No matching city</span><span>Try another spelling</span></div>';
+      results.innerHTML = `<div class="hero-search-option empty"><span>${config.noMatchTitle}</span><span>${config.noMatchSubtitle}</span></div>`;
       openResults();
       return;
     }
@@ -166,8 +238,8 @@ function initHeroSearch() {
         data-slug="${city.slug}"
         aria-selected="false"
       >
-        <span>${city.name}, ${city.country}</span>
-        <span>Open city page</span>
+        <span>${city.displayName || city.name}</span>
+        <span>${config.openCityPage}</span>
       </button>
     `).join('');
 
@@ -219,7 +291,7 @@ function initHeroSearch() {
 
     const openLink = document.querySelector('[data-hero-open]');
     if (openLink) {
-      openLink.setAttribute('href', `/sunrise/${snapshot.slug}/`);
+      openLink.setAttribute('href', buildSunrisePath(snapshot.slug));
     }
 
     previewButtons.forEach(button => {
@@ -320,7 +392,7 @@ function initHeroSearch() {
     }
 
     function resetLocationState() {
-      setLocationState('Use my location');
+      setLocationState(config.useMyLocation);
       if (locationResetTimer) {
         window.clearTimeout(locationResetTimer);
         locationResetTimer = null;
@@ -339,7 +411,7 @@ function initHeroSearch() {
 
     locationButton.addEventListener('click', () => {
       if (!navigator.geolocation) {
-        setLocationState('Location unavailable', { feedback: true });
+        setLocationState(config.locationUnavailable, { feedback: true });
         queueLocationReset();
         return;
       }
@@ -349,7 +421,7 @@ function initHeroSearch() {
         locationResetTimer = null;
       }
 
-      setLocationState('Locating...', { disabled: true, feedback: true });
+      setLocationState(config.locating, { disabled: true, feedback: true });
 
       navigator.geolocation.getCurrentPosition((position) => {
         const nearestCity = findNearestCity(position.coords.latitude, position.coords.longitude, searchData);
@@ -358,10 +430,10 @@ function initHeroSearch() {
           return;
         }
 
-        setLocationState('Nearest city unavailable', { feedback: true });
+        setLocationState(config.nearestUnavailable, { feedback: true });
         queueLocationReset();
       }, () => {
-        setLocationState('Location blocked', { feedback: true });
+        setLocationState(config.locationBlocked, { feedback: true });
         queueLocationReset();
       }, {
         enableHighAccuracy: false,
@@ -381,6 +453,19 @@ function initFooterSearch() {
   const locationButton = searchRoot.querySelector('[data-footer-use-location]');
   const locationLabel = searchRoot.querySelector('[data-footer-location-label]');
   const searchData = readJsonScript('footerSearchData');
+  const config = {
+    useMyLocation: 'Use my location',
+    typeCity: 'Type a city name to continue.',
+    noMatch: 'No matching city yet. Try another spelling.',
+    browserUnavailable: 'Browser location is not available here.',
+    locating: 'Locating...',
+    unavailable: 'Unavailable',
+    noMatchState: 'No match',
+    noLocationMatch: 'We could not map that location to an indexed city yet.',
+    blocked: 'Blocked',
+    permissionDenied: 'Location permission was denied or timed out.',
+    ...readJsonScript('footerSearchConfig'),
+  };
 
   if (!input || !status || !Array.isArray(searchData)) {
     return;
@@ -407,7 +492,7 @@ function initFooterSearch() {
   }
 
   function resetLocationState() {
-    setLocationState('Use my location');
+    setLocationState(config.useMyLocation);
     if (locationResetTimer) {
       window.clearTimeout(locationResetTimer);
       locationResetTimer = null;
@@ -435,14 +520,14 @@ function initFooterSearch() {
 
     const query = input.value.trim();
     if (!query) {
-      setStatus('Type a city name to continue.');
+      setStatus(config.typeCity);
       input.focus();
       return;
     }
 
     const matches = getRankedCityMatches(query, searchData, 1);
     if (!matches.length) {
-      setStatus('No matching city yet. Try another spelling.');
+      setStatus(config.noMatch);
       return;
     }
 
@@ -453,8 +538,8 @@ function initFooterSearch() {
   if (locationButton && locationLabel) {
     locationButton.addEventListener('click', () => {
       if (!navigator.geolocation) {
-        setLocationState('Unavailable', { feedback: true });
-        setStatus('Browser location is not available here.');
+        setLocationState(config.unavailable, { feedback: true });
+        setStatus(config.browserUnavailable);
         queueLocationReset();
         return;
       }
@@ -464,7 +549,7 @@ function initFooterSearch() {
         locationResetTimer = null;
       }
 
-      setLocationState('Locating...', { disabled: true, feedback: true });
+      setLocationState(config.locating, { disabled: true, feedback: true });
       setStatus('');
 
       navigator.geolocation.getCurrentPosition((position) => {
@@ -474,12 +559,12 @@ function initFooterSearch() {
           return;
         }
 
-        setLocationState('No match', { feedback: true });
-        setStatus('We could not map that location to an indexed city yet.');
+        setLocationState(config.noMatchState, { feedback: true });
+        setStatus(config.noLocationMatch);
         queueLocationReset();
       }, () => {
-        setLocationState('Blocked', { feedback: true });
-        setStatus('Location permission was denied or timed out.');
+        setLocationState(config.blocked, { feedback: true });
+        setStatus(config.permissionDenied);
         queueLocationReset();
       }, {
         enableHighAccuracy: false,

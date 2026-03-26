@@ -4,7 +4,7 @@ export const GET: APIRoute = () => {
   return new Response(null, {
     status: 301,
     headers: {
-      Location: 'https://sunrisetime.co/sitemap.xml',
+      Location: 'https://sunrisetime.co/sitemap-index.xml',
     },
   });
 };

@@ -1,0 +1,482 @@
+---
+import Base from '@layouts/Base.astro';
+import LocalizedHeader from '@components/LocalizedHeader.astro';
+import LocalizedFooter from '@components/LocalizedFooter.astro';
+import cities from '@data/cities.json';
+import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
+import {
+  getSpanishCityName,
+  getSpanishCountryName,
+  getSpanishMoonPhase,
+  getSpanishPrayerName,
+  spanishLocale,
+} from '@i18n/spanish';
+import { getDaylightSeries, getGoldenHour, getSunTimes, formatTime, getSunriseDelta, getSunsetDelta } from '@utils/sun';
+import { getMoonData, getNextMoonEvent } from '@utils/moon';
+import { getNextPrayer, getPrayerTimes } from '@utils/prayer-times';
+import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
+
+export function getStaticPaths() {
+  return cities.cities.map((city) => ({
+    params: { city: city.slug },
+    props: { city },
+  }));
+}
+
+type City = typeof cities.cities[0];
+const { city } = Astro.props as { city: City };
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(Math.max(value, min), max);
+}
+
+function formatCountdown(ms: number) {
+  const totalMinutes = Math.max(1, Math.round(ms / 60000));
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+
+  if (hours && minutes) return `${hours} h ${minutes} min`;
+  if (hours) return `${hours} h`;
+  return `${minutes} min`;
+}
+
+function formatMinuteShift(delta: number) {
+  if (delta === 0) return 'igual que ayer';
+  return `${Math.abs(delta)} min ${delta > 0 ? 'más tarde' : 'más temprano'} que ayer`;
+}
+
+function formatMinuteShiftSentence(delta: number) {
+  if (delta === 0) return 'a la misma hora local que ayer';
+  return `${Math.abs(delta)} minutos ${delta > 0 ? 'más tarde' : 'más temprano'} que ayer`;
+}
+
+const today = new Date();
+const cityName = getSpanishCityName(city);
+const countryName = getSpanishCountryName(city.country);
+const sun = getSunTimes(today, city.lat, city.lng);
+const golden = getGoldenHour(today, city.lat, city.lng);
+const moon = getMoonData(today, city.lat, city.lng);
+const nextMoonEvent = getNextMoonEvent(today);
+const prayers = getPrayerTimes(today, city.lat, city.lng, 'MWL', 'Standard');
+const nextPrayer = getNextPrayer(today, city.lat, city.lng, 'MWL', 'Standard');
+const sunriseDelta = getSunriseDelta(today, city.lat, city.lng, city.timezone);
+const sunsetDelta = getSunsetDelta(today, city.lat, city.lng, city.timezone);
+const series = getDaylightSeries(today, 7, city.lat, city.lng);
+const lightProgress = clamp(
+  ((today.getTime() - sun.dawn.getTime()) / (sun.dusk.getTime() - sun.dawn.getTime())) * 100,
+  0,
+  100,
+);
+const daylightTrendMinutes = Math.round((series[series.length - 1].hours - series[0].hours) * 60);
+const daysUntilMoonEvent = Math.max(1, Math.ceil((nextMoonEvent.date.getTime() - today.getTime()) / 86400000));
+
+function getNextSunEvent() {
+  if (today < sun.sunrise) {
+    return {
+      label: 'Próximo amanecer',
+      countdown: formatCountdown(sun.sunrise.getTime() - today.getTime()),
+      time: formatTime(sun.sunrise, city.timezone, spanishLocale),
+      support: `La hora dorada de la mañana termina a las ${formatTime(golden.morning.end, city.timezone, spanishLocale)}.`,
+    };
+  }
+
+  if (today < sun.sunset) {
+    return {
+      label: 'Próximo atardecer',
+      countdown: formatCountdown(sun.sunset.getTime() - today.getTime()),
+      time: formatTime(sun.sunset, city.timezone, spanishLocale),
+      support: `La hora dorada de la tarde empieza a las ${formatTime(golden.evening.start, city.timezone, spanishLocale)}.`,
+    };
+  }
+
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const tomorrowSun = getSunTimes(tomorrow, city.lat, city.lng);
+
+  return {
+    label: 'Amanecer de mañana',
+    countdown: formatCountdown(tomorrowSun.sunrise.getTime() - today.getTime()),
+    time: formatTime(tomorrowSun.sunrise, city.timezone, spanishLocale),
+    support: `Mañana habrá ${tomorrowSun.daylightFormatted} de luz natural.`,
+  };
+}
+
+const nextSunEvent = getNextSunEvent();
+const localDateLabel = today.toLocaleDateString(spanishLocale, {
+  weekday: 'long',
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+  timeZone: city.timezone,
+});
+const localTimeLabel = today.toLocaleTimeString(spanishLocale, {
+  hour: 'numeric',
+  minute: '2-digit',
+  timeZone: city.timezone,
+});
+const lightStatus = today < sun.dawn
+  ? 'Todavía es de noche.'
+  : today < sun.sunrise
+    ? 'Ya empezó el alba civil.'
+    : today < sun.sunset
+      ? 'Ahora mismo hay luz diurna.'
+      : today < sun.dusk
+        ? 'El crepúsculo civil se está apagando.'
+        : 'La noche ya volvió.';
+
+const nearbyCities = cities.cities
+  .filter((entry) => entry.continent === city.continent && entry.slug !== city.slug)
+  .slice(0, 6);
+
+const otherCities = cities.cities
+  .filter((entry) => entry.continent !== city.continent)
+  .slice(0, 4);
+
+const pagePath = `/sunrise/${city.slug}/`;
+const spanishPath = localizePath('es', pagePath);
+const pageUrl = `https://sunrisetime.co${spanishPath}`;
+const alternates = buildAlternateLinks([
+  { hrefLang: 'en', path: pagePath },
+  { hrefLang: 'es', path: spanishPath },
+  { hrefLang: 'x-default', path: pagePath },
+]);
+const languageLinks = buildLanguageSwitcherLinks(pagePath);
+
+const pageTitle = `Hora del amanecer y atardecer en ${cityName} hoy - SunriseTime`;
+const pageDesc = `Hoy el amanecer en ${cityName} es a las ${formatTime(sun.sunrise, city.timezone, spanishLocale)} y el atardecer a las ${formatTime(sun.sunset, city.timezone, spanishLocale)}. ${sun.daylightFormatted} de luz diurna, hora dorada, fase lunar y enlace a horarios de oración.`;
+
+const jsonLd = [
+  {
+    "@type": "WebPage",
+    "@id": `${pageUrl}#webpage`,
+    "name": pageTitle,
+    "description": pageDesc,
+    "url": pageUrl,
+    "inLanguage": "es",
+    "isPartOf": {
+      "@id": "https://sunrisetime.co/es/#website"
+    }
+  },
+  buildBreadcrumbJsonLd([
+    { name: 'Inicio', path: '/es/' },
+    { name: 'Ciudades', path: '/es/cities/' },
+    { name: cityName, path: spanishPath },
+  ]),
+  {
+    "@type": "FAQPage",
+    "@id": `${pageUrl}#faq`,
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": `¿A qué hora amanece hoy en ${cityName}?`,
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": `Hoy el amanecer en ${cityName} es a las ${formatTime(sun.sunrise, city.timezone, spanishLocale)}.`
+        }
+      },
+      {
+        "@type": "Question",
+        "name": `¿A qué hora atardece hoy en ${cityName}?`,
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": `Hoy el atardecer en ${cityName} es a las ${formatTime(sun.sunset, city.timezone, spanishLocale)} y la luz diurna total es de ${sun.daylightFormatted}.`
+        }
+      },
+      {
+        "@type": "Question",
+        "name": `¿La página también muestra hora dorada y horarios de oración en ${cityName}?`,
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": `Sí. La página incluye hora dorada, fase lunar y un acceso directo a los horarios de oración de ${cityName}.`
+        }
+      }
+    ]
+  }
+];
+---
+
+<Base
+  title={pageTitle}
+  description={pageDesc}
+  canonical={pageUrl}
+  keywords={`amanecer ${cityName}, atardecer ${cityName}, hora dorada ${cityName}, horarios de oración ${cityName}`}
+  jsonLd={jsonLd}
+  lang="es"
+  alternates={alternates}
+>
+  <LocalizedHeader languageLinks={languageLinks} currentLanguage="es" />
+
+  <main class="city-page">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/es/">Inicio</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <a href="/es/cities/">Ciudades</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <span>{cityName}</span>
+      </nav>
+
+      <section class="city-snapshot glass-card-lg">
+        <div class="city-snapshot-copy">
+          <span class="city-kicker">Amanecer y atardecer de hoy en {cityName}</span>
+          <h1>Hora del amanecer y atardecer en <span class="gradient-text">{cityName}</span></h1>
+          <p class="city-lead">
+            Hoy, {localDateLabel}, la hora local es {localTimeLabel}. El amanecer en {cityName} es a las {formatTime(sun.sunrise, city.timezone, spanishLocale)} y el atardecer a las {formatTime(sun.sunset, city.timezone, spanishLocale)}.
+            La página también muestra duración del día, hora dorada, fase lunar y un enlace rápido a los horarios de oración.
+          </p>
+
+          <div class="city-chip-row">
+            <span class="city-chip city-country-badge">{countryName}</span>
+            <span class="city-chip">{city.timezone}</span>
+            <span class="city-chip">{sun.daylightFormatted} de luz</span>
+          </div>
+
+          <div class="city-action-row">
+            <a href="/es/cities/" class="btn-primary">
+              <i data-lucide="search" class="icon-xs"></i>
+              Buscar otra ciudad
+            </a>
+            <a href="#golden" class="btn-secondary">
+              <i data-lucide="camera" class="icon-xs"></i>
+              Ver hora dorada
+            </a>
+            <a href={`/es/prayer-times/${city.slug}/`} class="btn-secondary">
+              <i data-lucide="clock" class="icon-xs"></i>
+              Horarios de oración
+            </a>
+          </div>
+        </div>
+
+        <div class="city-snapshot-panel">
+          <div class="city-next-event glass-card">
+            <span class="city-next-label">{nextSunEvent.label}</span>
+            <strong>{nextSunEvent.countdown}</strong>
+            <span class="city-next-time">{nextSunEvent.time} hora local</span>
+            <p>{nextSunEvent.support}</p>
+          </div>
+
+          <div class="city-light-track glass-card">
+            <div class="city-track-head">
+              <span>Amanecer civil {formatTime(sun.dawn, city.timezone, spanishLocale)}</span>
+              <strong>{lightStatus}</strong>
+              <span>Anochecer civil {formatTime(sun.dusk, city.timezone, spanishLocale)}</span>
+            </div>
+            <div class="city-track-bar">
+              <span class="city-track-fill" style={`width:${lightProgress}%`}></span>
+              <span class="city-track-marker" style={`left:${lightProgress}%`}></span>
+            </div>
+            <div class="city-track-points">
+              <span>Amanecer {formatTime(sun.sunrise, city.timezone, spanishLocale)}</span>
+              <span>Mediodía solar {formatTime(sun.solarNoon, city.timezone, spanishLocale)}</span>
+              <span>Atardecer {formatTime(sun.sunset, city.timezone, spanishLocale)}</span>
+            </div>
+          </div>
+
+          <div class="city-snapshot-metrics">
+            <div class="city-metric-card glass-card accent-sunrise">
+              <span class="city-metric-visual" aria-hidden="true"></span>
+              <span class="city-metric-label">Amanecer</span>
+              <strong class="city-metric-value">{formatTime(sun.sunrise, city.timezone, spanishLocale)}</strong>
+              <small class="city-metric-note">{formatMinuteShift(sunriseDelta)}</small>
+            </div>
+            <div class="city-metric-card glass-card accent-sunset">
+              <span class="city-metric-visual" aria-hidden="true"></span>
+              <span class="city-metric-label">Atardecer</span>
+              <strong class="city-metric-value">{formatTime(sun.sunset, city.timezone, spanishLocale)}</strong>
+              <small class="city-metric-note">{formatMinuteShift(sunsetDelta)}</small>
+            </div>
+            <div class="city-metric-card glass-card accent-daylight">
+              <span class="city-metric-visual" aria-hidden="true"></span>
+              <span class="city-metric-label">Luz diurna</span>
+              <strong class="city-metric-value">{sun.daylightFormatted}</strong>
+              <small class="city-metric-note">{daylightTrendMinutes >= 0 ? '+' : ''}{daylightTrendMinutes} min en 7 días</small>
+            </div>
+            <div class="city-metric-card glass-card accent-moon">
+              <span class="city-metric-visual" aria-hidden="true"></span>
+              <span class="city-metric-label">Luna</span>
+              <strong class="city-metric-value">{getSpanishMoonPhase(moon.phaseName)}</strong>
+              <small class="city-metric-note">{moon.illumination}% de iluminación</small>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="city-highlight-grid" aria-label="Quick paths">
+        <a href="#golden" class="city-highlight-card glass-card">
+          <span class="city-highlight-label">Hora dorada</span>
+          <strong>{formatTime(golden.morning.start, city.timezone, spanishLocale)} - {formatTime(golden.morning.end, city.timezone, spanishLocale)}</strong>
+          <p>La franja de la tarde empieza a las {formatTime(golden.evening.start, city.timezone, spanishLocale)}.</p>
+        </a>
+        <a href="#moon" class="city-highlight-card glass-card">
+          <span class="city-highlight-label">Luna</span>
+          <strong>{getSpanishMoonPhase(moon.phaseName)}</strong>
+          <p>{moon.illumination}% de iluminación. Próximo {nextMoonEvent.type === 'Full Moon' ? 'plenilunio' : 'novilunio'} en {daysUntilMoonEvent} días.</p>
+        </a>
+        <a href={`/es/prayer-times/${city.slug}/`} class="city-highlight-card glass-card">
+          <span class="city-highlight-label">Oración</span>
+          <strong>{getSpanishPrayerName(nextPrayer.name)} a las {formatTime(nextPrayer.time, city.timezone, spanishLocale)}</strong>
+          <p>Abre el horario completo de oración para {cityName}.</p>
+        </a>
+      </section>
+
+      <section class="detail-section" id="golden" aria-label="Hora dorada">
+        <div class="detail-section-head">
+          <h2><i data-lucide="camera" class="icon-md"></i> Hora dorada y crepúsculos en {cityName}</h2>
+          <p>Si buscas amanecer o atardecer para fotografía, estas son las franjas que cambian de verdad la planificación de la salida.</p>
+        </div>
+
+        <div class="detail-grid">
+          <div class="detail-card glass-card">
+            <h3>Hora dorada de la mañana</h3>
+            <div class="detail-time">
+              <span class="detail-time-value">{formatTime(golden.morning.start, city.timezone, spanishLocale)}</span>
+              <i data-lucide="arrow-right" class="icon-sm"></i>
+              <span class="detail-time-value">{formatTime(golden.morning.end, city.timezone, spanishLocale)}</span>
+            </div>
+            <span class="detail-duration">{golden.morning.durationMin} minutos</span>
+          </div>
+          <div class="detail-card glass-card">
+            <h3>Hora dorada de la tarde</h3>
+            <div class="detail-time">
+              <span class="detail-time-value">{formatTime(golden.evening.start, city.timezone, spanishLocale)}</span>
+              <i data-lucide="arrow-right" class="icon-sm"></i>
+              <span class="detail-time-value">{formatTime(golden.evening.end, city.timezone, spanishLocale)}</span>
+            </div>
+            <span class="detail-duration">{golden.evening.durationMin} minutos</span>
+          </div>
+        </div>
+
+        <div class="city-secondary-grid">
+          <div class="twilight-table glass-card">
+            <table>
+              <thead>
+                <tr><th>Fase</th><th>Mañana</th><th>Tarde</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Crepúsculo civil</td>
+                  <td>{formatTime(sun.dawn, city.timezone, spanishLocale)}</td>
+                  <td>{formatTime(sun.dusk, city.timezone, spanishLocale)}</td>
+                </tr>
+                <tr>
+                  <td>Crepúsculo náutico</td>
+                  <td>{formatTime(sun.nauticalDawn, city.timezone, spanishLocale)}</td>
+                  <td>{formatTime(sun.nauticalDusk, city.timezone, spanishLocale)}</td>
+                </tr>
+                <tr>
+                  <td>Crepúsculo astronómico</td>
+                  <td>{formatTime(sun.nightEnd, city.timezone, spanishLocale)}</td>
+                  <td>{formatTime(sun.night, city.timezone, spanishLocale)}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="daylight-chart glass-card">
+            <div class="demo-chart-title">Tendencia de luz diurna - vista de 7 días</div>
+            <div class="chart-bars-static">
+              {series.map((entry, index) => {
+                const pct = Math.round((entry.hours / 16) * 100);
+                const dayName = entry.date.toLocaleDateString(spanishLocale, { weekday: 'short', timeZone: city.timezone });
+                return (
+                  <div class={`chart-col ${index === 0 ? 'active' : ''}`}>
+                    <span class="chart-val">{entry.hours.toFixed(1)}h</span>
+                    <div class="chart-fill" style={`height:${pct}%`}></div>
+                    <span class="chart-day">{dayName}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="detail-section" id="moon" aria-label="Datos lunares">
+        <div class="detail-section-head">
+          <h2><i data-lucide="moon" class="icon-md"></i> Fase lunar y horarios de luna en {cityName}</h2>
+          <p>Útil cuando el plan se alarga después del atardecer o cuando quieres saber si la luz lunar ayuda o compite con la escena.</p>
+        </div>
+
+        <div class="detail-grid">
+          <div class="detail-card glass-card">
+            <h3>Fase lunar</h3>
+            <span class="detail-time-value">{getSpanishMoonPhase(moon.phaseName)}</span>
+            <span class="detail-duration">{moon.illumination}% de iluminación</span>
+          </div>
+          <div class="detail-card glass-card">
+            <h3>Salida y puesta de la luna</h3>
+            <div class="detail-time">
+              <div>
+                <span class="data-label">Salida</span>
+                <span class="detail-time-value">{moon.rise ? formatTime(moon.rise, city.timezone, spanishLocale) : '—'}</span>
+              </div>
+              <div>
+                <span class="data-label">Puesta</span>
+                <span class="detail-time-value">{moon.set ? formatTime(moon.set, city.timezone, spanishLocale) : '—'}</span>
+              </div>
+            </div>
+            <span class="detail-duration">El próximo {nextMoonEvent.type === 'Full Moon' ? 'plenilunio' : 'novilunio'} llega en {daysUntilMoonEvent} días.</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="detail-section seo-content" aria-label="Explicación SEO">
+        <h2><i data-lucide="info" class="icon-md"></i> Amanecer y atardecer de hoy en {cityName}</h2>
+        <div class="seo-text glass-card">
+          <p>
+            Hoy en {cityName}, el amanecer es a las {formatTime(sun.sunrise, city.timezone, spanishLocale)} y el atardecer a las {formatTime(sun.sunset, city.timezone, spanishLocale)}. En total hay {sun.daylightFormatted} de luz diurna. El mediodía solar cae a las {formatTime(sun.solarNoon, city.timezone, spanishLocale)} y el crepúsculo civil amplía la luz útil desde las {formatTime(sun.dawn, city.timezone, spanishLocale)} hasta las {formatTime(sun.dusk, city.timezone, spanishLocale)}.
+          </p>
+
+          <h3>Cómo se calculan estas horas</h3>
+          <p>
+            SunriseTime calcula el amanecer y el atardecer con un modelo solar alineado con NOAA, usando las coordenadas de {cityName} (latitud {city.lat.toFixed(4)} y longitud {city.lng.toFixed(4)}) y la zona horaria local {city.timezone}. La hora de amanecer de hoy es {formatMinuteShiftSentence(sunriseDelta)} y la del atardecer es {formatMinuteShiftSentence(sunsetDelta)}.
+          </p>
+
+          <h3>Hora dorada, luna y oración en la misma página</h3>
+          <p>
+            La hora dorada de la mañana va de {formatTime(golden.morning.start, city.timezone, spanishLocale)} a {formatTime(golden.morning.end, city.timezone, spanishLocale)}, mientras que la de la tarde va de {formatTime(golden.evening.start, city.timezone, spanishLocale)} a {formatTime(golden.evening.end, city.timezone, spanishLocale)}. También puedes revisar la fase lunar actual y abrir la página completa de horarios de oración de {cityName}.
+          </p>
+        </div>
+      </section>
+
+      <section class="detail-section" id="nearby" aria-label="Ciudades cercanas">
+        <div class="detail-section-head">
+          <h2><i data-lucide="map-pin" class="icon-md"></i> Amanecer en ciudades cercanas</h2>
+          <p>Después de ver la hora del amanecer en {cityName}, la siguiente acción útil suele ser comparar con otra ciudad cercana o de destino.</p>
+        </div>
+
+        <div class="nearby-grid">
+          {nearbyCities.map((entry) => (
+            <a href={`/es/sunrise/${entry.slug}/`} class="nearby-card glass-card">
+              <span class="nearby-name">{getSpanishCityName(entry)}</span>
+              <span class="nearby-country">{getSpanishCountryName(entry.country)}</span>
+            </a>
+          ))}
+        </div>
+
+        {otherCities.length > 0 && (
+          <>
+            <h3 class="other-cities-title">Otras ciudades populares</h3>
+            <div class="nearby-grid">
+              {otherCities.map((entry) => (
+                <a href={`/es/sunrise/${entry.slug}/`} class="nearby-card glass-card">
+                  <span class="nearby-name">{getSpanishCityName(entry)}</span>
+                  <span class="nearby-country">{getSpanishCountryName(entry.country)}</span>
+                </a>
+              ))}
+            </div>
+          </>
+        )}
+
+        <div class="cities-cta" style="margin-top:2rem;">
+          <a href="/es/cities/" class="btn-secondary">
+            <i data-lucide="globe" class="icon-xs"></i>
+            Ver todas las ciudades
+          </a>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <LocalizedFooter />
+</Base>

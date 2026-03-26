@@ -1,0 +1,398 @@
+---
+import Base from '@layouts/Base.astro';
+import ChineseHeader from '@components/ChineseHeader.astro';
+import ChineseFooter from '@components/ChineseFooter.astro';
+import { allCities, regionHubs, totalCities } from '@data/site';
+import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
+import {
+  chineseHomeFaqs,
+  chineseLocale,
+  getChineseCityAliases,
+  getChineseCityDisplayName,
+  getChineseCityLocationLabel,
+  getChineseCityName,
+  getChineseMoonPhase,
+  getChinesePrayerName,
+  getChineseRegionName,
+  getChineseTimezoneLabel,
+  formatChineseDuration,
+} from '@i18n/chinese';
+import { getGoldenHour, getSunTimes, formatTime } from '@utils/sun';
+import { getMoonData } from '@utils/moon';
+import { getNextPrayer } from '@utils/prayer-times';
+import { buildAlternateLinks } from '@utils/seo';
+
+const pagePath = '/';
+const chinesePath = localizePath('zh-cn', pagePath);
+const pageUrl = `https://sunrisetime.co${chinesePath}`;
+const alternates = buildAlternateLinks([
+  { hrefLang: 'en', path: pagePath },
+  { hrefLang: 'es', path: localizePath('es', pagePath) },
+  { hrefLang: 'zh-cn', path: chinesePath },
+  { hrefLang: 'x-default', path: pagePath },
+]);
+const languageLinks = buildLanguageSwitcherLinks(pagePath);
+
+const previewSlugs = ['beijing', 'shanghai', 'dubai', 'london', 'new-york', 'madrid'];
+const now = new Date();
+
+function buildPreviewEntry(slug: string) {
+  const city = allCities.find((entry) => entry.slug === slug);
+  if (!city) return null;
+
+  const sun = getSunTimes(now, city.lat, city.lng);
+  const golden = getGoldenHour(now, city.lat, city.lng);
+  const moon = getMoonData(now, city.lat, city.lng);
+  const nextPrayer = getNextPrayer(now, city.lat, city.lng, 'MWL', 'Standard');
+
+  let nextEventLabel = '下一次日出';
+  let nextEventTime = formatTime(sun.sunrise, city.timezone, chineseLocale);
+  let nextEventSupport = `晨间黄金时刻将在 ${formatTime(golden.morning.end, city.timezone, chineseLocale)} 结束。`;
+
+  if (now >= sun.sunrise && now < sun.sunset) {
+    nextEventLabel = '下一次日落';
+    nextEventTime = formatTime(sun.sunset, city.timezone, chineseLocale);
+    nextEventSupport = `傍晚黄金时刻将于 ${formatTime(golden.evening.start, city.timezone, chineseLocale)} 开始。`;
+  } else if (now >= sun.sunset) {
+    const tomorrow = new Date(now);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowSun = getSunTimes(tomorrow, city.lat, city.lng);
+    nextEventLabel = '明日日出';
+    nextEventTime = formatTime(tomorrowSun.sunrise, city.timezone, chineseLocale);
+    nextEventSupport = `明天白昼时长约为 ${formatChineseDuration(tomorrowSun.daylightDuration)}。`;
+  }
+
+  return {
+    slug: city.slug,
+    name: getChineseCityName(city),
+    displayName: getChineseCityDisplayName(city),
+    country: getChineseCityLocationLabel(city),
+    countryLabel: getChineseCityLocationLabel(city),
+    timezone: getChineseTimezoneLabel(city.timezone, now),
+    aliases: getChineseCityAliases(city),
+    admin1: city.admin1 ?? '',
+    caption: `${getChineseCityLocationLabel(city)} · ${now.toLocaleDateString(chineseLocale, {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      timeZone: city.timezone,
+    })}`,
+    sunrise: formatTime(sun.sunrise, city.timezone, chineseLocale),
+    sunset: formatTime(sun.sunset, city.timezone, chineseLocale),
+    daylight: formatChineseDuration(sun.daylightDuration),
+    golden: `${formatTime(golden.evening.start, city.timezone, chineseLocale)} - ${formatTime(golden.evening.end, city.timezone, chineseLocale)}`,
+    moon: `${getChineseMoonPhase(moon.phaseName)} · ${moon.illumination}%`,
+    prayer: `${getChinesePrayerName(nextPrayer.name)} ${formatTime(nextPrayer.time, city.timezone, chineseLocale)}`,
+    nextEventLabel,
+    nextEventTime,
+    nextEventSupport,
+  };
+}
+
+const previewCities = previewSlugs
+  .map((slug) => buildPreviewEntry(slug))
+  .filter((entry): entry is NonNullable<ReturnType<typeof buildPreviewEntry>> => Boolean(entry));
+
+const heroCity = previewCities[0];
+
+const searchCities = allCities.map((city) => ({
+  name: city.name,
+  displayName: getChineseCityDisplayName(city),
+  slug: city.slug,
+  country: city.country,
+  countryLabel: getChineseCityLocationLabel(city),
+  admin1: city.admin1 ?? '',
+  aliases: getChineseCityAliases(city),
+  lat: city.lat,
+  lng: city.lng,
+  population: city.population,
+}));
+
+const regionGroups = regionHubs.map((region) => ({
+  id: region.slug,
+  name: getChineseRegionName(region.slug, region.name),
+  cities: region.cities.slice(0, 6).map((city) => ({
+    slug: city.slug,
+    name: getChineseCityName(city),
+    country: getChineseCityLocationLabel(city),
+  })),
+}));
+
+const jsonLd = [
+  {
+    "@type": "WebSite",
+    "@id": "https://sunrisetime.co/zh-cn/#website",
+    "name": "SunriseTime 简体中文",
+    "url": "https://sunrisetime.co/zh-cn/",
+    "description": `查询今天各城市的日出时间、日落时间、日照时长、黄金时刻、月相和礼拜时间。`,
+    "inLanguage": "zh-CN",
+    "publisher": {
+      "@id": "https://sunrisetime.co/#organization"
+    }
+  },
+  {
+    "@type": "Organization",
+    "@id": "https://sunrisetime.co/#organization",
+    "name": "SunriseTime",
+    "url": "https://sunrisetime.co/"
+  },
+  {
+    "@type": "FAQPage",
+    "@id": "https://sunrisetime.co/zh-cn/#faq",
+    "mainEntity": chineseHomeFaqs.map((item) => ({
+      "@type": "Question",
+      "name": item.question,
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": item.answer,
+      },
+    })),
+  },
+];
+---
+
+<Base
+  title={`今日全球 ${totalCities} 座城市日出日落时间查询 | SunriseTime`}
+  description={`查询今天各城市的日出时间、日落时间、日照时长、黄金时刻、月相和礼拜时间，支持按城市快速搜索并直达页面。`}
+  canonical={pageUrl}
+  keywords="日出时间, 日落时间, 日出日落时间, 礼拜时间, 黄金时刻, 月相, 日照时长"
+  jsonLd={jsonLd}
+  lang="zh-CN"
+  langPrefix="/zh-cn"
+  alternates={alternates}
+>
+  <ChineseHeader languageLinks={languageLinks} currentLanguage="zh-cn" />
+
+  <main class="resource-page">
+    <section class="snapshot-hero" id="search">
+      <div class="container snapshot-hero-shell">
+        <div class="snapshot-hero-copy">
+          <div class="hero-badge">
+            <i data-lucide="languages" class="icon-xs"></i>
+            <span>查今天的时间</span>
+          </div>
+
+          <div class="hero-search-panel glass-card-lg" data-hero-search>
+            <div class="hero-search-head">
+              <div>
+                <span class="hero-search-label">直接找今天的结果</span>
+                <strong class="hero-search-title">搜索城市，立刻打开对应的日出日落或礼拜时间页面</strong>
+              </div>
+            </div>
+            <div class="hero-search-shell hero-search-shell-lg">
+              <i data-lucide="search" class="icon-sm"></i>
+              <input
+                id="heroCitySearch"
+                type="text"
+                data-city-search-input
+                placeholder="例如：北京、上海、迪拜、伦敦"
+                autocomplete="off"
+                aria-autocomplete="list"
+                aria-controls="heroSearchResults"
+                aria-expanded="false"
+                aria-label="搜索城市"
+                role="combobox"
+              >
+              <button type="button" class="hero-location-btn hero-location-btn-inline" data-use-location>
+                <i data-lucide="locate-fixed" class="icon-sm"></i>
+                <span class="hero-location-text" data-location-label aria-live="polite" aria-atomic="true">使用我的位置</span>
+              </button>
+            </div>
+            <div class="hero-search-results" id="heroSearchResults" data-search-results role="listbox"></div>
+
+            <div class="hero-quick-row">
+              <span class="hero-quick-label">快速查看</span>
+              <div class="hero-preview-switches">
+                {previewCities.map((city, index) => (
+                  <button type="button" class={`hero-city-pill ${index === 0 ? 'active' : ''}`} data-hero-city={city.slug}>
+                    {city.displayName}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <header class="resource-header" style="padding-top:0;margin-top:2rem;">
+            <span class="section-badge">
+              <i data-lucide="sun-medium" class="icon-xs"></i>
+              日出、日落与礼拜时间
+            </span>
+            <h1>按城市查询今天的日出日落时间。</h1>
+            <p class="resource-subtitle">搜索一座城市，马上看到今天的日出、日落、日照时长、黄金时刻、月相和下一次礼拜。</p>
+            <div class="resource-meta">
+              <span class="resource-meta-chip">{totalCities} 座城市</span>
+              <span class="resource-meta-chip">支持定位查找</span>
+              <span class="resource-meta-chip">热门城市可直接进入</span>
+            </div>
+          </header>
+        </div>
+
+        <div class="hero-snapshot-panel glass-card-lg">
+          <div class="hero-panel-top">
+            <div class="hero-panel-copy">
+              <span class="hero-panel-label">即时预览</span>
+              <h2>
+                <span data-hero-city-name>{heroCity.name}</span>
+                <span class="hero-panel-country" data-hero-country>{heroCity.countryLabel}</span>
+              </h2>
+              <p data-hero-caption>{heroCity.caption}</p>
+            </div>
+            <a class="btn-secondary-sm hero-open-link" data-hero-open href={`/zh-cn/sunrise/${heroCity.slug}/`}>
+              <span>打开页面</span>
+              <i data-lucide="arrow-up-right" class="icon-sm"></i>
+            </a>
+          </div>
+
+          <div class="hero-next-card">
+            <span class="hero-next-label" data-hero-next-label>{heroCity.nextEventLabel}</span>
+            <strong class="hero-next-time" data-hero-next-time>{heroCity.nextEventTime}</strong>
+            <span class="hero-next-sub" data-hero-next-support>{heroCity.nextEventSupport}</span>
+          </div>
+
+          <div class="hero-mini-grid">
+            <div class="hero-mini-card glass-card">
+              <span class="hero-mini-label">日出</span>
+              <strong data-hero-sunrise>{heroCity.sunrise}</strong>
+            </div>
+            <div class="hero-mini-card glass-card">
+              <span class="hero-mini-label">日落</span>
+              <strong data-hero-sunset>{heroCity.sunset}</strong>
+            </div>
+            <div class="hero-mini-card glass-card">
+              <span class="hero-mini-label">日照时长</span>
+              <strong data-hero-daylight>{heroCity.daylight}</strong>
+            </div>
+            <div class="hero-mini-card glass-card">
+              <span class="hero-mini-label">黄金时刻</span>
+              <strong data-hero-golden>{heroCity.golden}</strong>
+            </div>
+            <div class="hero-mini-card glass-card">
+              <span class="hero-mini-label">月相</span>
+              <strong data-hero-moon>{heroCity.moon}</strong>
+            </div>
+            <div class="hero-mini-card glass-card">
+              <span class="hero-mini-label">下一次礼拜</span>
+              <strong data-hero-prayer>{heroCity.prayer}</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <section class="resource-grid">
+        <article class="resource-card glass-card">
+          <h2>你可以直接查什么</h2>
+          <ul class="resource-list">
+            <li>今天几点日出、几点日落。</li>
+            <li>白天有多长，黄金时刻什么时候开始和结束。</li>
+            <li>如果你需要，也可以继续看礼拜时间和月相。</li>
+          </ul>
+        </article>
+
+        <article class="resource-card glass-card">
+          <h2>怎么用会更快</h2>
+          <ul class="resource-list">
+            <li>知道城市名时，直接在上面的搜索框输入。</li>
+            <li>还在比较目的地时，可以先看下面的热门城市入口。</li>
+            <li>想按区域浏览或看主题内容，就进入城市索引和主题指南。</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="resource-section" id="top-cities">
+        <div class="detail-section-head">
+          <h2>热门城市入口</h2>
+          <p>如果你已经知道城市，直接进入对应页面会比先看说明更快。</p>
+        </div>
+
+        <div class="cities-grid">
+          {regionGroups.map((group) => (
+            <div class="city-group glass-card" id={`zh-${group.id}`}>
+              <h3>
+                <i data-lucide="globe" class="icon-sm"></i>
+                {group.name}
+              </h3>
+              <ul class="city-list">
+                {group.cities.map((city) => (
+                  <li>
+                    <a href={`/zh-cn/sunrise/${city.slug}/`} class="city-link">
+                      <span class="city-name">{city.name}</span>
+                      <span class="city-country">{city.country}</span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+
+        <div class="cities-cta">
+          <a href="/zh-cn/cities/" class="btn-secondary">
+            <i data-lucide="globe" class="icon-xs"></i>
+            查看完整城市索引
+          </a>
+        </div>
+      </section>
+
+      <section class="faq" id="faq">
+        <div class="section-header">
+          <span class="section-badge">
+            <i data-lucide="help-circle" class="icon-xs"></i>
+            常见问题
+          </span>
+          <h2>简体中文版常见问题</h2>
+          <p class="section-subtitle">第一次使用中文站时，最常见的问题都在这里。</p>
+        </div>
+
+        <div class="faq-list">
+          {chineseHomeFaqs.map((item, index) => (
+            <details class="faq-item glass-card" id={`zh-faq-${index + 1}`}>
+              <summary>
+                <span>{item.question}</span>
+                <i data-lucide="chevron-down" class="icon-sm faq-icon"></i>
+              </summary>
+              <div class="faq-answer">
+                <p>{item.answer}</p>
+              </div>
+            </details>
+          ))}
+        </div>
+      </section>
+
+      <section class="resource-callout glass-card-lg" style="margin-top:2rem;">
+        <div>
+          <span class="resource-callout-label">下一步怎么用</span>
+          <h2>知道城市就直接进城市页；还在比较目的地，就先看城市索引或主题指南。</h2>
+          <p>如果你想继续比较多个城市，就进城市索引；如果你更关心拍摄、月相或礼拜安排，就进主题指南。</p>
+        </div>
+        <div class="resource-link-row">
+          <a href="/zh-cn/cities/" class="btn-primary-sm">城市索引</a>
+          <a href="/zh-cn/guides/" class="btn-secondary-sm">主题指南</a>
+          <a href="/zh-cn/methodology/" class="btn-secondary-sm">方法说明</a>
+          <a href="/zh-cn/about/" class="btn-secondary-sm">关于 SunriseTime</a>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <ChineseFooter />
+
+  <script type="application/json" id="heroPreviewData" set:html={JSON.stringify(previewCities)} />
+  <script type="application/json" id="heroSearchData" set:html={JSON.stringify(searchCities)} />
+  <script
+    type="application/json"
+    id="heroSearchConfig"
+    set:html={JSON.stringify({
+      noMatchTitle: '没有找到匹配的城市',
+      noMatchSubtitle: '换一种拼写再试试',
+      openCityPage: '打开城市页',
+      useMyLocation: '使用我的位置',
+      locationUnavailable: '当前位置不可用',
+      locating: '定位中...',
+      nearestUnavailable: '没有找到附近已收录的城市',
+      locationBlocked: '定位权限被拒绝',
+    })}
+  />
+</Base>
+

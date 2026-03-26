@@ -1,0 +1,109 @@
+---
+import Base from '@layouts/Base.astro';
+import ChineseHeader from '@components/ChineseHeader.astro';
+import ChineseFooter from '@components/ChineseFooter.astro';
+import { supportEmail, supportEmailHref } from '@data/site';
+import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
+import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
+
+const pagePath = '/contact/';
+const chinesePath = localizePath('zh-cn', pagePath);
+const pageUrl = `https://sunrisetime.co${chinesePath}`;
+const alternates = buildAlternateLinks([
+  { hrefLang: 'en', path: pagePath },
+  { hrefLang: 'es', path: localizePath('es', pagePath) },
+  { hrefLang: 'zh-cn', path: chinesePath },
+  { hrefLang: 'x-default', path: pagePath },
+]);
+const languageLinks = buildLanguageSwitcherLinks(pagePath);
+
+const jsonLd = [
+  {
+    "@type": "ContactPage",
+    "@id": `${pageUrl}#webpage`,
+    "name": "联系 SunriseTime",
+    "description": "联系 SunriseTime 处理城市修正、隐私问题、合作咨询和一般反馈。",
+    "url": pageUrl,
+    "inLanguage": "zh-CN",
+    "isPartOf": {
+      "@id": "https://sunrisetime.co/zh-cn/#website"
+    }
+  },
+  buildBreadcrumbJsonLd([
+    { name: '首页', path: '/zh-cn/' },
+    { name: '联系我们', path: chinesePath },
+  ]),
+];
+---
+
+<Base
+  title="联系 SunriseTime"
+  description="联系 SunriseTime 提交城市修正、产品反馈、广告合作和隐私请求。"
+  canonical={pageUrl}
+  keywords="联系 SunriseTime, 城市修正, 支持邮箱"
+  jsonLd={jsonLd}
+  lang="zh-CN"
+  langPrefix="/zh-cn"
+  alternates={alternates}
+>
+  <ChineseHeader languageLinks={languageLinks} currentLanguage="zh-cn" />
+
+  <main class="resource-page">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="面包屑导航">
+        <a href="/zh-cn/">首页</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <span>联系我们</span>
+      </nav>
+
+      <header class="resource-header">
+        <span class="section-badge">
+          <i data-lucide="mail" class="icon-xs"></i>
+          联系我们
+        </span>
+        <h1>一个邮箱，统一处理城市修正、隐私问题、合作咨询和一般反馈。</h1>
+        <p class="resource-subtitle">如果你的问题与某个城市页面有关，请尽量附上页面链接、城市名和你发现的问题，这样排查会更快。</p>
+        <div class="resource-meta">
+          <span class="resource-meta-chip">联系邮箱：{supportEmail}</span>
+        </div>
+      </header>
+
+      <section class="resource-grid">
+        <article class="resource-card glass-card">
+          <h2>什么情况适合发邮件</h2>
+          <ul class="resource-list">
+            <li>城市坐标、时区、名称或别名需要修正。</li>
+            <li>希望新增某座城市或提升某座城市的优先级。</li>
+            <li>对隐私、条款、方法说明或编辑策略有疑问。</li>
+            <li>合作、广告或媒体相关咨询。</li>
+          </ul>
+        </article>
+
+        <article class="resource-card glass-card">
+          <h2>怎样能更快得到回复</h2>
+          <ul class="resource-list">
+            <li>附上具体页面链接或明确的城市名称。</li>
+            <li>用一两句话说明问题点，不要只说“数据不对”。</li>
+            <li>如果涉及时间，请附上本地日期、时区和参考来源。</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="resource-callout glass-card-lg">
+        <div>
+          <span class="resource-callout-label">主要联系方式</span>
+          <h2>直接发送邮件到 SunriseTime。</h2>
+          <p>{supportEmail}</p>
+        </div>
+        <div class="resource-link-row">
+          <a href={supportEmailHref} class="btn-primary-sm">发送邮件</a>
+          <a href="/zh-cn/methodology/" class="btn-secondary-sm">方法说明</a>
+          <a href="/zh-cn/sitemap/" class="btn-secondary-sm">站点地图</a>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <ChineseFooter />
+</Base>
+

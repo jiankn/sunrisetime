@@ -3,8 +3,9 @@ import Base from '@layouts/Base.astro';
 import Header from '@components/Header.astro';
 import Footer from '@components/Footer.astro';
 import AdUnit from '@components/AdUnit.astro';
-import { getRegionHub, regionHubs, useCaseHubs } from '@data/site';
-import { buildBreadcrumbJsonLd } from '@utils/seo';
+import { getCityLocationLabel, getRegionHub, regionHubs, useCaseHubs } from '@data/site';
+import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
+import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
 
 export function getStaticPaths() {
   return regionHubs.map((region) => ({
@@ -21,7 +22,14 @@ if (!region) {
 const relatedGuides = useCaseHubs.filter((hub) => hub.relatedRegionSlugs.includes(region.slug));
 const otherRegions = regionHubs.filter((entry) => entry.slug !== region.slug);
 const leadCity = region.featuredCities[0] ?? region.cities[0];
-const pageUrl = `https://sunrisetime.co${region.path}`;
+const pagePath = region.path;
+const pageUrl = `https://sunrisetime.co${pagePath}`;
+const alternates = buildAlternateLinks([
+  { hrefLang: 'en', path: pagePath },
+  { hrefLang: 'es', path: localizePath('es', pagePath) },
+  { hrefLang: 'x-default', path: pagePath },
+]);
+const languageLinks = buildLanguageSwitcherLinks(pagePath);
 const breadcrumbItems = [
   { name: 'Home', path: '/' },
   { name: 'Cities', path: '/cities/' },
@@ -49,8 +57,10 @@ const jsonLd = [
   canonical={pageUrl}
   keywords={`${region.name.toLowerCase()} sunrise times, ${region.name.toLowerCase()} sunset times, ${region.name.toLowerCase()} cities`}
   jsonLd={jsonLd}
+  lang="en"
+  alternates={alternates}
 >
-  <Header />
+  <Header languageLinks={languageLinks} currentLanguage="en" />
 
   <main class="resource-page">
     <div class="container">
@@ -105,7 +115,7 @@ const jsonLd = [
           {region.featuredCities.map((city) => (
             <a href={`/sunrise/${city.slug}/`} class="hub-city-card glass-card">
               <span class="hub-city-name">{city.name}</span>
-              <span class="hub-city-country">{city.country}</span>
+              <span class="hub-city-country">{getCityLocationLabel(city)}</span>
             </a>
           ))}
         </div>
@@ -122,7 +132,7 @@ const jsonLd = [
           {region.cities.map((city) => (
             <a href={`/sunrise/${city.slug}/`} class="hub-city-card glass-card">
               <span class="hub-city-name">{city.name}</span>
-              <span class="hub-city-country">{city.country}</span>
+              <span class="hub-city-country">{getCityLocationLabel(city)}</span>
             </a>
           ))}
         </div>

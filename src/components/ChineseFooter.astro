@@ -1,0 +1,57 @@
+---
+import { featuredFooterCities, totalCities } from '@data/site';
+import { chineseFooter, getChineseCityName } from '@i18n/chinese';
+---
+
+<footer class="footer">
+  <div class="container footer-grid">
+    <div class="footer-brand">
+      <div class="nav-logo">
+        <span class="logo-icon"><img src="/logo.svg" alt="SunriseTime 标志" width="28" height="28"></span>
+        <span class="logo-text">Sunrise<span class="logo-accent">Time</span></span>
+      </div>
+      <p>{chineseFooter.summary}</p>
+      <div class="footer-chip-list" style="margin-top:1rem;">
+        {featuredFooterCities.map((city) => (
+          <a href={`/zh-cn/sunrise/${city.slug}/`} class="footer-chip">
+            {getChineseCityName(city)}
+          </a>
+        ))}
+      </div>
+    </div>
+
+    <div class="footer-links">
+      <h4>继续浏览</h4>
+      <ul>
+        {chineseFooter.coreLinks.map((link) => (
+          <li><a href={link.path}>{link.name}</a></li>
+        ))}
+      </ul>
+    </div>
+
+    <div class="footer-links">
+      <h4>信任与说明</h4>
+      <ul>
+        {chineseFooter.trustLinks.map((link) => (
+          <li><a href={link.path}>{link.name}</a></li>
+        ))}
+      </ul>
+    </div>
+  </div>
+
+  <div class="container footer-bottom">
+    <div class="footer-bottom-copy">
+      <p>&copy; {new Date().getFullYear()} SunriseTime. {chineseFooter.bottomNote} 当前已覆盖 {totalCities} 座城市。</p>
+    </div>
+
+    <div class="footer-bottom-links">
+      <a href="/zh-cn/about/">关于</a>
+      <a href="/zh-cn/methodology/">方法说明</a>
+      <a href="/zh-cn/privacy/">隐私</a>
+      <a href="/zh-cn/terms/">条款</a>
+      <a href="/zh-cn/contact/">联系</a>
+      <a href="/zh-cn/guides/">指南</a>
+      <a href="/zh-cn/sitemap/">站点地图</a>
+    </div>
+  </div>
+</footer>

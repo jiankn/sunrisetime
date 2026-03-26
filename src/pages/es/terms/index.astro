@@ -1,0 +1,105 @@
+---
+import Base from '@layouts/Base.astro';
+import LocalizedHeader from '@components/LocalizedHeader.astro';
+import LocalizedFooter from '@components/LocalizedFooter.astro';
+import { legalLastUpdated, supportEmail, supportEmailHref } from '@data/site';
+import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
+import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
+
+const pagePath = '/terms/';
+const spanishPath = localizePath('es', pagePath);
+const pageUrl = `https://sunrisetime.co${spanishPath}`;
+const alternates = buildAlternateLinks([
+  { hrefLang: 'en', path: pagePath },
+  { hrefLang: 'es', path: spanishPath },
+  { hrefLang: 'x-default', path: pagePath },
+]);
+const languageLinks = buildLanguageSwitcherLinks(pagePath);
+
+const jsonLd = [
+  {
+    "@type": "WebPage",
+    "@id": `${pageUrl}#webpage`,
+    "name": "Términos del servicio",
+    "description": "Reglas básicas para usar SunriseTime como herramienta informativa pública.",
+    "url": pageUrl,
+    "inLanguage": "es",
+    "isPartOf": {
+      "@id": "https://sunrisetime.co/es/#website"
+    }
+  },
+  buildBreadcrumbJsonLd([
+    { name: 'Inicio', path: '/es/' },
+    { name: 'Términos', path: spanishPath },
+  ]),
+];
+---
+
+<Base
+  title="Términos del servicio - SunriseTime"
+  description="Lee los términos básicos para usar SunriseTime como herramienta informativa de amanecer, atardecer y oración."
+  canonical={pageUrl}
+  keywords="términos SunriseTime, uso del sitio, descargo informativo"
+  jsonLd={jsonLd}
+  lang="es"
+  alternates={alternates}
+>
+  <LocalizedHeader languageLinks={languageLinks} currentLanguage="es" />
+
+  <main class="resource-page">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/es/">Inicio</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <span>Términos</span>
+      </nav>
+
+      <header class="resource-header">
+        <span class="section-badge">
+          <i data-lucide="file-text" class="icon-xs"></i>
+          Términos
+        </span>
+        <h1>Usa SunriseTime como una herramienta informativa y de planificación, no como sustituto de una decisión profesional crítica.</h1>
+        <p class="resource-subtitle">Estos términos resumen el uso permitido, los límites de responsabilidad y la relación con anuncios o servicios externos en la versión pública del sitio.</p>
+        <div class="resource-meta">
+          <span class="resource-meta-chip">Actualizado: {legalLastUpdated}</span>
+          <span class="resource-meta-chip">Utilidad pública</span>
+        </div>
+      </header>
+
+      <section class="resource-grid">
+        <article class="resource-card glass-card">
+          <h2>Uso permitido</h2>
+          <ul class="resource-list">
+            <li>Puedes consultar, enlazar y usar SunriseTime para planificación personal o profesional.</li>
+            <li>No puedes usar el sitio para interrumpir el servicio, abusar de la infraestructura o rasparlo de forma desproporcionada.</li>
+            <li>El contenido y el diseño siguen perteneciendo a SunriseTime salvo indicación contraria.</li>
+          </ul>
+        </article>
+
+        <article class="resource-card glass-card">
+          <h2>Límites y advertencias</h2>
+          <ul class="resource-list">
+            <li>Los datos publicados son referencias útiles, no garantías absolutas para seguridad, cumplimiento legal o práctica religiosa.</li>
+            <li>La disponibilidad del sitio puede cambiar y no se promete funcionamiento continuo sin errores.</li>
+            <li>Los anuncios o enlaces externos no deben entenderse como recomendación salvo que se indique expresamente.</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="resource-callout glass-card-lg">
+        <div>
+          <span class="resource-callout-label">Contacto legal</span>
+          <h2>¿Dudas sobre estos términos?</h2>
+          <p>Escribe a {supportEmail} para consultas relacionadas con uso, políticas o reclamaciones.</p>
+        </div>
+        <div class="resource-link-row">
+          <a href={supportEmailHref} class="btn-primary-sm">Enviar email</a>
+          <a href="/es/privacy/" class="btn-secondary-sm">Ver privacidad</a>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <LocalizedFooter />
+</Base>

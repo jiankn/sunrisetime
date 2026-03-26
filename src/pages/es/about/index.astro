@@ -1,0 +1,94 @@
+---
+import Base from '@layouts/Base.astro';
+import LocalizedHeader from '@components/LocalizedHeader.astro';
+import LocalizedFooter from '@components/LocalizedFooter.astro';
+import { cityIndexLabel, totalCities } from '@data/site';
+import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
+import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
+
+const pagePath = '/about/';
+const spanishPath = localizePath('es', pagePath);
+const pageUrl = `https://sunrisetime.co${spanishPath}`;
+const alternates = buildAlternateLinks([
+  { hrefLang: 'en', path: pagePath },
+  { hrefLang: 'es', path: spanishPath },
+  { hrefLang: 'x-default', path: pagePath },
+]);
+const languageLinks = buildLanguageSwitcherLinks(pagePath);
+
+const jsonLd = [
+  {
+    "@type": "AboutPage",
+    "@id": `${pageUrl}#webpage`,
+    "name": "Sobre SunriseTime",
+    "description": "Qué resuelve SunriseTime, cómo organiza sus páginas por ciudad y por qué la versión en español existe como activo SEO independiente.",
+    "url": pageUrl,
+    "inLanguage": "es",
+    "isPartOf": {
+      "@id": "https://sunrisetime.co/es/#website"
+    }
+  },
+  buildBreadcrumbJsonLd([
+    { name: 'Inicio', path: '/es/' },
+    { name: 'Sobre SunriseTime', path: spanishPath },
+  ]),
+];
+---
+
+<Base
+  title="Sobre SunriseTime - Amanecer, atardecer y oración por ciudad"
+  description="Conoce cómo SunriseTime organiza páginas de amanecer, atardecer, hora dorada y oración por ciudad, y por qué la versión en español se publica como capa SEO independiente."
+  canonical={pageUrl}
+  keywords="sobre SunriseTime, amanecer por ciudad, SEO multilingüe"
+  jsonLd={jsonLd}
+  lang="es"
+  alternates={alternates}
+>
+  <LocalizedHeader languageLinks={languageLinks} currentLanguage="es" />
+
+  <main class="resource-page">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/es/">Inicio</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <span>Sobre SunriseTime</span>
+      </nav>
+
+      <header class="resource-header">
+        <span class="section-badge">
+          <i data-lucide="sun-medium" class="icon-xs"></i>
+          Sobre SunriseTime
+        </span>
+        <h1>SunriseTime está pensado para responder rápido a una pregunta muy concreta: ¿a qué hora amanece, atardece o llega la próxima oración en una ciudad?</h1>
+        <p class="resource-subtitle">La versión en español no es una traducción cosmética. Se publica con URLs propias, canonical propio, hreflang real y contenido principal localizado para que Google la trate como un activo SEO independiente.</p>
+        <div class="resource-meta">
+          <span class="resource-meta-chip">{cityIndexLabel}</span>
+          <span class="resource-meta-chip">{totalCities} ciudades</span>
+          <span class="resource-meta-chip">Sin registro</span>
+        </div>
+      </header>
+
+      <section class="resource-grid">
+        <article class="resource-card glass-card">
+          <h2>Qué hace SunriseTime</h2>
+          <ul class="resource-list">
+            <li>Publica páginas por ciudad con amanecer, atardecer, luz diurna, hora dorada, fase lunar y oración.</li>
+            <li>Prioriza la respuesta rápida antes que el contenido inflado o genérico.</li>
+            <li>Conecta páginas de ciudad, confianza y sitemap para que el sitio sea útil para personas y rastreadores.</li>
+          </ul>
+        </article>
+
+        <article class="resource-card glass-card">
+          <h2>Para quién está hecho</h2>
+          <ul class="resource-list">
+            <li>Personas que buscan la hora exacta del amanecer o del atardecer antes de salir.</li>
+            <li>Fotógrafos, viajeros y creadores que necesitan hora dorada y cambios de luz.</li>
+            <li>Usuarios que quieren ver oración y datos solares en el mismo flujo.</li>
+          </ul>
+        </article>
+      </section>
+    </div>
+  </main>
+
+  <LocalizedFooter />
+</Base>

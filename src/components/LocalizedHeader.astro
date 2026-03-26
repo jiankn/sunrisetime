@@ -1,0 +1,51 @@
+---
+import LanguageSwitcher from '@components/LanguageSwitcher.astro';
+import { spanishNavigation } from '@i18n/spanish';
+
+interface Props {
+  languageLinks?: { code: string; label: string; href: string }[];
+  currentLanguage?: string;
+}
+
+const { languageLinks = [], currentLanguage = 'es' } = Astro.props;
+---
+
+<nav class="navbar" id="navbar">
+  <div class="nav-inner">
+    <a href="/es/" class="nav-logo" aria-label="SunriseTime Inicio">
+      <span class="logo-icon">
+        <img src="/logo.svg" alt="SunriseTime Logo" width="28" height="28">
+      </span>
+      <span class="logo-text">Sunrise<span class="logo-accent">Time</span></span>
+    </a>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="/es/#search">{spanishNavigation.search}</a></li>
+      <li><a href="/es/cities/">{spanishNavigation.cities}</a></li>
+      <li><a href="/es/guides/">{spanishNavigation.guides}</a></li>
+      <li><a href="/es/contact/">{spanishNavigation.contact}</a></li>
+    </ul>
+    <div class="nav-actions">
+      <LanguageSwitcher links={languageLinks} currentLanguage={currentLanguage} />
+      <a href="/es/#search" class="btn-secondary-sm">{spanishNavigation.searchCity}</a>
+      <a href="/es/cities/" class="btn-primary-sm">{spanishNavigation.browseCities}</a>
+    </div>
+    <button class="hamburger" id="hamburger" aria-label="Abrir menú" type="button">
+      <i data-lucide="menu" class="icon-sm"></i>
+    </button>
+  </div>
+</nav>
+
+<div class="mobile-menu" id="mobileMenu">
+  <ul>
+    <li><a href="/es/#search">{spanishNavigation.search}</a></li>
+    <li><a href="/es/cities/">{spanishNavigation.cities}</a></li>
+    <li><a href="/es/guides/">{spanishNavigation.guides}</a></li>
+    <li><a href="/es/contact/">{spanishNavigation.contact}</a></li>
+    {languageLinks.length > 1 && (
+      <li>
+        <LanguageSwitcher links={languageLinks} currentLanguage={currentLanguage} />
+      </li>
+    )}
+    <li><a href="/es/#search" class="btn-primary-sm" style="display:inline-block;margin-top:1rem;">{spanishNavigation.searchYourCity}</a></li>
+  </ul>
+</div>

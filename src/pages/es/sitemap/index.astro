@@ -1,0 +1,141 @@
+---
+import Base from '@layouts/Base.astro';
+import LocalizedHeader from '@components/LocalizedHeader.astro';
+import LocalizedFooter from '@components/LocalizedFooter.astro';
+import { allCities, regionHubs, useCaseHubs } from '@data/site';
+import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
+import {
+  getSpanishCityLocationLabel,
+  getSpanishCityName,
+  getSpanishGuideContent,
+  getSpanishRegionName,
+} from '@i18n/spanish';
+import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
+
+const pagePath = '/sitemap/';
+const spanishPath = localizePath('es', pagePath);
+const pageUrl = `https://sunrisetime.co${spanishPath}`;
+const alternates = buildAlternateLinks([
+  { hrefLang: 'en', path: pagePath },
+  { hrefLang: 'es', path: spanishPath },
+  { hrefLang: 'x-default', path: pagePath },
+]);
+const languageLinks = buildLanguageSwitcherLinks(pagePath);
+
+const jsonLd = [
+  {
+    "@type": "WebPage",
+    "@id": `${pageUrl}#webpage`,
+    "name": "Mapa del sitio HTML",
+    "description": "Listado HTML de páginas principales, páginas de confianza y ciudades indexadas en la versión en español de SunriseTime.",
+    "url": pageUrl,
+    "inLanguage": "es",
+    "isPartOf": {
+      "@id": "https://sunrisetime.co/es/#website"
+    }
+  },
+  buildBreadcrumbJsonLd([
+    { name: 'Inicio', path: '/es/' },
+    { name: 'Mapa del sitio', path: spanishPath },
+  ]),
+];
+---
+
+<Base
+  title="Mapa del sitio HTML - SunriseTime Español"
+  description="Explora las páginas principales y las ciudades indexadas de la versión en español de SunriseTime."
+  canonical={pageUrl}
+  keywords="mapa del sitio HTML, SunriseTime español"
+  jsonLd={jsonLd}
+  lang="es"
+  alternates={alternates}
+>
+  <LocalizedHeader languageLinks={languageLinks} currentLanguage="es" />
+
+  <main class="resource-page">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/es/">Inicio</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <span>Mapa del sitio</span>
+      </nav>
+
+      <header class="resource-header">
+        <span class="section-badge">
+          <i data-lucide="map" class="icon-xs"></i>
+          Mapa del sitio
+        </span>
+        <h1>Navega la versión en español desde una sola página.</h1>
+        <p class="resource-subtitle">Este sitemap HTML sirve para personas y para motores de búsqueda. Prioriza las páginas útiles, las páginas de confianza y el acceso a las URLs de ciudad.</p>
+      </header>
+
+      <section class="sitemap-grid">
+        <article class="sitemap-section glass-card">
+          <h2>Páginas principales</h2>
+          <ul class="sitemap-links">
+            <li><a href="/es/">Inicio</a></li>
+            <li><a href="/es/cities/">Ciudades</a></li>
+            <li><a href="/es/guides/">Guías</a></li>
+            <li><a href="/es/methodology/">Metodología</a></li>
+            <li><a href="/es/about/">Sobre SunriseTime</a></li>
+            <li><a href="/es/contact/">Contacto</a></li>
+          </ul>
+        </article>
+
+        <article class="sitemap-section glass-card">
+          <h2>Confianza</h2>
+          <ul class="sitemap-links">
+            <li><a href="/es/privacy/">Privacidad</a></li>
+            <li><a href="/es/terms/">Términos</a></li>
+            <li><a href="/es/sitemap/">Mapa del sitio HTML</a></li>
+            <li><a href="/es/sitemap.xml">Mapa del sitio XML</a></li>
+          </ul>
+        </article>
+
+        <article class="sitemap-section glass-card">
+          <h2>Guías</h2>
+          <ul class="sitemap-links">
+            {useCaseHubs.map((hub) => {
+              const content = getSpanishGuideContent(hub);
+              return <li><a href={`/es/guides/${hub.slug}/`}>{content.name}</a></li>;
+            })}
+          </ul>
+        </article>
+      </section>
+
+      <section class="resource-section">
+        <div class="detail-section-head">
+          <h2>Hubs regionales</h2>
+          <p>La capa en español ya incluye páginas regionales, guías y páginas de ciudad conectadas por hreflang.</p>
+        </div>
+        <div class="resource-link-grid">
+          {regionHubs.map((region) => (
+            <a href={`/es/cities/${region.slug}/`} class="resource-link-card glass-card">
+              <strong>{getSpanishRegionName(region.slug, region.name)}</strong>
+              <span>{region.cityCount} ciudades indexadas</span>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      {regionHubs.map((region) => (
+        <section class="resource-section">
+          <div class="detail-section-head">
+            <h2>{getSpanishRegionName(region.slug, region.name)}</h2>
+            <p><a href={`/es/cities/${region.slug}/`}>Abrir el hub regional</a></p>
+          </div>
+          <div class="hub-city-grid">
+            {region.cities.map((city) => (
+              <a href={`/es/sunrise/${city.slug}/`} class="hub-city-card glass-card">
+                <span class="hub-city-name">{getSpanishCityName(city)}</span>
+                <span class="hub-city-country">{getSpanishCityLocationLabel(city, { includeAdmin1: Boolean(city.admin1) })}</span>
+              </a>
+            ))}
+          </div>
+        </section>
+      ))}
+    </div>
+  </main>
+
+  <LocalizedFooter />
+</Base>

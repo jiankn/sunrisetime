@@ -1,0 +1,156 @@
+---
+import Base from '@layouts/Base.astro';
+import ChineseHeader from '@components/ChineseHeader.astro';
+import ChineseFooter from '@components/ChineseFooter.astro';
+import { allCities, regionHubs, useCaseHubs } from '@data/site';
+import {
+  getChineseCityLocationLabel,
+  getChineseCityName,
+  getChineseGuideContent,
+  getChineseRegionName,
+} from '@i18n/chinese';
+import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
+import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
+
+const pagePath = '/sitemap/';
+const chinesePath = localizePath('zh-cn', pagePath);
+const pageUrl = `https://sunrisetime.co${chinesePath}`;
+const alternates = buildAlternateLinks([
+  { hrefLang: 'en', path: pagePath },
+  { hrefLang: 'es', path: localizePath('es', pagePath) },
+  { hrefLang: 'zh-cn', path: chinesePath },
+  { hrefLang: 'x-default', path: pagePath },
+]);
+const languageLinks = buildLanguageSwitcherLinks(pagePath);
+
+const jsonLd = [
+  {
+    "@type": "WebPage",
+    "@id": `${pageUrl}#webpage`,
+    "name": "HTML 站点地图",
+    "description": "简体中文版的核心页面、区域页、指南页和城市页总览。",
+    "url": pageUrl,
+    "inLanguage": "zh-CN",
+    "isPartOf": {
+      "@id": "https://sunrisetime.co/zh-cn/#website"
+    }
+  },
+  buildBreadcrumbJsonLd([
+    { name: '首页', path: '/zh-cn/' },
+    { name: '站点地图', path: chinesePath },
+  ]),
+];
+---
+
+<Base
+  title="HTML 站点地图 - SunriseTime 简体中文"
+  description="查看 SunriseTime 简体中文版的核心页面、区域页、主题指南和城市入口。"
+  canonical={pageUrl}
+  keywords="HTML 站点地图, SunriseTime 简体中文"
+  jsonLd={jsonLd}
+  lang="zh-CN"
+  langPrefix="/zh-cn"
+  alternates={alternates}
+>
+  <ChineseHeader languageLinks={languageLinks} currentLanguage="zh-cn" />
+
+  <main class="resource-page">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="面包屑导航">
+        <a href="/zh-cn/">首页</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <span>站点地图</span>
+      </nav>
+
+      <header class="resource-header">
+        <span class="section-badge">
+          <i data-lucide="map" class="icon-xs"></i>
+          站点地图
+        </span>
+        <h1>从一个页面浏览完整的简体中文版。</h1>
+        <p class="resource-subtitle">如果你想从目录里找页面，这里集中列出了中文站最常用的入口。</p>
+      </header>
+
+      <section class="sitemap-grid">
+        <article class="sitemap-section glass-card">
+          <h2>核心页面</h2>
+          <ul class="sitemap-links">
+            <li><a href="/zh-cn/">首页</a></li>
+            <li><a href="/zh-cn/cities/">城市索引</a></li>
+            <li><a href="/zh-cn/guides/">主题指南</a></li>
+            <li><a href="/zh-cn/methodology/">方法说明</a></li>
+            <li><a href="/zh-cn/about/">关于 SunriseTime</a></li>
+            <li><a href="/zh-cn/contact/">联系我们</a></li>
+          </ul>
+        </article>
+
+        <article class="sitemap-section glass-card">
+          <h2>信任与说明</h2>
+          <ul class="sitemap-links">
+            <li><a href="/zh-cn/privacy/">隐私政策</a></li>
+            <li><a href="/zh-cn/terms/">使用条款</a></li>
+            <li><a href="/zh-cn/sitemap/">HTML 站点地图</a></li>
+            <li><a href="/zh-cn/sitemap.xml">XML 站点地图</a></li>
+          </ul>
+        </article>
+
+        <article class="sitemap-section glass-card">
+          <h2>主题指南</h2>
+          <ul class="sitemap-links">
+            {useCaseHubs.map((hub) => {
+              const content = getChineseGuideContent(hub);
+              return <li><a href={`/zh-cn/guides/${hub.slug}/`}>{content.name}</a></li>;
+            })}
+          </ul>
+        </article>
+      </section>
+
+      <section class="resource-section">
+        <div class="detail-section-head">
+          <h2>区域页</h2>
+          <p>如果你还没确定具体城市，可以先按区域继续浏览。</p>
+        </div>
+        <div class="resource-link-grid">
+          {regionHubs.map((region) => (
+            <a href={`/zh-cn/cities/${region.slug}/`} class="resource-link-card glass-card">
+              <strong>{getChineseRegionName(region.slug, region.name)}</strong>
+              <span>{region.cityCount} 座城市已索引</span>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      {regionHubs.map((region) => (
+        <section class="resource-section">
+          <div class="detail-section-head">
+            <h2>{getChineseRegionName(region.slug, region.name)}</h2>
+            <p><a href={`/zh-cn/cities/${region.slug}/`}>打开这个区域页</a></p>
+          </div>
+          <div class="hub-city-grid">
+            {region.cities.map((city) => (
+              <a href={`/zh-cn/sunrise/${city.slug}/`} class="hub-city-card glass-card">
+                <span class="hub-city-name">{getChineseCityName(city)}</span>
+                <span class="hub-city-country">{getChineseCityLocationLabel(city)}</span>
+              </a>
+            ))}
+          </div>
+        </section>
+      ))}
+
+      <section class="resource-callout glass-card-lg">
+        <div>
+          <span class="resource-callout-label">城市页总量</span>
+          <h2>当前简体中文版已经连通 {allCities.length} 座城市的城市级入口。</h2>
+          <p>如果不想从完整列表开始，最好的入口通常仍然是主题指南或区域页。</p>
+        </div>
+        <div class="resource-link-row">
+          <a href="/zh-cn/cities/" class="btn-primary-sm">城市索引</a>
+          <a href="/zh-cn/guides/" class="btn-secondary-sm">主题指南</a>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <ChineseFooter />
+</Base>
+

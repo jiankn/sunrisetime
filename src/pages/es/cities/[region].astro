@@ -1,0 +1,187 @@
+---
+import Base from '@layouts/Base.astro';
+import LocalizedHeader from '@components/LocalizedHeader.astro';
+import LocalizedFooter from '@components/LocalizedFooter.astro';
+import AdUnit from '@components/AdUnit.astro';
+import { getRegionHub, regionHubs, useCaseHubs } from '@data/site';
+import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
+import {
+  getSpanishCityLocationLabel,
+  getSpanishCityName,
+  getSpanishGuideContent,
+  getSpanishRegionContent,
+  getSpanishRegionName,
+} from '@i18n/spanish';
+import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
+
+export function getStaticPaths() {
+  return regionHubs.map((region) => ({
+    params: { region: region.slug },
+  }));
+}
+
+const region = getRegionHub(Astro.params.region ?? '');
+
+if (!region) {
+  throw new Error(`Unknown region hub: ${Astro.params.region}`);
+}
+
+const content = getSpanishRegionContent(region);
+const relatedGuides = useCaseHubs.filter((hub) => hub.relatedRegionSlugs.includes(region.slug));
+const otherRegions = regionHubs.filter((entry) => entry.slug !== region.slug);
+const leadCity = region.featuredCities[0] ?? region.cities[0];
+const pagePath = region.path;
+const spanishPath = localizePath('es', pagePath);
+const pageUrl = `https://sunrisetime.co${spanishPath}`;
+const alternates = buildAlternateLinks([
+  { hrefLang: 'en', path: pagePath },
+  { hrefLang: 'es', path: spanishPath },
+  { hrefLang: 'x-default', path: pagePath },
+]);
+const languageLinks = buildLanguageSwitcherLinks(pagePath);
+const regionName = getSpanishRegionName(region.slug, region.name);
+
+const jsonLd = [
+  {
+    "@type": "CollectionPage",
+    "@id": `${pageUrl}#webpage`,
+    "name": `${regionName} - amanecer y atardecer`,
+    "description": content.description,
+    "url": pageUrl,
+    "inLanguage": "es",
+    "isPartOf": {
+      "@id": "https://sunrisetime.co/es/#website"
+    }
+  },
+  buildBreadcrumbJsonLd([
+    { name: 'Inicio', path: '/es/' },
+    { name: 'Ciudades', path: '/es/cities/' },
+    { name: regionName, path: spanishPath },
+  ]),
+];
+---
+
+<Base
+  title={`${regionName} - amanecer y atardecer | SunriseTime Español`}
+  description={content.description}
+  canonical={pageUrl}
+  keywords={`${regionName.toLowerCase()} amanecer, ${regionName.toLowerCase()} atardecer`}
+  jsonLd={jsonLd}
+  lang="es"
+  alternates={alternates}
+>
+  <LocalizedHeader languageLinks={languageLinks} currentLanguage="es" />
+
+  <main class="resource-page">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/es/">Inicio</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <a href="/es/cities/">Ciudades</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <span>{regionName}</span>
+      </nav>
+
+      <header class="resource-header">
+        <span class="section-badge">
+          <i data-lucide="globe-2" class="icon-xs"></i>
+          {regionName}
+        </span>
+        <h1>{content.description}</h1>
+        <p class="resource-subtitle">{content.intro}</p>
+        <div class="resource-meta">
+          <span class="resource-meta-chip">{region.cityCount} ciudades indexadas</span>
+          {leadCity && <span class="resource-meta-chip">Empieza por {getSpanishCityName(leadCity)}</span>}
+          <span class="resource-meta-chip">Hub regional en español</span>
+        </div>
+      </header>
+
+      <section class="resource-grid">
+        <article class="resource-card glass-card">
+          <h2>Por qué navegar esta región</h2>
+          <ul class="resource-list">
+            {content.reasons.map((item) => (
+              <li>{item}</li>
+            ))}
+          </ul>
+        </article>
+
+        <article class="resource-card glass-card">
+          <h2>Para quién encaja mejor</h2>
+          <ul class="resource-list">
+            {content.audiences.map((item) => (
+              <li>{item}</li>
+            ))}
+          </ul>
+        </article>
+      </section>
+
+      <section class="resource-section">
+        <div class="detail-section-head">
+          <h2>Ciudades destacadas</h2>
+          <p>Estas son buenas entradas si quieres llegar rápido desde navegación regional a una respuesta local.</p>
+        </div>
+        <div class="hub-city-grid">
+          {region.featuredCities.map((city) => (
+            <a href={`/es/sunrise/${city.slug}/`} class="hub-city-card glass-card">
+              <span class="hub-city-name">{getSpanishCityName(city)}</span>
+              <span class="hub-city-country">{getSpanishCityLocationLabel(city, { includeAdmin1: Boolean(city.admin1) })}</span>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <AdUnit id={`ad-es-region-${region.slug}`} />
+
+      <section class="resource-section">
+        <div class="detail-section-head">
+          <h2>Todas las ciudades indexadas en {regionName}</h2>
+          <p>Usa la lista completa cuando necesites más profundidad o comparación dentro de la misma región.</p>
+        </div>
+        <div class="hub-city-grid">
+          {region.cities.map((city) => (
+            <a href={`/es/sunrise/${city.slug}/`} class="hub-city-card glass-card">
+              <span class="hub-city-name">{getSpanishCityName(city)}</span>
+              <span class="hub-city-country">{getSpanishCityLocationLabel(city, { includeAdmin1: Boolean(city.admin1) })}</span>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <section class="resource-section">
+        <div class="detail-section-head">
+          <h2>Guías relacionadas</h2>
+          <p>Las guías capturan intención más amplia y la devuelven a páginas de ciudad o hubs regionales.</p>
+        </div>
+        <div class="resource-link-grid">
+          {relatedGuides.map((hub) => {
+            const guideContent = getSpanishGuideContent(hub);
+            return (
+              <a href={`/es/guides/${hub.slug}/`} class="resource-link-card glass-card">
+                <strong>{guideContent.name}</strong>
+                <span>{guideContent.description}</span>
+              </a>
+            );
+          })}
+        </div>
+      </section>
+
+      <section class="resource-section">
+        <div class="detail-section-head">
+          <h2>Otras regiones</h2>
+          <p>Si tu comparación cambia, pasa a otro hub regional en vez de volver al inicio.</p>
+        </div>
+        <div class="resource-link-grid">
+          {otherRegions.map((entry) => (
+            <a href={`/es/cities/${entry.slug}/`} class="resource-link-card glass-card">
+              <strong>{getSpanishRegionName(entry.slug, entry.name)}</strong>
+              <span>{entry.cityCount} ciudades indexadas</span>
+            </a>
+          ))}
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <LocalizedFooter />
+</Base>

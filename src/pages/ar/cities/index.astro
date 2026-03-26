@@ -1,0 +1,118 @@
+---
+import Base from '@layouts/Base.astro';
+import ArabicHeader from '@components/ArabicHeader.astro';
+import ArabicFooter from '@components/ArabicFooter.astro';
+import { getCitySearchText, regionHubs, totalCities } from '@data/site';
+import {
+  getArabicCityDisplayName,
+  getArabicCityLocationLabel,
+  getArabicCityName,
+  getArabicRegionName,
+} from '@i18n/arabic';
+import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
+import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
+
+const pagePath = '/cities/';
+const arabicPath = localizePath('ar', pagePath);
+const pageUrl = `https://sunrisetime.co${arabicPath}`;
+const alternates = buildAlternateLinks([
+  { hrefLang: 'en', path: pagePath },
+  { hrefLang: 'es', path: localizePath('es', pagePath) },
+  { hrefLang: 'ar', path: arabicPath },
+  { hrefLang: 'x-default', path: pagePath },
+]);
+const languageLinks = buildLanguageSwitcherLinks(pagePath);
+
+const jsonLd = [
+  {
+    "@type": "CollectionPage",
+    "@id": `${pageUrl}#webpage`,
+    "name": "فهرس المدن بالعربية",
+    "description": `فهرس عربي لصفحات الشروق والغروب في ${totalCities} مدينة مع تصفح إقليمي قابل للفهرسة.`,
+    "url": pageUrl,
+    "inLanguage": "ar",
+  },
+  buildBreadcrumbJsonLd([
+    { name: 'الرئيسية', path: '/ar/' },
+    { name: 'المدن', path: '/ar/cities/' },
+  ]),
+];
+---
+
+<Base
+  title={`فهرس الشروق والغروب في ${totalCities} مدينة - العربية`}
+  description={`تصفح صفحات الشروق والغروب في ${totalCities} مدينة من فهرس عربي يدعم RTL والتصفح حسب الإقليم.`}
+  canonical={pageUrl}
+  keywords="فهرس المدن, الشروق, الغروب"
+  jsonLd={jsonLd}
+  lang="ar"
+  dir="rtl"
+  alternates={alternates}
+>
+  <ArabicHeader languageLinks={languageLinks} currentLanguage="ar" />
+
+  <main class="cities-hub">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/ar/">الرئيسية</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <span>المدن</span>
+      </nav>
+
+      <header class="cities-hub-header">
+        <h1>فهرس <span class="gradient-text">{totalCities} مدينة</span> للشروق والغروب</h1>
+        <p>ابحث عن مدينة أو تصفحها حسب الإقليم. الفهرس العربي الآن متصل بصفحات المدن والمراكز الإقليمية والأدلة.</p>
+        <div class="hub-search">
+          <i data-lucide="search" class="icon-sm" style="color:var(--text-tertiary);flex-shrink:0;"></i>
+          <input type="text" id="hubCitySearch" placeholder="ابحث عن مدينة..." autocomplete="off" />
+        </div>
+      </header>
+
+      {regionHubs.map((region) => (
+        <section class="continent-section" data-continent={region.slug}>
+          <h2>
+            <i data-lucide="globe" class="icon-md"></i>
+            {getArabicRegionName(region.slug, region.name)}
+          </h2>
+          <div class="hub-city-grid">
+            {region.cities.map((city) => (
+              <a
+                href={`/ar/sunrise/${city.slug}/`}
+                class="hub-city-card glass-card"
+                data-city-search={`${getArabicCityDisplayName(city, { includeAdmin1: Boolean(city.admin1) })} ${getCitySearchText(city)}`.toLowerCase()}
+              >
+                <span class="hub-city-name">{getArabicCityName(city)}</span>
+                <span class="hub-city-country">{getArabicCityLocationLabel(city, { includeAdmin1: Boolean(city.admin1) })}</span>
+              </a>
+            ))}
+          </div>
+        </section>
+      ))}
+    </div>
+  </main>
+
+  <ArabicFooter />
+</Base>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const input = document.getElementById('hubCitySearch');
+    if (!input) return;
+
+    input.addEventListener('input', (event) => {
+      const query = (event.target as HTMLInputElement).value.toLowerCase().trim();
+      const cards = document.querySelectorAll<HTMLElement>('.hub-city-card');
+      const sections = document.querySelectorAll<HTMLElement>('.continent-section');
+
+      cards.forEach((card) => {
+        const name = card.dataset.citySearch || '';
+        card.style.display = name.includes(query) ? '' : 'none';
+      });
+
+      sections.forEach((section) => {
+        const visible = section.querySelectorAll<HTMLElement>('.hub-city-card:not([style*="display: none"])');
+        section.style.display = visible.length > 0 ? '' : 'none';
+      });
+    });
+  });
+</script>

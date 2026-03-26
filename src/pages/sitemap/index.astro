@@ -6,12 +6,22 @@ import {
   allCities,
   footerCompanyLinks,
   footerCoreLinks,
+  getCityLocationLabel,
   regionHubs,
   useCaseHubs,
 } from '@data/site';
 import { buildBreadcrumbJsonLd } from '@utils/seo';
+import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
+import { buildAlternateLinks } from '@utils/seo';
 
 const pageUrl = 'https://sunrisetime.co/sitemap/';
+const pagePath = '/sitemap/';
+const alternates = buildAlternateLinks([
+  { hrefLang: 'en', path: pagePath },
+  { hrefLang: 'es', path: localizePath('es', pagePath) },
+  { hrefLang: 'x-default', path: pagePath },
+]);
+const languageLinks = buildLanguageSwitcherLinks(pagePath);
 
 const jsonLd = [
   {
@@ -37,8 +47,10 @@ const jsonLd = [
   canonical={pageUrl}
   keywords="HTML sitemap, SunriseTime sitemap, city pages"
   jsonLd={jsonLd}
+  lang="en"
+  alternates={alternates}
 >
-  <Header />
+  <Header languageLinks={languageLinks} currentLanguage="en" />
 
   <main class="resource-page">
     <div class="container">
@@ -112,7 +124,7 @@ const jsonLd = [
             {region.cities.map((city) => (
               <a href={`/sunrise/${city.slug}/`} class="hub-city-card glass-card">
                 <span class="hub-city-name">{city.name}</span>
-                <span class="hub-city-country">{city.country}</span>
+                <span class="hub-city-country">{getCityLocationLabel(city)}</span>
               </a>
             ))}
           </div>

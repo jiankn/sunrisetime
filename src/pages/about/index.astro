@@ -4,8 +4,17 @@ import Header from '@components/Header.astro';
 import Footer from '@components/Footer.astro';
 import { cityIndexLabel, totalCities } from '@data/site';
 import { buildBreadcrumbJsonLd } from '@utils/seo';
+import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
+import { buildAlternateLinks } from '@utils/seo';
 
 const pageUrl = 'https://sunrisetime.co/about/';
+const pagePath = '/about/';
+const alternates = buildAlternateLinks([
+  { hrefLang: 'en', path: pagePath },
+  { hrefLang: 'es', path: localizePath('es', pagePath) },
+  { hrefLang: 'x-default', path: pagePath },
+]);
+const languageLinks = buildLanguageSwitcherLinks(pagePath);
 
 const jsonLd = [
   {
@@ -31,8 +40,10 @@ const jsonLd = [
   canonical={pageUrl}
   keywords="about SunriseTime, sunrise site, sunset tool, ad-supported utility"
   jsonLd={jsonLd}
+  lang="en"
+  alternates={alternates}
 >
-  <Header />
+  <Header languageLinks={languageLinks} currentLanguage="en" />
 
   <main class="resource-page">
     <div class="container">

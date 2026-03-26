@@ -1,0 +1,396 @@
+---
+import Base from '@layouts/Base.astro';
+import LocalizedHeader from '@components/LocalizedHeader.astro';
+import LocalizedFooter from '@components/LocalizedFooter.astro';
+import { allCities, regionHubs, totalCities } from '@data/site';
+import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
+import {
+  getSpanishCityAliases,
+  getSpanishCityDisplayName,
+  getSpanishCityName,
+  getSpanishCityLocationLabel,
+  getSpanishCountryName,
+  getSpanishMoonPhase,
+  getSpanishPrayerName,
+  getSpanishRegionName,
+  spanishHomeFaqs,
+  spanishLocale,
+} from '@i18n/spanish';
+import { getGoldenHour, getSunTimes, formatTime } from '@utils/sun';
+import { getMoonData } from '@utils/moon';
+import { getNextPrayer } from '@utils/prayer-times';
+import { buildAlternateLinks } from '@utils/seo';
+
+const pagePath = '/';
+const alternates = buildAlternateLinks([
+  { hrefLang: 'en', path: pagePath },
+  { hrefLang: 'es', path: localizePath('es', pagePath) },
+  { hrefLang: 'x-default', path: pagePath },
+]);
+const languageLinks = buildLanguageSwitcherLinks(pagePath);
+
+const previewSlugs = ['new-york', 'madrid', 'dubai', 'mexico-city', 'bogota', 'buenos-aires'];
+const now = new Date();
+
+function buildPreviewEntry(slug: string) {
+  const city = allCities.find((entry) => entry.slug === slug);
+  if (!city) return null;
+
+  const sun = getSunTimes(now, city.lat, city.lng);
+  const golden = getGoldenHour(now, city.lat, city.lng);
+  const moon = getMoonData(now, city.lat, city.lng);
+  const nextPrayer = getNextPrayer(now, city.lat, city.lng, 'MWL', 'Standard');
+
+  let nextEventLabel = 'Próximo amanecer';
+  let nextEventTime = formatTime(sun.sunrise, city.timezone, spanishLocale);
+  let nextEventSupport = `La hora dorada de la mañana termina a las ${formatTime(golden.morning.end, city.timezone, spanishLocale)}.`;
+
+  if (now >= sun.sunrise && now < sun.sunset) {
+    nextEventLabel = 'Próximo atardecer';
+    nextEventTime = formatTime(sun.sunset, city.timezone, spanishLocale);
+    nextEventSupport = `La hora dorada de la tarde empieza a las ${formatTime(golden.evening.start, city.timezone, spanishLocale)}.`;
+  } else if (now >= sun.sunset) {
+    const tomorrow = new Date(now);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowSun = getSunTimes(tomorrow, city.lat, city.lng);
+    nextEventLabel = 'Amanecer de mañana';
+    nextEventTime = formatTime(tomorrowSun.sunrise, city.timezone, spanishLocale);
+    nextEventSupport = `Mañana habrá ${tomorrowSun.daylightFormatted} de luz natural.`;
+  }
+
+  return {
+    slug: city.slug,
+    name: city.name,
+    displayName: getSpanishCityDisplayName(city, { includeAdmin1: Boolean(city.admin1) }),
+    country: city.country,
+    countryLabel: getSpanishCityLocationLabel(city, { includeAdmin1: Boolean(city.admin1) }),
+    timezone: city.timezone,
+    aliases: getSpanishCityAliases(city),
+    admin1: city.admin1 ?? '',
+    caption: `${getSpanishCityLocationLabel(city, { includeAdmin1: Boolean(city.admin1) })} · ${now.toLocaleDateString(spanishLocale, {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      timeZone: city.timezone,
+    })}`,
+    sunrise: formatTime(sun.sunrise, city.timezone, spanishLocale),
+    sunset: formatTime(sun.sunset, city.timezone, spanishLocale),
+    daylight: sun.daylightFormatted,
+    golden: `${formatTime(golden.evening.start, city.timezone, spanishLocale)} - ${formatTime(golden.evening.end, city.timezone, spanishLocale)}`,
+    moon: `${getSpanishMoonPhase(moon.phaseName)} · ${moon.illumination}%`,
+    prayer: `${getSpanishPrayerName(nextPrayer.name)} ${formatTime(nextPrayer.time, city.timezone, spanishLocale)}`,
+    nextEventLabel,
+    nextEventTime,
+    nextEventSupport,
+  };
+}
+
+const previewCities = previewSlugs
+  .map((slug) => buildPreviewEntry(slug))
+  .filter((entry): entry is NonNullable<ReturnType<typeof buildPreviewEntry>> => Boolean(entry));
+
+const heroCity = previewCities[0];
+
+const searchCities = allCities.map((city) => ({
+  name: city.name,
+  displayName: getSpanishCityDisplayName(city, { includeAdmin1: Boolean(city.admin1) }),
+  slug: city.slug,
+  country: city.country,
+  countryLabel: getSpanishCityLocationLabel(city, { includeAdmin1: Boolean(city.admin1) }),
+  admin1: city.admin1 ?? '',
+  aliases: getSpanishCityAliases(city),
+  lat: city.lat,
+  lng: city.lng,
+  population: city.population,
+}));
+
+const regionGroups = regionHubs.map((region) => ({
+  id: region.slug,
+  name: getSpanishRegionName(region.slug, region.name),
+  cities: region.cities.slice(0, 6).map((city) => ({
+    slug: city.slug,
+    name: getSpanishCityName(city),
+    country: getSpanishCityLocationLabel(city, { includeAdmin1: Boolean(city.admin1) }),
+  })),
+}));
+
+const jsonLd = [
+  {
+    "@type": "WebSite",
+    "@id": "https://sunrisetime.co/es/#website",
+    "name": "SunriseTime Español",
+    "url": "https://sunrisetime.co/es/",
+    "description": `Consulta el amanecer, el atardecer, la hora dorada y los horarios de oración de ${totalCities} ciudades indexadas.`,
+    "inLanguage": "es",
+    "publisher": {
+      "@id": "https://sunrisetime.co/#organization"
+    }
+  },
+  {
+    "@type": "Organization",
+    "@id": "https://sunrisetime.co/#organization",
+    "name": "SunriseTime",
+    "url": "https://sunrisetime.co/"
+  },
+  {
+    "@type": "FAQPage",
+    "@id": "https://sunrisetime.co/es/#faq",
+    "mainEntity": spanishHomeFaqs.map((item) => ({
+      "@type": "Question",
+      "name": item.question,
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": item.answer,
+      },
+    })),
+  },
+];
+---
+
+<Base
+  title={`Hora del amanecer y atardecer hoy en ${totalCities} ciudades - SunriseTime`}
+  description={`Busca el amanecer, el atardecer, la hora dorada, la fase lunar y los horarios de oración de ${totalCities} ciudades. Versión SEO en español con URLs indexables y contenido principal localizado.`}
+  canonical="https://sunrisetime.co/es/"
+  keywords="amanecer hoy, atardecer hoy, hora dorada, horarios de oración, ciudades"
+  jsonLd={jsonLd}
+  lang="es"
+  alternates={alternates}
+>
+  <LocalizedHeader languageLinks={languageLinks} currentLanguage="es" />
+
+  <main class="resource-page">
+    <section class="snapshot-hero" id="search">
+      <div class="container snapshot-hero-shell">
+        <div class="snapshot-hero-copy">
+          <div class="hero-badge">
+            <i data-lucide="languages" class="icon-xs"></i>
+            <span>Piloto SEO en español</span>
+          </div>
+
+          <div class="hero-search-panel glass-card-lg" data-hero-search>
+            <div class="hero-search-head">
+              <div>
+                <span class="hero-search-label">Encuentra la respuesta de hoy</span>
+                <strong class="hero-search-title">Busca una ciudad y abre su página local en segundos</strong>
+              </div>
+            </div>
+            <div class="hero-search-shell hero-search-shell-lg">
+              <i data-lucide="search" class="icon-sm"></i>
+              <input
+                id="heroCitySearch"
+                type="text"
+                data-city-search-input
+                placeholder="Ejemplo: Madrid, Nueva York, Bogotá"
+                autocomplete="off"
+                aria-autocomplete="list"
+                aria-controls="heroSearchResults"
+                aria-expanded="false"
+                aria-label="Buscar una ciudad"
+                role="combobox"
+              >
+              <button type="button" class="hero-location-btn hero-location-btn-inline" data-use-location>
+                <i data-lucide="locate-fixed" class="icon-sm"></i>
+                <span class="hero-location-text" data-location-label aria-live="polite" aria-atomic="true">Usar mi ubicación</span>
+              </button>
+            </div>
+            <div class="hero-search-results" id="heroSearchResults" data-search-results role="listbox"></div>
+
+            <div class="hero-quick-row">
+              <span class="hero-quick-label">Vistas rápidas</span>
+              <div class="hero-preview-switches">
+                {previewCities.map((city, index) => (
+                  <button
+                    type="button"
+                    class={`hero-city-pill ${index === 0 ? 'active' : ''}`}
+                    data-hero-city={city.slug}
+                  >
+                    {city.displayName}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <header class="resource-header" style="padding-top:0;margin-top:2rem;">
+            <span class="section-badge">
+              <i data-lucide="sun-medium" class="icon-xs"></i>
+              Amanecer, atardecer y oración
+            </span>
+            <h1>Consulta el amanecer y el atardecer de hoy por ciudad.</h1>
+            <p class="resource-subtitle">SunriseTime en español responde primero a la intención principal: hora del amanecer, hora del atardecer, duración del día, hora dorada, fase lunar y acceso rápido a horarios de oración.</p>
+            <div class="resource-meta">
+              <span class="resource-meta-chip">{totalCities} ciudades indexadas</span>
+              <span class="resource-meta-chip">Canonical propio</span>
+              <span class="resource-meta-chip">hreflang real</span>
+            </div>
+          </header>
+        </div>
+
+        <div class="hero-snapshot-panel glass-card-lg">
+          <div class="hero-panel-top">
+            <div class="hero-panel-copy">
+              <span class="hero-panel-label">Vista previa instantánea</span>
+              <h2>
+                <span data-hero-city-name>{heroCity.displayName}</span>
+                <span class="hero-panel-country" data-hero-country>{heroCity.countryLabel}</span>
+              </h2>
+              <p data-hero-caption>{heroCity.caption}</p>
+            </div>
+            <a class="btn-secondary-sm hero-open-link" data-hero-open href={`/es/sunrise/${heroCity.slug}/`}>
+              <span>Abrir página</span>
+              <i data-lucide="arrow-up-right" class="icon-sm"></i>
+            </a>
+          </div>
+
+          <div class="hero-next-card">
+            <span class="hero-next-label" data-hero-next-label>{heroCity.nextEventLabel}</span>
+            <strong class="hero-next-time" data-hero-next-time>{heroCity.nextEventTime}</strong>
+            <span class="hero-next-sub" data-hero-next-support>{heroCity.nextEventSupport}</span>
+          </div>
+
+          <div class="hero-mini-grid">
+            <div class="hero-mini-card glass-card">
+              <span class="hero-mini-label">Amanecer</span>
+              <strong data-hero-sunrise>{heroCity.sunrise}</strong>
+            </div>
+            <div class="hero-mini-card glass-card">
+              <span class="hero-mini-label">Atardecer</span>
+              <strong data-hero-sunset>{heroCity.sunset}</strong>
+            </div>
+            <div class="hero-mini-card glass-card">
+              <span class="hero-mini-label">Luz diurna</span>
+              <strong data-hero-daylight>{heroCity.daylight}</strong>
+            </div>
+            <div class="hero-mini-card glass-card">
+              <span class="hero-mini-label">Hora dorada</span>
+              <strong data-hero-golden>{heroCity.golden}</strong>
+            </div>
+            <div class="hero-mini-card glass-card">
+              <span class="hero-mini-label">Luna</span>
+              <strong data-hero-moon>{heroCity.moon}</strong>
+            </div>
+            <div class="hero-mini-card glass-card">
+              <span class="hero-mini-label">Próxima oración</span>
+              <strong data-hero-prayer>{heroCity.prayer}</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <section class="resource-grid">
+        <article class="resource-card glass-card">
+          <h2>Qué cubre esta versión</h2>
+          <ul class="resource-list">
+            <li>Home en español con búsqueda real por ciudad y rutas indexables bajo `/es/`.</li>
+            <li>Páginas de amanecer, atardecer y oración por ciudad con metadata localizada.</li>
+            <li>Páginas de confianza: sobre nosotros, privacidad, términos, contacto y sitemap HTML.</li>
+          </ul>
+        </article>
+
+        <article class="resource-card glass-card">
+          <h2>Qué ve primero Google</h2>
+          <ul class="resource-list">
+            <li>Title, description, H1 y cuerpo principal en español.</li>
+            <li>Canonical propio para cada URL en español.</li>
+            <li>Clúster hreflang consistente entre inglés y español.</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="resource-section" id="top-cities">
+        <div class="detail-section-head">
+          <h2>Ciudades destacadas</h2>
+          <p>Abre una ciudad popular y entra directamente a la respuesta de hoy.</p>
+        </div>
+
+        <div class="cities-grid">
+          {regionGroups.map((group) => (
+            <div class="city-group glass-card" id={`es-${group.id}`}>
+              <h3>
+                <i data-lucide="globe" class="icon-sm"></i>
+                {group.name}
+              </h3>
+              <ul class="city-list">
+                {group.cities.map((city) => (
+                  <li>
+                    <a href={`/es/sunrise/${city.slug}/`} class="city-link">
+                      <span class="city-name">{city.name}</span>
+                      <span class="city-country">{city.country}</span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+
+        <div class="cities-cta">
+          <a href="/es/cities/" class="btn-secondary">
+            <i data-lucide="globe" class="icon-xs"></i>
+            Ver índice completo de ciudades
+          </a>
+        </div>
+      </section>
+
+      <section class="faq" id="faq">
+        <div class="section-header">
+          <span class="section-badge">
+            <i data-lucide="help-circle" class="icon-xs"></i>
+            FAQ
+          </span>
+          <h2>Preguntas frecuentes sobre la versión en español</h2>
+          <p class="section-subtitle">La intención de esta capa multilingüe es sumar URLs útiles y rastreables, no duplicar el inglés con una traducción superficial.</p>
+        </div>
+
+        <div class="faq-list">
+          {spanishHomeFaqs.map((item, index) => (
+            <details class="faq-item glass-card" id={`es-faq-${index + 1}`}>
+              <summary>
+                <span>{item.question}</span>
+                <i data-lucide="chevron-down" class="icon-sm faq-icon"></i>
+              </summary>
+              <div class="faq-answer">
+                <p>{item.answer}</p>
+              </div>
+            </details>
+          ))}
+        </div>
+      </section>
+
+      <section class="resource-callout glass-card-lg" style="margin-top:2rem;">
+        <div>
+          <span class="resource-callout-label">Siguiente paso</span>
+          <h2>Empieza por una ciudad y entra en la URL correcta desde la primera búsqueda.</h2>
+          <p>Si ya sabes la ciudad, abre su página de amanecer o de oración. Si todavía comparas destinos, entra por el índice de ciudades.</p>
+        </div>
+        <div class="resource-link-row">
+          <a href="/es/cities/" class="btn-primary-sm">Índice de ciudades</a>
+          <a href="/es/guides/" class="btn-secondary-sm">Guías</a>
+          <a href="/es/methodology/" class="btn-secondary-sm">Metodología</a>
+          <a href="/es/about/" class="btn-secondary-sm">Sobre SunriseTime</a>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <LocalizedFooter />
+
+  <script type="application/json" id="heroPreviewData" set:html={JSON.stringify(previewCities)} />
+  <script type="application/json" id="heroSearchData" set:html={JSON.stringify(searchCities)} />
+  <script
+    type="application/json"
+    id="heroSearchConfig"
+    set:html={JSON.stringify({
+      noMatchTitle: 'No encontramos esa ciudad',
+      noMatchSubtitle: 'Prueba otra escritura o una ciudad cercana',
+      openCityPage: 'Abrir página',
+      useMyLocation: 'Usar mi ubicación',
+      locationUnavailable: 'Ubicación no disponible',
+      locating: 'Buscando...',
+      nearestUnavailable: 'No encontramos una ciudad cercana',
+      locationBlocked: 'Permiso bloqueado',
+    })}
+  />
+</Base>

@@ -1,0 +1,97 @@
+---
+import Base from '@layouts/Base.astro';
+import ChineseHeader from '@components/ChineseHeader.astro';
+import ChineseFooter from '@components/ChineseFooter.astro';
+import { regionHubs, useCaseHubs } from '@data/site';
+import { getChineseGuideContent, getChineseRegionName } from '@i18n/chinese';
+import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
+import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
+
+const pagePath = '/guides/';
+const chinesePath = localizePath('zh-cn', pagePath);
+const pageUrl = `https://sunrisetime.co${chinesePath}`;
+const alternates = buildAlternateLinks([
+  { hrefLang: 'en', path: pagePath },
+  { hrefLang: 'es', path: localizePath('es', pagePath) },
+  { hrefLang: 'zh-cn', path: chinesePath },
+  { hrefLang: 'x-default', path: pagePath },
+]);
+const languageLinks = buildLanguageSwitcherLinks(pagePath);
+
+const jsonLd = [
+  {
+    "@type": "CollectionPage",
+    "@id": `${pageUrl}#webpage`,
+    "name": "SunriseTime 中文指南",
+    "description": "围绕黄金时刻、月相、礼拜时间和日照时长的简体中文主题指南。",
+    "url": pageUrl,
+    "inLanguage": "zh-CN",
+  },
+  buildBreadcrumbJsonLd([
+    { name: '首页', path: '/zh-cn/' },
+    { name: '主题指南', path: chinesePath },
+  ]),
+];
+---
+
+<Base
+  title="主题指南 - SunriseTime 简体中文"
+  description="查看 SunriseTime 简体中文主题指南：黄金时刻、月相、礼拜时间和日照时长。"
+  canonical={pageUrl}
+  keywords="黄金时刻 指南, 月相 指南, 礼拜时间 指南, 日照时长 指南"
+  jsonLd={jsonLd}
+  lang="zh-CN"
+  langPrefix="/zh-cn"
+  alternates={alternates}
+>
+  <ChineseHeader languageLinks={languageLinks} currentLanguage="zh-cn" />
+
+  <main class="resource-page">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="面包屑导航">
+        <a href="/zh-cn/">首页</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <span>主题指南</span>
+      </nav>
+
+      <header class="resource-header">
+        <span class="section-badge">
+          <i data-lucide="compass" class="icon-xs"></i>
+          主题指南
+        </span>
+        <h1>当问题不止是一座城市时，先从主题指南进入。</h1>
+        <p class="resource-subtitle">如果你还没确定具体城市，或者想先按主题了解要看什么，可以先从这里开始。</p>
+      </header>
+
+      <section class="resource-link-grid">
+        {useCaseHubs.map((hub) => {
+          const content = getChineseGuideContent(hub);
+          return (
+            <a href={`/zh-cn/guides/${hub.slug}/`} class="resource-link-card resource-link-card-rich glass-card">
+              <strong>{content.name}</strong>
+              <span>{content.description}</span>
+            </a>
+          );
+        })}
+      </section>
+
+      <section class="resource-section">
+        <div class="detail-section-head">
+          <h2>把主题页和区域页结合起来用</h2>
+          <p>主题页帮你先确定看什么，区域页帮你挑城市。两者一起用，会比反复搜索更省时间。</p>
+        </div>
+        <div class="resource-link-grid">
+          {regionHubs.map((region) => (
+            <a href={`/zh-cn/cities/${region.slug}/`} class="resource-link-card glass-card">
+              <strong>{getChineseRegionName(region.slug, region.name)}</strong>
+              <span>{region.cityCount} 座城市已索引</span>
+            </a>
+          ))}
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <ChineseFooter />
+</Base>
+

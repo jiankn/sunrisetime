@@ -11,6 +11,10 @@ interface Props {
   jsonLd?: object[];
   robots?: string;
   ogType?: string;
+  lang?: string;
+  langPrefix?: string;
+  dir?: 'ltr' | 'rtl';
+  alternates?: { hrefLang: string; href: string }[];
 }
 
 const {
@@ -21,11 +25,17 @@ const {
   jsonLd = [],
   robots = 'index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1',
   ogType = 'website',
+  lang = 'en',
+  langPrefix,
+  dir = 'ltr',
+  alternates = [],
 } = Astro.props;
+
+const resolvedLangPrefix = langPrefix ?? (lang === 'en' ? '' : `/${lang}`);
 ---
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang={lang} dir={dir}>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -34,6 +44,9 @@ const {
   <meta name="keywords" content={keywords}>
   <meta name="robots" content={robots}>
   <link rel="canonical" href={canonical}>
+  {alternates.map((alternate) => (
+    <link rel="alternate" hreflang={alternate.hrefLang} href={alternate.href} />
+  ))}
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="apple-touch-icon" href="/logo.png">
 
@@ -77,7 +90,7 @@ const {
 
   <slot name="head" />
 </head>
-<body>
+<body data-lang-prefix={resolvedLangPrefix}>
   <slot />
   <script src="/scripts/main.js" defer></script>
 </body>

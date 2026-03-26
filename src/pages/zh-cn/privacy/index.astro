@@ -1,0 +1,134 @@
+---
+import Base from '@layouts/Base.astro';
+import ChineseHeader from '@components/ChineseHeader.astro';
+import ChineseFooter from '@components/ChineseFooter.astro';
+import { supportEmail, supportEmailHref } from '@data/site';
+import { chineseLegalLastUpdated } from '@i18n/chinese';
+import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
+import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
+
+const pagePath = '/privacy/';
+const chinesePath = localizePath('zh-cn', pagePath);
+const pageUrl = `https://sunrisetime.co${chinesePath}`;
+const alternates = buildAlternateLinks([
+  { hrefLang: 'en', path: pagePath },
+  { hrefLang: 'es', path: localizePath('es', pagePath) },
+  { hrefLang: 'zh-cn', path: chinesePath },
+  { hrefLang: 'x-default', path: pagePath },
+]);
+const languageLinks = buildLanguageSwitcherLinks(pagePath);
+
+const jsonLd = [
+  {
+    "@type": "WebPage",
+    "@id": `${pageUrl}#webpage`,
+    "name": "隐私政策",
+    "description": "了解 SunriseTime 如何处理有限的使用数据、定位权限、Cookie 和广告相关信息。",
+    "url": pageUrl,
+    "inLanguage": "zh-CN",
+    "isPartOf": {
+      "@id": "https://sunrisetime.co/zh-cn/#website"
+    }
+  },
+  buildBreadcrumbJsonLd([
+    { name: '首页', path: '/zh-cn/' },
+    { name: '隐私政策', path: chinesePath },
+  ]),
+];
+---
+
+<Base
+  title="隐私政策 - SunriseTime"
+  description="查看 SunriseTime 如何处理 Cookie、有限使用数据、定位权限和广告相关信息。"
+  canonical={pageUrl}
+  keywords="隐私政策, SunriseTime 隐私, Cookie"
+  jsonLd={jsonLd}
+  lang="zh-CN"
+  langPrefix="/zh-cn"
+  alternates={alternates}
+>
+  <ChineseHeader languageLinks={languageLinks} currentLanguage="zh-cn" />
+
+  <main class="resource-page">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="面包屑导航">
+        <a href="/zh-cn/">首页</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <span>隐私政策</span>
+      </nav>
+
+      <header class="resource-header">
+        <span class="section-badge">
+          <i data-lucide="shield" class="icon-xs"></i>
+          隐私政策
+        </span>
+        <h1>SunriseTime 尽量保持产品简单，因此隐私模型也应尽量简单透明。</h1>
+        <p class="resource-subtitle">本站是一个面向公开访问的实用型网站，目标是在尽量少收集个人信息的前提下，提供日出日落和礼拜时间查询服务。</p>
+        <div class="resource-meta">
+          <span class="resource-meta-chip">最后更新：{chineseLegalLastUpdated}</span>
+          <span class="resource-meta-chip">免费站点</span>
+        </div>
+      </header>
+
+      <section class="resource-grid">
+        <article class="resource-card glass-card">
+          <h2>我们可能处理哪些信息</h2>
+          <ul class="resource-list">
+            <li>浏览器、设备、近似网络位置和页面请求等基础技术信息。</li>
+            <li>你访问过的城市页、搜索过的词和浏览路径。</li>
+            <li>只有在你主动授权时，浏览器提供的定位信息。</li>
+          </ul>
+        </article>
+
+        <article class="resource-card glass-card">
+          <h2>这些信息会怎么用</h2>
+          <ul class="resource-list">
+            <li>返回正确的城市页面和相关时间数据。</li>
+            <li>判断哪些页面更常被使用，方便继续改进站点导航。</li>
+            <li>保障站点安全、发现滥用并维持正常运行。</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="resource-grid">
+        <article class="resource-card glass-card">
+          <h2>Cookie、广告和第三方服务</h2>
+          <ul class="resource-list">
+            <li>站点可能使用 Cookie 或类似技术支撑基础功能和广告展示。</li>
+            <li>如果启用 Google AdSense，Google 及其合作方可能会使用 Cookie 进行广告投放或效果测量。</li>
+            <li>第三方服务各自受其隐私政策约束。</li>
+          </ul>
+        </article>
+
+        <article class="resource-card glass-card">
+          <h2>你的选择</h2>
+          <ul class="resource-list">
+            <li>你可以在浏览器设置中屏蔽或清理 Cookie。</li>
+            <li>你可以随时拒绝浏览器定位权限。</li>
+            <li>如果你不接受相关技术处理，可以停止使用本站。</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="resource-grid">
+        <article class="resource-card glass-card">
+          <h2>数据保留与安全</h2>
+          <ul class="resource-list">
+            <li>我们尽量只保留维持服务运行、排障和防滥用所需的信息。</li>
+            <li>没有任何系统能保证绝对安全，因此 SunriseTime 也尽量避免收集不必要的个人数据。</li>
+            <li>部分运行日志可能会保留一段时间，用于稳定性和安全分析。</li>
+          </ul>
+        </article>
+
+        <article class="resource-card glass-card">
+          <h2>隐私相关联系</h2>
+          <p class="resource-text">如果你有隐私相关问题，请发邮件到 <a href={supportEmailHref}>{supportEmail}</a>。</p>
+          <p class="resource-text">若未来启用更多分析或广告能力，本页会继续更新，以反映线上真实配置。</p>
+        </article>
+      </section>
+    </div>
+  </main>
+
+  <ChineseFooter />
+</Base>
+

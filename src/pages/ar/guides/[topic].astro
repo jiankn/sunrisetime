@@ -1,0 +1,171 @@
+---
+import Base from '@layouts/Base.astro';
+import ArabicHeader from '@components/ArabicHeader.astro';
+import ArabicFooter from '@components/ArabicFooter.astro';
+import AdUnit from '@components/AdUnit.astro';
+import { getCitiesBySlugs, getUseCaseHub, regionHubs, useCaseHubs } from '@data/site';
+import {
+  getArabicCityLocationLabel,
+  getArabicCityName,
+  getArabicGuideContent,
+  getArabicRegionName,
+} from '@i18n/arabic';
+import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
+import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
+
+export function getStaticPaths() {
+  return useCaseHubs.map((hub) => ({
+    params: { topic: hub.slug },
+  }));
+}
+
+const hub = getUseCaseHub(Astro.params.topic ?? '');
+
+if (!hub) {
+  throw new Error(`Unknown guide topic: ${Astro.params.topic}`);
+}
+
+const content = getArabicGuideContent(hub);
+const featuredCities = getCitiesBySlugs(hub.featuredCitySlugs);
+const relatedRegions = regionHubs.filter((region) => hub.relatedRegionSlugs.includes(region.slug));
+const siblingGuides = useCaseHubs.filter((entry) => entry.slug !== hub.slug);
+const pagePath = hub.path;
+const arabicPath = localizePath('ar', pagePath);
+const pageUrl = `https://sunrisetime.co${arabicPath}`;
+const alternates = buildAlternateLinks([
+  { hrefLang: 'en', path: pagePath },
+  { hrefLang: 'es', path: localizePath('es', pagePath) },
+  { hrefLang: 'ar', path: arabicPath },
+  { hrefLang: 'x-default', path: pagePath },
+]);
+const languageLinks = buildLanguageSwitcherLinks(pagePath);
+const breadcrumbItems = [
+  { name: 'الرئيسية', path: '/ar/' },
+  { name: 'الأدلة', path: '/ar/guides/' },
+  { name: content.name, path: arabicPath },
+];
+
+const jsonLd = [
+  {
+    "@type": "CollectionPage",
+    "@id": `${pageUrl}#webpage`,
+    "name": `${content.name} - دليل`,
+    "description": content.description,
+    "url": pageUrl,
+    "inLanguage": "ar",
+    "isPartOf": {
+      "@id": "https://sunrisetime.co/ar/#website"
+    }
+  },
+  buildBreadcrumbJsonLd(breadcrumbItems),
+];
+---
+
+<Base
+  title={`${content.name} - دليل تخطيط | SunriseTime العربية`}
+  description={content.description}
+  canonical={pageUrl}
+  keywords={`${content.name}, دليل ${content.name}, تخطيط الشروق`}
+  jsonLd={jsonLd}
+  lang="ar"
+  dir="rtl"
+  alternates={alternates}
+>
+  <ArabicHeader languageLinks={languageLinks} currentLanguage="ar" />
+
+  <main class="resource-page">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/ar/">الرئيسية</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <a href="/ar/guides/">الأدلة</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <span>{content.name}</span>
+      </nav>
+
+      <header class="resource-header">
+        <span class="section-badge">
+          <i data-lucide="sparkles" class="icon-xs"></i>
+          {content.name}
+        </span>
+        <h1>{content.description}</h1>
+        <p class="resource-subtitle">{content.intro}</p>
+      </header>
+
+      <section class="resource-grid">
+        <article class="resource-card glass-card">
+          <h2>ماذا يساعدك هذا الدليل أن تفعل</h2>
+          <ul class="resource-list">
+            {content.primaryBullets.map((item) => (
+              <li>{item}</li>
+            ))}
+          </ul>
+        </article>
+
+        <article class="resource-card glass-card">
+          <h2>مسار العمل المقترح</h2>
+          <ul class="resource-list">
+            {content.workflowBullets.map((item) => (
+              <li>{item}</li>
+            ))}
+          </ul>
+        </article>
+      </section>
+
+      <section class="resource-section">
+        <div class="detail-section-head">
+          <h2>مدن مميزة لهذا الموضوع</h2>
+          <p>هذه الصفحات نقطة دخول قوية عندما تريد جوابًا سريعًا وروابط داخلية واضحة بعده.</p>
+        </div>
+        <div class="hub-city-grid">
+          {featuredCities.map((city) => {
+            const cityPath = hub.slug === 'prayer-times' ? `/ar/prayer-times/${city.slug}/` : `/ar/sunrise/${city.slug}/`;
+            return (
+              <a href={cityPath} class="hub-city-card glass-card">
+                <span class="hub-city-name">{getArabicCityName(city)}</span>
+                <span class="hub-city-country">{getArabicCityLocationLabel(city, { includeAdmin1: Boolean(city.admin1) })}</span>
+              </a>
+            );
+          })}
+        </div>
+      </section>
+
+      <AdUnit id={`ad-ar-guide-${hub.slug}`} />
+
+      <section class="resource-section">
+        <div class="detail-section-head">
+          <h2>مراكز إقليمية مرتبطة</h2>
+          <p>استخدم صفحات الأقاليم عندما تحتاج عدة مدن قريبة بدون تكرار مسار البحث.</p>
+        </div>
+        <div class="resource-link-grid">
+          {relatedRegions.map((region) => (
+            <a href={`/ar/cities/${region.slug}/`} class="resource-link-card glass-card">
+              <strong>{getArabicRegionName(region.slug, region.name)}</strong>
+              <span>{region.cityCount} مدينة مفهرسة</span>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <section class="resource-section">
+        <div class="detail-section-head">
+          <h2>أدلة أخرى</h2>
+          <p>كل دليل يعالج نية بداية مختلفة، لكن جميعها يعيد المستخدم في النهاية إلى صفحات المدن نفسها.</p>
+        </div>
+        <div class="resource-link-grid">
+          {siblingGuides.map((entry) => {
+            const siblingContent = getArabicGuideContent(entry);
+            return (
+              <a href={`/ar/guides/${entry.slug}/`} class="resource-link-card glass-card">
+                <strong>{siblingContent.name}</strong>
+                <span>{siblingContent.description}</span>
+              </a>
+            );
+          })}
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <ArabicFooter />
+</Base>

@@ -1,0 +1,58 @@
+---
+import { featuredFooterCities, totalCities } from '@data/site';
+import { arabicFooter } from '@i18n/arabic';
+import { getArabicCityName } from '@i18n/arabic';
+---
+
+<footer class="footer">
+  <div class="container footer-grid">
+    <div class="footer-brand">
+      <div class="nav-logo">
+        <span class="logo-icon"><img src="/logo.svg" alt="SunriseTime" width="28" height="28"></span>
+        <span class="logo-text">Sunrise<span class="logo-accent">Time</span></span>
+      </div>
+      <p>{arabicFooter.summary}</p>
+      <div class="footer-chip-list" style="margin-top:1rem;">
+        {featuredFooterCities.map((city) => (
+          <a href={`/ar/sunrise/${city.slug}/`} class="footer-chip">
+            {getArabicCityName(city)}
+          </a>
+        ))}
+      </div>
+    </div>
+
+    <div class="footer-links">
+      <h4>تابع التصفح</h4>
+      <ul>
+        {arabicFooter.coreLinks.map((link) => (
+          <li><a href={link.path}>{link.name}</a></li>
+        ))}
+      </ul>
+    </div>
+
+    <div class="footer-links">
+      <h4>الثقة</h4>
+      <ul>
+        {arabicFooter.trustLinks.map((link) => (
+          <li><a href={link.path}>{link.name}</a></li>
+        ))}
+      </ul>
+    </div>
+  </div>
+
+  <div class="container footer-bottom">
+    <div class="footer-bottom-copy">
+      <p>&copy; {new Date().getFullYear()} SunriseTime. {arabicFooter.bottomNote} يعمل الدليل حاليًا على {totalCities} مدينة.</p>
+    </div>
+
+    <div class="footer-bottom-links">
+      <a href="/ar/about/">عن الموقع</a>
+      <a href="/ar/methodology/">المنهجية</a>
+      <a href="/ar/privacy/">الخصوصية</a>
+      <a href="/ar/terms/">الشروط</a>
+      <a href="/ar/contact/">اتصل بنا</a>
+      <a href="/ar/guides/">الأدلة</a>
+      <a href="/ar/sitemap/">خريطة الموقع</a>
+    </div>
+  </div>
+</footer>

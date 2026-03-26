@@ -1,0 +1,32 @@
+---
+interface Props {
+  links?: { code: string; label: string; href: string }[];
+  currentLanguage?: string;
+  ariaLabel?: string;
+}
+
+const { links = [], currentLanguage = 'en', ariaLabel } = Astro.props;
+
+const languageSwitcherLabelMap: Record<string, string> = {
+  'ar': 'مبدل اللغة',
+  'es': 'Selector de idioma',
+  'zh-cn': '语言切换',
+};
+
+const resolvedAriaLabel = ariaLabel ?? languageSwitcherLabelMap[currentLanguage] ?? 'Language switcher';
+---
+
+{links.length > 1 && (
+  <div class="lang-switch" aria-label={resolvedAriaLabel}>
+    {links.map((link) => (
+      <a
+        href={link.href}
+        class={link.code === currentLanguage ? 'active' : undefined}
+        hreflang={link.code}
+        lang={link.code}
+      >
+        {link.label}
+      </a>
+    ))}
+  </div>
+)}

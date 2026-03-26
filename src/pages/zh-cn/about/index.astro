@@ -1,0 +1,129 @@
+---
+import Base from '@layouts/Base.astro';
+import ChineseHeader from '@components/ChineseHeader.astro';
+import ChineseFooter from '@components/ChineseFooter.astro';
+import { totalCities } from '@data/site';
+import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
+import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
+
+const pagePath = '/about/';
+const chinesePath = localizePath('zh-cn', pagePath);
+const pageUrl = `https://sunrisetime.co${chinesePath}`;
+const alternates = buildAlternateLinks([
+  { hrefLang: 'en', path: pagePath },
+  { hrefLang: 'es', path: localizePath('es', pagePath) },
+  { hrefLang: 'zh-cn', path: chinesePath },
+  { hrefLang: 'x-default', path: pagePath },
+]);
+const languageLinks = buildLanguageSwitcherLinks(pagePath);
+
+const jsonLd = [
+  {
+    "@type": "AboutPage",
+    "@id": `${pageUrl}#webpage`,
+    "name": "关于 SunriseTime",
+    "description": "了解 SunriseTime 如何帮助你查看城市的日出日落、黄金时刻、月相和礼拜时间。",
+    "url": pageUrl,
+    "inLanguage": "zh-CN",
+    "isPartOf": {
+      "@id": "https://sunrisetime.co/zh-cn/#website"
+    }
+  },
+  buildBreadcrumbJsonLd([
+    { name: '首页', path: '/zh-cn/' },
+    { name: '关于 SunriseTime', path: chinesePath },
+  ]),
+];
+---
+
+<Base
+  title="关于 SunriseTime - 城市日出日落与礼拜时间"
+  description="了解 SunriseTime 提供哪些城市时间信息，以及它适合哪些使用场景。"
+  canonical={pageUrl}
+  keywords="关于 SunriseTime, 日出日落查询, 礼拜时间"
+  jsonLd={jsonLd}
+  lang="zh-CN"
+  langPrefix="/zh-cn"
+  alternates={alternates}
+>
+  <ChineseHeader languageLinks={languageLinks} currentLanguage="zh-cn" />
+
+  <main class="resource-page">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="面包屑导航">
+        <a href="/zh-cn/">首页</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <span>关于 SunriseTime</span>
+      </nav>
+
+      <header class="resource-header">
+        <span class="section-badge">
+          <i data-lucide="sun-medium" class="icon-xs"></i>
+          关于 SunriseTime
+        </span>
+        <h1>SunriseTime 想做的事情很简单：让你尽快看到这座城市今天几点日出、几点日落，以及下一次礼拜在什么时候。</h1>
+        <p class="resource-subtitle">我们把一座城市里最常用的天光和礼拜信息放到同一页，尽量减少来回搜索和反复跳转。</p>
+        <div class="resource-meta">
+          <span class="resource-meta-chip">{totalCities} 座城市</span>
+          <span class="resource-meta-chip">无需注册</span>
+        </div>
+      </header>
+
+      <section class="resource-grid">
+        <article class="resource-card glass-card">
+          <h2>SunriseTime 提供什么</h2>
+          <ul class="resource-list">
+            <li>城市级页面，集中展示日出、日落、日照时长、黄金时刻、月相和礼拜时间。</li>
+            <li>主题指南和区域页，方便你在还没确定城市时先做比较。</li>
+            <li>方法说明、隐私、条款、联系和站点地图等信任页面。</li>
+          </ul>
+        </article>
+
+        <article class="resource-card glass-card">
+          <h2>为谁而做</h2>
+          <ul class="resource-list">
+            <li>出门前想先看天光窗口的人。</li>
+            <li>按拍摄、旅行或户外活动安排日程的人。</li>
+            <li>希望把礼拜时间和太阳时间放在同一流程里查看的人。</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="resource-grid">
+        <article class="resource-card glass-card">
+          <h2>为什么页面结构会这样设计</h2>
+          <ul class="resource-list">
+            <li>大多数时候，你真正需要的是“这座城市今天几点日出、几点日落”。</li>
+            <li>城市页先回答时间问题，再提供区域页和主题页继续看相关内容。</li>
+            <li>信息越集中、步骤越少，使用起来就越顺手。</li>
+          </ul>
+        </article>
+
+        <article class="resource-card glass-card">
+          <h2>中文页会特别注意什么</h2>
+          <ul class="resource-list">
+            <li>尽量使用简体中文用户更熟悉的城市名和说法。</li>
+            <li>遇到重名城市时，会补上州、省或地区帮助区分。</li>
+            <li>首页、城市页、指南页和说明页都会保持同一套中文表达习惯。</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="resource-callout glass-card-lg">
+        <div>
+          <span class="resource-callout-label">继续了解</span>
+          <h2>如果你已经知道城市，最好的下一步通常还是直接进入城市页。</h2>
+          <p>如果你更想先弄清数据怎么来的，再去看方法说明会更合适。</p>
+        </div>
+        <div class="resource-link-row">
+          <a href="/zh-cn/cities/" class="btn-primary-sm">城市索引</a>
+          <a href="/zh-cn/methodology/" class="btn-secondary-sm">方法说明</a>
+          <a href="/zh-cn/sitemap/" class="btn-secondary-sm">站点地图</a>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <ChineseFooter />
+</Base>
+

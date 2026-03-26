@@ -1,0 +1,132 @@
+---
+import Base from '@layouts/Base.astro';
+import ArabicHeader from '@components/ArabicHeader.astro';
+import ArabicFooter from '@components/ArabicFooter.astro';
+import { supportEmail, supportEmailHref } from '@data/site';
+import { arabicLegalLastUpdated } from '@i18n/arabic';
+import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
+import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
+
+const pagePath = '/terms/';
+const arabicPath = localizePath('ar', pagePath);
+const pageUrl = `https://sunrisetime.co${arabicPath}`;
+const alternates = buildAlternateLinks([
+  { hrefLang: 'en', path: pagePath },
+  { hrefLang: 'es', path: localizePath('es', pagePath) },
+  { hrefLang: 'ar', path: arabicPath },
+  { hrefLang: 'x-default', path: pagePath },
+]);
+const languageLinks = buildLanguageSwitcherLinks(pagePath);
+
+const jsonLd = [
+  {
+    "@type": "WebPage",
+    "@id": `${pageUrl}#webpage`,
+    "name": "شروط الاستخدام",
+    "description": "اقرأ الشروط الأساسية التي تنظم استخدام SunriseTime والإفصاحات المتعلقة بطبيعة الخدمة الإرشادية.",
+    "url": pageUrl,
+    "inLanguage": "ar",
+    "isPartOf": {
+      "@id": "https://sunrisetime.co/ar/#website"
+    }
+  },
+  buildBreadcrumbJsonLd([
+    { name: 'الرئيسية', path: '/ar/' },
+    { name: 'الشروط', path: arabicPath },
+  ]),
+];
+---
+
+<Base
+  title="شروط الاستخدام - SunriseTime"
+  description="اقرأ الشروط الأساسية لاستخدام SunriseTime، بما في ذلك حدود الاستخدام الإرشادي والإفصاحات الإعلانية."
+  canonical={pageUrl}
+  keywords="شروط الاستخدام, شروط SunriseTime, استخدام الموقع"
+  jsonLd={jsonLd}
+  lang="ar"
+  dir="rtl"
+  alternates={alternates}
+>
+  <ArabicHeader languageLinks={languageLinks} currentLanguage="ar" />
+
+  <main class="resource-page">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/ar/">الرئيسية</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <span>الشروط</span>
+      </nav>
+
+      <header class="resource-header">
+        <span class="section-badge">
+          <i data-lucide="file-text" class="icon-xs"></i>
+          شروط الاستخدام
+        </span>
+        <h1>استخدم SunriseTime كأداة معلومات للتخطيط، لا كبديل عن حكم مهني حاسم في الحالات الحساسة.</h1>
+        <p class="resource-subtitle">تحدد هذه الشروط القواعد الأساسية لاستخدام الموقع. وهي قصيرة ومركزة على منفعة عامة مفتوحة، لا على الحسابات أو الخطط المدفوعة.</p>
+        <div class="resource-meta">
+          <span class="resource-meta-chip">آخر تحديث {arabicLegalLastUpdated}</span>
+          <span class="resource-meta-chip">خدمة عامة مفتوحة</span>
+        </div>
+      </header>
+
+      <section class="resource-grid">
+        <article class="resource-card glass-card">
+          <h2>الاستخدام المسموح</h2>
+          <ul class="resource-list">
+            <li>يمكنك استخدام SunriseTime للبحث والتصفح والرجوع إلى معلومات التوقيت لأغراض التخطيط الشخصي أو العملي.</li>
+            <li>يمكنك الربط بصفحات SunriseTime واستخدام الموقع كمورد معلوماتي عام.</li>
+            <li>لا يجوز استخدام الموقع بطريقة تعطل الخدمة أو تكشط البيانات خارج الاستخدام العام المعقول أو تسيء إلى البنية التحتية.</li>
+          </ul>
+        </article>
+
+        <article class="resource-card glass-card">
+          <h2>إخلاء المسؤولية عن الطابع الإرشادي</h2>
+          <ul class="resource-list">
+            <li>يقدم SunriseTime تقديرات زمنية ومعلومات مرجعية للتيسير فقط.</li>
+            <li>يجب التحقق مستقلًا عند اتخاذ قرارات مهمة يكون فيها الدقة ضرورية للسلامة أو الالتزام القانوني أو الممارسة الدينية.</li>
+            <li>لا نضمن أن يكون الموقع متاحًا دائمًا أو خاليًا من الأخطاء أو مناسبًا لكل غرض.</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="resource-grid">
+        <article class="resource-card glass-card">
+          <h2>الإعلانات وتحقيق الدخل</h2>
+          <ul class="resource-list">
+            <li>قد يعرض SunriseTime إعلانات لدعم النسخة العامة المجانية من الخدمة.</li>
+            <li>قد تطبق الشركاء الإعلانيون سياساتهم أو أدوات القياس أو ملفات تعريف الارتباط الخاصة بهم عندما تكون مفعلة.</li>
+            <li>لا ينبغي اعتبار الإعلانات تأييدًا ما لم يذكر ذلك بوضوح.</li>
+          </ul>
+        </article>
+
+        <article class="resource-card glass-card">
+          <h2>المحتوى والملكية الفكرية</h2>
+          <ul class="resource-list">
+            <li>تصميم الموقع والعلامة والمحتوى المكتوب وبنية الصفحات تعود إلى SunriseTime ما لم يذكر خلاف ذلك.</li>
+            <li>تبقى أسماء الأطراف الثالثة ومجموعات البيانات والمكتبات ملكًا لأصحابها.</li>
+            <li>لا يجوز نسخ الموقع بطريقة توهم بملكية أو تأليف غير صحيحين.</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="resource-grid">
+        <article class="resource-card glass-card">
+          <h2>الخدمات والروابط الخارجية</h2>
+          <ul class="resource-list">
+            <li>قد يربط SunriseTime بمصادر خارجية أو يعتمد على بنية تحتية تابعة لأطراف ثالثة.</li>
+            <li>لسنا مسؤولين عن محتوى أو توفر أو سياسات هذه الخدمات الخارجية.</li>
+            <li>قد يؤدي استخدام خدمات خارجية انطلاقًا من SunriseTime إلى خضوعك لشروط وسياسات منفصلة.</li>
+          </ul>
+        </article>
+
+        <article class="resource-card glass-card">
+          <h2>التواصل</h2>
+          <p class="resource-text">يمكن إرسال الأسئلة المتعلقة بهذه الشروط إلى <a href={supportEmailHref}>{supportEmail}</a>.</p>
+        </article>
+      </section>
+    </div>
+  </main>
+
+  <ArabicFooter />
+</Base>

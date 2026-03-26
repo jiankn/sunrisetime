@@ -1,0 +1,129 @@
+---
+import Base from '@layouts/Base.astro';
+import ArabicHeader from '@components/ArabicHeader.astro';
+import ArabicFooter from '@components/ArabicFooter.astro';
+import { cityIndexLabel, totalCities } from '@data/site';
+import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
+import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
+
+const pagePath = '/about/';
+const arabicPath = localizePath('ar', pagePath);
+const pageUrl = `https://sunrisetime.co${arabicPath}`;
+const alternates = buildAlternateLinks([
+  { hrefLang: 'en', path: pagePath },
+  { hrefLang: 'es', path: localizePath('es', pagePath) },
+  { hrefLang: 'ar', path: arabicPath },
+  { hrefLang: 'x-default', path: pagePath },
+]);
+const languageLinks = buildLanguageSwitcherLinks(pagePath);
+
+const jsonLd = [
+  {
+    "@type": "AboutPage",
+    "@id": `${pageUrl}#webpage`,
+    "name": "عن SunriseTime",
+    "description": "تعرف على ما يقدمه SunriseTime ولماذا تبنى الصفحات العربية كأصل SEO مستقل وليس مجرد ترجمة شكلية.",
+    "url": pageUrl,
+    "inLanguage": "ar",
+    "isPartOf": {
+      "@id": "https://sunrisetime.co/ar/#website"
+    }
+  },
+  buildBreadcrumbJsonLd([
+    { name: 'الرئيسية', path: '/ar/' },
+    { name: 'عن SunriseTime', path: arabicPath },
+  ]),
+];
+---
+
+<Base
+  title="عن SunriseTime - الشروق والغروب والصلاة حسب المدينة"
+  description="تعرف على كيف ينظم SunriseTime صفحات الشروق والغروب والساعة الذهبية والقمر والصلاة حسب المدينة، ولماذا تنشر النسخة العربية كطبقة SEO مستقلة."
+  canonical={pageUrl}
+  keywords="عن SunriseTime, الشروق حسب المدينة, SEO متعدد اللغات"
+  jsonLd={jsonLd}
+  lang="ar"
+  dir="rtl"
+  alternates={alternates}
+>
+  <ArabicHeader languageLinks={languageLinks} currentLanguage="ar" />
+
+  <main class="resource-page">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/ar/">الرئيسية</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <span>عن SunriseTime</span>
+      </nav>
+
+      <header class="resource-header">
+        <span class="section-badge">
+          <i data-lucide="sun-medium" class="icon-xs"></i>
+          عن SunriseTime
+        </span>
+        <h1>SunriseTime مبني للإجابة بسرعة عن سؤال واحد واضح: متى الشروق أو الغروب أو الصلاة التالية في مدينتي؟</h1>
+        <p class="resource-subtitle">النسخة العربية ليست واجهة مترجمة فقط. لها عناوين URL مستقلة، وcanonical مستقل، وhreflang حقيقي، ومحتوى رئيسي عربي بحيث تتعامل معها Google كأصل قابل للفهرسة بحد ذاته.</p>
+        <div class="resource-meta">
+          <span class="resource-meta-chip">{cityIndexLabel}</span>
+          <span class="resource-meta-chip">{totalCities} مدينة</span>
+          <span class="resource-meta-chip">بدون تسجيل</span>
+        </div>
+      </header>
+
+      <section class="resource-grid">
+        <article class="resource-card glass-card">
+          <h2>ماذا يفعل SunriseTime</h2>
+          <ul class="resource-list">
+            <li>ينشر صفحات مدينة تحتوي على الشروق والغروب وطول النهار والساعة الذهبية ومرحلة القمر ومواقيت الصلاة.</li>
+            <li>يقدم الإجابة الأساسية بسرعة قبل أي محتوى عام أو تضخيم غير مفيد.</li>
+            <li>يربط بين صفحات المدن والمراكز الإقليمية والأدلة وصفحات الثقة لتقوية الفائدة والتنقل الداخلي.</li>
+          </ul>
+        </article>
+
+        <article class="resource-card glass-card">
+          <h2>لمن صمم</h2>
+          <ul class="resource-list">
+            <li>الأشخاص الذين يريدون وقت الشروق أو الغروب قبل الخروج.</li>
+            <li>المصورون والمسافرون وصناع المحتوى الذين يحتاجون توقيت الضوء الذهبي وتغيّر الإضاءة.</li>
+            <li>المستخدمون الذين يفضلون رؤية مواقيت الصلاة وبيانات الشمس في تدفق واحد.</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="resource-grid">
+        <article class="resource-card glass-card">
+          <h2>لماذا المجال ضيق عن قصد</h2>
+          <ul class="resource-list">
+            <li>أعلى قيمة للمستخدم ليست قراءة محتوى عام، بل الحصول على إجابة دقيقة لمدينة الآن.</li>
+            <li>كل صفحة مصممة أولًا حول هذه المهمة، ثم حول روابط داخلية تساعد على مواصلة التصفح.</li>
+            <li>التركيز الأضيق يحسن الوضوح والسرعة والثقة أكثر من التوسع في ميزات جانبية.</li>
+          </ul>
+        </article>
+
+        <article class="resource-card glass-card">
+          <h2>كيف يعمل نموذج العمل</h2>
+          <ul class="resource-list">
+            <li>الزيارات البحثية تهبط على صفحات مدينة أو موضوع ذات فائدة عملية حقيقية.</li>
+            <li>الروابط الداخلية تنقل المستخدم إلى مدن وأقاليم وأدلة مرتبطة، ما يرفع عمق الجلسة.</li>
+            <li>الإعلانات تدعم النسخة العامة المجانية بدون جدران دفع أو حسابات.</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="resource-callout glass-card-lg">
+        <div>
+          <span class="resource-callout-label">الثقة قبل التوسع</span>
+          <h2>صفحات المنفعة الواضحة تتفوق على صفحات التسويق الضبابية.</h2>
+          <p>لهذا يستثمر SunriseTime في المنهجية والمراكز الإقليمية والأدلة والربط الداخلي النظيف بدل نسخ نمو عامة لا تضيف شيئًا للمستخدم.</p>
+        </div>
+        <div class="resource-link-row">
+          <a href="/ar/methodology/" class="btn-primary-sm">اقرأ المنهجية</a>
+          <a href="/ar/cities/" class="btn-secondary-sm">تصفح المدن</a>
+          <a href="/ar/sitemap/" class="btn-secondary-sm">خريطة الموقع</a>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <ArabicFooter />
+</Base>

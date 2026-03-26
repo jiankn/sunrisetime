@@ -1,0 +1,110 @@
+---
+import Base from '@layouts/Base.astro';
+import LocalizedHeader from '@components/LocalizedHeader.astro';
+import LocalizedFooter from '@components/LocalizedFooter.astro';
+import { legalLastUpdated, supportEmail, supportEmailHref } from '@data/site';
+import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
+import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
+
+const pagePath = '/privacy/';
+const spanishPath = localizePath('es', pagePath);
+const pageUrl = `https://sunrisetime.co${spanishPath}`;
+const alternates = buildAlternateLinks([
+  { hrefLang: 'en', path: pagePath },
+  { hrefLang: 'es', path: spanishPath },
+  { hrefLang: 'x-default', path: pagePath },
+]);
+const languageLinks = buildLanguageSwitcherLinks(pagePath);
+
+const jsonLd = [
+  {
+    "@type": "WebPage",
+    "@id": `${pageUrl}#webpage`,
+    "name": "Política de privacidad",
+    "description": "Cómo SunriseTime procesa datos técnicos, cookies y solicitudes relacionadas con privacidad en la versión pública del sitio.",
+    "url": pageUrl,
+    "inLanguage": "es",
+    "isPartOf": {
+      "@id": "https://sunrisetime.co/es/#website"
+    }
+  },
+  buildBreadcrumbJsonLd([
+    { name: 'Inicio', path: '/es/' },
+    { name: 'Privacidad', path: spanishPath },
+  ]),
+];
+---
+
+<Base
+  title="Política de privacidad - SunriseTime"
+  description="Lee cómo SunriseTime trata datos técnicos, cookies, ubicación opcional del navegador y solicitudes de privacidad en su versión pública."
+  canonical={pageUrl}
+  keywords="privacidad SunriseTime, cookies, ubicación del navegador"
+  jsonLd={jsonLd}
+  lang="es"
+  alternates={alternates}
+>
+  <LocalizedHeader languageLinks={languageLinks} currentLanguage="es" />
+
+  <main class="resource-page">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/es/">Inicio</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <span>Privacidad</span>
+      </nav>
+
+      <header class="resource-header">
+        <span class="section-badge">
+          <i data-lucide="shield" class="icon-xs"></i>
+          Privacidad
+        </span>
+        <h1>SunriseTime intenta mantener un modelo de privacidad simple y proporcional al tipo de producto que ofrece.</h1>
+        <p class="resource-subtitle">El sitio es una utilidad pública sin cuentas. Aun así, esta política explica qué datos técnicos pueden procesarse, cómo funciona la ubicación opcional del navegador y qué cambia si se activan herramientas publicitarias.</p>
+        <div class="resource-meta">
+          <span class="resource-meta-chip">Actualizado: {legalLastUpdated}</span>
+          <span class="resource-meta-chip">Sitio público</span>
+        </div>
+      </header>
+
+      <section class="resource-grid">
+        <article class="resource-card glass-card">
+          <h2>Qué datos pueden procesarse</h2>
+          <ul class="resource-list">
+            <li>Datos técnicos básicos como navegador, dispositivo, zona de red aproximada y solicitudes de página.</li>
+            <li>Consultas de ciudad y páginas que abras mientras usas SunriseTime.</li>
+            <li>Ubicación del navegador solo cuando eliges la función "Usar mi ubicación".</li>
+          </ul>
+        </article>
+
+        <article class="resource-card glass-card">
+          <h2>Para qué se usan</h2>
+          <ul class="resource-list">
+            <li>Para mostrar la ciudad correcta, calcular datos solares y mejorar rendimiento.</li>
+            <li>Para detectar páginas útiles y corregir errores de estructura o enlazado.</li>
+            <li>Para operar el servicio, prevenir abuso y mantener estabilidad técnica.</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="resource-grid">
+        <article class="resource-card glass-card">
+          <h2>Cookies y terceros</h2>
+          <ul class="resource-list">
+            <li>El sitio puede usar cookies o tecnologías similares para funciones básicas y soporte publicitario.</li>
+            <li>Si se activa un proveedor de anuncios, ese tercero puede aplicar su propia política.</li>
+            <li>Los servicios externos procesan datos según sus propias condiciones cuando están activos.</li>
+          </ul>
+        </article>
+
+        <article class="resource-card glass-card">
+          <h2>Contacto de privacidad</h2>
+          <p class="resource-text">Para dudas o solicitudes de privacidad escribe a <a href={supportEmailHref}>{supportEmail}</a>.</p>
+          <p class="resource-text">Si la infraestructura del sitio cambia de forma relevante, esta página debe actualizarse para seguir alineada con el producto real.</p>
+        </article>
+      </section>
+    </div>
+  </main>
+
+  <LocalizedFooter />
+</Base>

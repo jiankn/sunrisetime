@@ -1,0 +1,168 @@
+---
+import Base from '@layouts/Base.astro';
+import LocalizedHeader from '@components/LocalizedHeader.astro';
+import LocalizedFooter from '@components/LocalizedFooter.astro';
+import AdUnit from '@components/AdUnit.astro';
+import { getCitiesBySlugs, getUseCaseHub, regionHubs, useCaseHubs } from '@data/site';
+import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
+import {
+  getSpanishCityLocationLabel,
+  getSpanishCityName,
+  getSpanishGuideContent,
+  getSpanishRegionName,
+} from '@i18n/spanish';
+import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
+
+export function getStaticPaths() {
+  return useCaseHubs.map((hub) => ({
+    params: { topic: hub.slug },
+  }));
+}
+
+const hub = getUseCaseHub(Astro.params.topic ?? '');
+
+if (!hub) {
+  throw new Error(`Unknown guide topic: ${Astro.params.topic}`);
+}
+
+const content = getSpanishGuideContent(hub);
+const featuredCities = getCitiesBySlugs(hub.featuredCitySlugs);
+const relatedRegions = regionHubs.filter((region) => hub.relatedRegionSlugs.includes(region.slug));
+const siblingGuides = useCaseHubs.filter((entry) => entry.slug !== hub.slug);
+const pagePath = hub.path;
+const spanishPath = localizePath('es', pagePath);
+const pageUrl = `https://sunrisetime.co${spanishPath}`;
+const alternates = buildAlternateLinks([
+  { hrefLang: 'en', path: pagePath },
+  { hrefLang: 'es', path: spanishPath },
+  { hrefLang: 'x-default', path: pagePath },
+]);
+const languageLinks = buildLanguageSwitcherLinks(pagePath);
+
+const jsonLd = [
+  {
+    "@type": "CollectionPage",
+    "@id": `${pageUrl}#webpage`,
+    "name": `${content.name} - guía`,
+    "description": content.description,
+    "url": pageUrl,
+    "inLanguage": "es",
+    "isPartOf": {
+      "@id": "https://sunrisetime.co/es/#website"
+    }
+  },
+  buildBreadcrumbJsonLd([
+    { name: 'Inicio', path: '/es/' },
+    { name: 'Guías', path: '/es/guides/' },
+    { name: content.name, path: spanishPath },
+  ]),
+];
+---
+
+<Base
+  title={`${content.name} - Guía de planificación | SunriseTime Español`}
+  description={content.description}
+  canonical={pageUrl}
+  keywords={`${content.name.toLowerCase()}, guía ${content.name.toLowerCase()}, planificación solar`}
+  jsonLd={jsonLd}
+  lang="es"
+  alternates={alternates}
+>
+  <LocalizedHeader languageLinks={languageLinks} currentLanguage="es" />
+
+  <main class="resource-page">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/es/">Inicio</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <a href="/es/guides/">Guías</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <span>{content.name}</span>
+      </nav>
+
+      <header class="resource-header">
+        <span class="section-badge">
+          <i data-lucide="sparkles" class="icon-xs"></i>
+          {content.name}
+        </span>
+        <h1>{content.description}</h1>
+        <p class="resource-subtitle">{content.intro}</p>
+      </header>
+
+      <section class="resource-grid">
+        <article class="resource-card glass-card">
+          <h2>Qué resuelve esta guía</h2>
+          <ul class="resource-list">
+            {content.primaryBullets.map((item) => (
+              <li>{item}</li>
+            ))}
+          </ul>
+        </article>
+
+        <article class="resource-card glass-card">
+          <h2>Flujo recomendado</h2>
+          <ul class="resource-list">
+            {content.workflowBullets.map((item) => (
+              <li>{item}</li>
+            ))}
+          </ul>
+        </article>
+      </section>
+
+      <section class="resource-section">
+        <div class="detail-section-head">
+          <h2>Ciudades destacadas para {content.name.toLowerCase()}</h2>
+          <p>Estas páginas suelen ser el mejor punto de entrada cuando quieres una respuesta rápida y enlaces internos claros después.</p>
+        </div>
+        <div class="hub-city-grid">
+          {featuredCities.map((city) => {
+            const cityPath = hub.slug === 'prayer-times' ? `/es/prayer-times/${city.slug}/` : `/es/sunrise/${city.slug}/`;
+            return (
+              <a href={cityPath} class="hub-city-card glass-card">
+                <span class="hub-city-name">{getSpanishCityName(city)}</span>
+                <span class="hub-city-country">{getSpanishCityLocationLabel(city, { includeAdmin1: Boolean(city.admin1) })}</span>
+              </a>
+            );
+          })}
+        </div>
+      </section>
+
+      <AdUnit id={`ad-es-guide-${hub.slug}`} />
+
+      <section class="resource-section">
+        <div class="detail-section-head">
+          <h2>Hubs regionales relacionados</h2>
+          <p>Usa una página regional cuando necesites varias ciudades cercanas sin repetir el mismo flujo de búsqueda.</p>
+        </div>
+        <div class="resource-link-grid">
+          {relatedRegions.map((region) => (
+            <a href={`/es/cities/${region.slug}/`} class="resource-link-card glass-card">
+              <strong>{getSpanishRegionName(region.slug, region.name)}</strong>
+              <span>{region.cityCount} ciudades indexadas</span>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <section class="resource-section">
+        <div class="detail-section-head">
+          <h2>Otras guías</h2>
+          <p>Cada guía resuelve una intención distinta, pero todas derivan hacia las mismas páginas de ciudad.</p>
+        </div>
+        <div class="resource-link-grid">
+          {siblingGuides.map((entry) => {
+            const siblingContent = getSpanishGuideContent(entry);
+            return (
+              <a href={`/es/guides/${entry.slug}/`} class="resource-link-card glass-card">
+                <strong>{siblingContent.name}</strong>
+                <span>{siblingContent.description}</span>
+              </a>
+            );
+          })}
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <LocalizedFooter />
+</Base>

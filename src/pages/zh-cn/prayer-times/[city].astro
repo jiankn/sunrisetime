@@ -1,0 +1,243 @@
+---
+import Base from '@layouts/Base.astro';
+import ChineseHeader from '@components/ChineseHeader.astro';
+import ChineseFooter from '@components/ChineseFooter.astro';
+import cities from '@data/cities.json';
+import {
+  chineseLocale,
+  formatChineseDuration,
+  getChineseCityDisplayName,
+  getChineseCityLocationLabel,
+  getChineseCityName,
+  getChinesePrayerName,
+  getChineseTimezoneLabel,
+} from '@i18n/chinese';
+import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
+import { getSunTimes, formatTime } from '@utils/sun';
+import { getNextPrayer, getPrayerTimes } from '@utils/prayer-times';
+import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
+
+export function getStaticPaths() {
+  return cities.cities.map((city) => ({
+    params: { city: city.slug },
+    props: { city },
+  }));
+}
+
+type City = typeof cities.cities[0];
+const { city } = Astro.props as { city: City };
+
+function formatCountdown(ms: number) {
+  const totalMinutes = Math.max(1, Math.round(ms / 60000));
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  if (hours && minutes) return `${hours}小时${minutes}分钟`;
+  if (hours) return `${hours}小时`;
+  return `${minutes}分钟`;
+}
+
+const today = new Date();
+const cityName = getChineseCityName(city);
+const cityDisplayName = getChineseCityDisplayName(city);
+const locationLabel = getChineseCityLocationLabel(city);
+const timezoneLabel = getChineseTimezoneLabel(city.timezone, today);
+const sun = getSunTimes(today, city.lat, city.lng);
+const prayers = getPrayerTimes(today, city.lat, city.lng, 'MWL', 'Standard');
+const nextPrayer = getNextPrayer(today, city.lat, city.lng, 'MWL', 'Standard');
+const nextPrayerCountdown = nextPrayer.time > today
+  ? formatCountdown(nextPrayer.time.getTime() - today.getTime())
+  : '';
+const localDateLabel = today.toLocaleDateString(chineseLocale, {
+  weekday: 'long',
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+  timeZone: city.timezone,
+});
+
+const nearbyCities = cities.cities
+  .filter((entry) => entry.continent === city.continent && entry.slug !== city.slug)
+  .slice(0, 6);
+
+const pagePath = `/prayer-times/${city.slug}/`;
+const zhPath = localizePath('zh-cn', pagePath);
+const sunrisePagePath = `/sunrise/${city.slug}/`;
+const sunrisePath = localizePath('zh-cn', sunrisePagePath);
+const pageUrl = `https://sunrisetime.co${zhPath}`;
+const alternates = buildAlternateLinks([
+  { hrefLang: 'en', path: pagePath },
+  { hrefLang: 'es', path: localizePath('es', pagePath) },
+  { hrefLang: 'zh-cn', path: zhPath },
+  { hrefLang: 'x-default', path: pagePath },
+]);
+const languageLinks = buildLanguageSwitcherLinks(pagePath);
+
+const prayerList = [
+  { name: 'Fajr', time: prayers.fajr, desc: '黎明前的晨礼时间', icon: 'cloud-moon' },
+  { name: 'Sunrise', time: prayers.sunrise, desc: '当天日出时间', icon: 'sunrise' },
+  { name: 'Dhuhr', time: prayers.dhuhr, desc: '中午后的晌礼时间', icon: 'sun' },
+  { name: 'Asr', time: prayers.asr, desc: '午后晡礼时间', icon: 'cloud-sun' },
+  { name: 'Maghrib', time: prayers.maghrib, desc: '日落后的昏礼时间', icon: 'sunset' },
+  { name: 'Isha', time: prayers.isha, desc: '夜间宵礼时间', icon: 'moon' },
+];
+
+const pageTitle = `${cityDisplayName}今日礼拜时间`;
+const pageDesc = `${cityDisplayName}今天的礼拜时间：晨礼 ${formatTime(prayers.fajr, city.timezone, chineseLocale)}，晌礼 ${formatTime(prayers.dhuhr, city.timezone, chineseLocale)}，晡礼 ${formatTime(prayers.asr, city.timezone, chineseLocale)}，昏礼 ${formatTime(prayers.maghrib, city.timezone, chineseLocale)}，宵礼 ${formatTime(prayers.isha, city.timezone, chineseLocale)}。`;
+
+const jsonLd = [
+  {
+    "@type": "WebPage",
+    "@id": `${pageUrl}#webpage`,
+    "name": pageTitle,
+    "description": pageDesc,
+    "url": pageUrl,
+    "inLanguage": "zh-CN",
+  },
+  buildBreadcrumbJsonLd([
+    { name: '首页', path: '/zh-cn/' },
+    { name: '礼拜时间', path: zhPath },
+    { name: cityName, path: zhPath },
+  ]),
+];
+---
+
+<Base
+  title={`${pageTitle} - SunriseTime`}
+  description={pageDesc}
+  canonical={pageUrl}
+  keywords={`${cityDisplayName} 礼拜时间, ${cityDisplayName} 晨礼时间, ${cityDisplayName} 昏礼时间`}
+  jsonLd={jsonLd}
+  lang="zh-CN"
+  langPrefix="/zh-cn"
+  alternates={alternates}
+>
+  <ChineseHeader languageLinks={languageLinks} currentLanguage="zh-cn" />
+
+  <main class="city-page prayer-page">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="面包屑导航">
+        <a href="/zh-cn/">首页</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <a href={sunrisePath}>日出日落</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <span>{cityName}</span>
+      </nav>
+
+      <section class="prayer-hero glass-card-lg">
+        <div class="prayer-hero-copy">
+          <span class="city-kicker">{localDateLabel}</span>
+          <h1><span class="gradient-text">{cityName}</span>今日礼拜时间</h1>
+          <p class="city-lead">
+            下一次礼拜是 <strong>{getChinesePrayerName(nextPrayer.name)}</strong>，时间为 {formatTime(nextPrayer.time, city.timezone, chineseLocale)}{nextPrayerCountdown ? `，还有 ${nextPrayerCountdown}` : ''}。本页同时提供与礼拜相关的日出、日落和天光信息。
+          </p>
+
+          <div class="city-chip-row">
+            <span class="city-chip city-country-badge">{locationLabel}</span>
+            <span class="city-chip">{timezoneLabel}</span>
+            <span class="city-chip">穆斯林世界联盟 · 标准影长</span>
+          </div>
+
+          <div class="city-action-row">
+            <a href={sunrisePath} class="btn-secondary">
+              <i data-lucide="sun" class="icon-xs"></i>
+              查看日出日落
+            </a>
+            <a href="/zh-cn/cities/" class="btn-secondary">
+              <i data-lucide="search" class="icon-xs"></i>
+              换一座城市
+            </a>
+          </div>
+        </div>
+
+        <div class="prayer-hero-panel">
+          <div class="prayer-next-hero glass-card">
+            <span class="prayer-next-label">下一次礼拜</span>
+            <strong class="prayer-next-name">{getChinesePrayerName(nextPrayer.name)}</strong>
+            <span class="prayer-next-time">{formatTime(nextPrayer.time, city.timezone, chineseLocale)}</span>
+            {nextPrayerCountdown && (
+              <span class="prayer-next-countdown">{nextPrayerCountdown}</span>
+            )}
+          </div>
+        </div>
+      </section>
+
+      <section class="detail-section" id="schedule" aria-label="礼拜时间表">
+        <div class="detail-section-head">
+          <h2><i data-lucide="clock" class="icon-md"></i> 今日礼拜时间表</h2>
+          <p>以下时间适用于 {cityDisplayName} 的 {localDateLabel}。</p>
+        </div>
+
+        <div class="prayer-grid">
+          {prayerList.map((entry) => (
+            <div class={`prayer-card glass-card ${nextPrayer.name === entry.name ? 'prayer-card-active' : ''}`}>
+              <i data-lucide={entry.icon} class="icon-md"></i>
+              <span class="prayer-name">{getChinesePrayerName(entry.name)}</span>
+              <span class="prayer-time">{formatTime(entry.time, city.timezone, chineseLocale)}</span>
+              <span class="prayer-desc">{entry.desc}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section class="detail-section" aria-label="太阳时间数据">
+        <div class="detail-section-head">
+          <h2><i data-lucide="sun" class="icon-md"></i> 与礼拜相关的太阳时间</h2>
+        </div>
+        <div class="detail-grid">
+          <div class="detail-card glass-card">
+            <h3>日出与日落</h3>
+            <div class="detail-time">
+              <div>
+                <span class="data-label">日出</span>
+                <span class="detail-time-value">{formatTime(sun.sunrise, city.timezone, chineseLocale)}</span>
+              </div>
+              <div>
+                <span class="data-label">日落</span>
+                <span class="detail-time-value">{formatTime(sun.sunset, city.timezone, chineseLocale)}</span>
+              </div>
+            </div>
+            <span class="detail-duration">今天白昼时长约为 {formatChineseDuration(sun.daylightDuration)}</span>
+          </div>
+          <div class="detail-card glass-card">
+            <h3>晨光与暮光</h3>
+            <div class="detail-time">
+              <div>
+                <span class="data-label">晨光</span>
+                <span class="detail-time-value">{formatTime(sun.dawn, city.timezone, chineseLocale)}</span>
+              </div>
+              <div>
+                <span class="data-label">暮光</span>
+                <span class="detail-time-value">{formatTime(sun.dusk, city.timezone, chineseLocale)}</span>
+              </div>
+            </div>
+            <span class="detail-duration">太阳中天 {formatTime(sun.solarNoon, city.timezone, chineseLocale)}</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="detail-section seo-content" aria-label="礼拜时间说明">
+        <h2><i data-lucide="info" class="icon-md"></i> 如何看 {cityName} 的礼拜时间</h2>
+        <div class="seo-text glass-card">
+          <p>这页把今天的礼拜顺序、下一次礼拜时间，以及与礼拜相关的日出日落信息放在同一页里。当前默认按穆斯林世界联盟（MWL）标准计算，晡礼使用标准影长规则。</p>
+        </div>
+      </section>
+
+      <section class="detail-section" id="nearby" aria-label="相近城市">
+        <div class="detail-section-head">
+          <h2><i data-lucide="map-pin" class="icon-md"></i> 同区域其他城市</h2>
+        </div>
+        <div class="nearby-grid">
+          {nearbyCities.map((entry) => (
+            <a href={`/zh-cn/prayer-times/${entry.slug}/`} class="nearby-card glass-card">
+              <span class="nearby-name">{getChineseCityName(entry)}</span>
+              <span class="nearby-country">{getChineseCityLocationLabel(entry)}</span>
+            </a>
+          ))}
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <ChineseFooter />
+</Base>
+

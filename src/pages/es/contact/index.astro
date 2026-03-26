@@ -1,0 +1,105 @@
+---
+import Base from '@layouts/Base.astro';
+import LocalizedHeader from '@components/LocalizedHeader.astro';
+import LocalizedFooter from '@components/LocalizedFooter.astro';
+import { supportEmail, supportEmailHref } from '@data/site';
+import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
+import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
+
+const pagePath = '/contact/';
+const spanishPath = localizePath('es', pagePath);
+const pageUrl = `https://sunrisetime.co${spanishPath}`;
+const alternates = buildAlternateLinks([
+  { hrefLang: 'en', path: pagePath },
+  { hrefLang: 'es', path: spanishPath },
+  { hrefLang: 'x-default', path: pagePath },
+]);
+const languageLinks = buildLanguageSwitcherLinks(pagePath);
+
+const jsonLd = [
+  {
+    "@type": "ContactPage",
+    "@id": `${pageUrl}#webpage`,
+    "name": "Contacto SunriseTime",
+    "description": "Contacto para correcciones de ciudad, dudas de privacidad, preguntas comerciales o feedback general.",
+    "url": pageUrl,
+    "inLanguage": "es",
+    "isPartOf": {
+      "@id": "https://sunrisetime.co/es/#website"
+    }
+  },
+  buildBreadcrumbJsonLd([
+    { name: 'Inicio', path: '/es/' },
+    { name: 'Contacto', path: spanishPath },
+  ]),
+];
+---
+
+<Base
+  title="Contacto - SunriseTime"
+  description="Contacta con SunriseTime para correcciones de ciudad, solicitudes de privacidad, consultas sobre anuncios o feedback del producto."
+  canonical={pageUrl}
+  keywords="contacto SunriseTime, corrección de ciudad, soporte"
+  jsonLd={jsonLd}
+  lang="es"
+  alternates={alternates}
+>
+  <LocalizedHeader languageLinks={languageLinks} currentLanguage="es" />
+
+  <main class="resource-page">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/es/">Inicio</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <span>Contacto</span>
+      </nav>
+
+      <header class="resource-header">
+        <span class="section-badge">
+          <i data-lucide="mail" class="icon-xs"></i>
+          Contacto
+        </span>
+        <h1>Un solo buzón para correcciones, privacidad, negocio y feedback.</h1>
+        <p class="resource-subtitle">Si detectas una ciudad incorrecta, una zona horaria mal asignada o una incoherencia entre las páginas en inglés y español, envía la URL exacta y una breve descripción del problema.</p>
+        <div class="resource-meta">
+          <span class="resource-meta-chip">Correo principal: {supportEmail}</span>
+        </div>
+      </header>
+
+      <section class="resource-grid">
+        <article class="resource-card glass-card">
+          <h2>Cuándo escribirnos</h2>
+          <ul class="resource-list">
+            <li>Correcciones de ciudad, coordenadas o zona horaria.</li>
+            <li>Solicitudes de priorización de ciudades o idiomas.</li>
+            <li>Dudas sobre privacidad, términos o política editorial.</li>
+            <li>Consultas comerciales, publicitarias o de partnership.</li>
+          </ul>
+        </article>
+
+        <article class="resource-card glass-card">
+          <h2>Qué acelera la respuesta</h2>
+          <ul class="resource-list">
+            <li>La URL exacta de la página implicada.</li>
+            <li>La ciudad o idioma al que se refiere tu mensaje.</li>
+            <li>La fecha y el contexto si el problema está en la salida horaria.</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="resource-callout glass-card-lg">
+        <div>
+          <span class="resource-callout-label">Método principal</span>
+          <h2>Escribe directamente a SunriseTime.</h2>
+          <p>{supportEmail}</p>
+        </div>
+        <div class="resource-link-row">
+          <a href={supportEmailHref} class="btn-primary-sm">Enviar email</a>
+          <a href="/es/sitemap/" class="btn-secondary-sm">Mapa del sitio</a>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <LocalizedFooter />
+</Base>

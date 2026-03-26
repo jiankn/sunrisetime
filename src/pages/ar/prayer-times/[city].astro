@@ -1,0 +1,238 @@
+---
+import Base from '@layouts/Base.astro';
+import ArabicHeader from '@components/ArabicHeader.astro';
+import ArabicFooter from '@components/ArabicFooter.astro';
+import cities from '@data/cities.json';
+import {
+  arabicLocale,
+  getArabicCityDisplayName,
+  getArabicCityLocationLabel,
+  getArabicCityName,
+  getArabicPrayerName,
+} from '@i18n/arabic';
+import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
+import { getSunTimes, formatTime } from '@utils/sun';
+import { getNextPrayer, getPrayerTimes } from '@utils/prayer-times';
+import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
+
+export function getStaticPaths() {
+  return cities.cities.map((city) => ({
+    params: { city: city.slug },
+    props: { city },
+  }));
+}
+
+type City = typeof cities.cities[0];
+const { city } = Astro.props as { city: City };
+
+function formatCountdown(ms: number) {
+  const totalMinutes = Math.max(1, Math.round(ms / 60000));
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  if (hours && minutes) return `${hours} س ${minutes} د`;
+  if (hours) return `${hours} س`;
+  return `${minutes} د`;
+}
+
+const today = new Date();
+const cityName = getArabicCityName(city);
+const cityDisplayName = getArabicCityDisplayName(city, { includeAdmin1: Boolean(city.admin1) });
+const locationLabel = getArabicCityLocationLabel(city, { includeAdmin1: Boolean(city.admin1) });
+const sun = getSunTimes(today, city.lat, city.lng);
+const prayers = getPrayerTimes(today, city.lat, city.lng, 'MWL', 'Standard');
+const nextPrayer = getNextPrayer(today, city.lat, city.lng, 'MWL', 'Standard');
+const nextPrayerCountdown = nextPrayer.time > today
+  ? formatCountdown(nextPrayer.time.getTime() - today.getTime())
+  : '';
+const localDateLabel = today.toLocaleDateString(arabicLocale, {
+  weekday: 'long',
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+  timeZone: city.timezone,
+});
+
+const nearbyCities = cities.cities
+  .filter((entry) => entry.continent === city.continent && entry.slug !== city.slug)
+  .slice(0, 6);
+
+const pagePath = `/prayer-times/${city.slug}/`;
+const arPath = localizePath('ar', pagePath);
+const sunrisePath = localizePath('ar', `/sunrise/${city.slug}/`);
+const pageUrl = `https://sunrisetime.co${arPath}`;
+const alternates = buildAlternateLinks([
+  { hrefLang: 'en', path: pagePath },
+  { hrefLang: 'es', path: localizePath('es', pagePath) },
+  { hrefLang: 'ar', path: arPath },
+  { hrefLang: 'x-default', path: pagePath },
+]);
+const languageLinks = buildLanguageSwitcherLinks(pagePath);
+
+const prayerList = [
+  { name: 'Fajr', time: prayers.fajr, desc: 'صلاة ما قبل الفجر', icon: 'cloud-moon' },
+  { name: 'Sunrise', time: prayers.sunrise, desc: 'وقت الشروق', icon: 'sunrise' },
+  { name: 'Dhuhr', time: prayers.dhuhr, desc: 'صلاة الظهر', icon: 'sun' },
+  { name: 'Asr', time: prayers.asr, desc: 'صلاة العصر', icon: 'cloud-sun' },
+  { name: 'Maghrib', time: prayers.maghrib, desc: 'صلاة المغرب', icon: 'sunset' },
+  { name: 'Isha', time: prayers.isha, desc: 'صلاة العشاء', icon: 'moon' },
+];
+
+const pageTitle = `مواقيت الصلاة في ${cityDisplayName} اليوم`;
+const pageDesc = `مواقيت الصلاة اليوم في ${cityDisplayName}: الفجر ${formatTime(prayers.fajr, city.timezone, arabicLocale)}، الظهر ${formatTime(prayers.dhuhr, city.timezone, arabicLocale)}، العصر ${formatTime(prayers.asr, city.timezone, arabicLocale)}، المغرب ${formatTime(prayers.maghrib, city.timezone, arabicLocale)}، العشاء ${formatTime(prayers.isha, city.timezone, arabicLocale)}.`;
+
+const jsonLd = [
+  {
+    "@type": "WebPage",
+    "@id": `${pageUrl}#webpage`,
+    "name": pageTitle,
+    "description": pageDesc,
+    "url": pageUrl,
+    "inLanguage": "ar",
+  },
+  buildBreadcrumbJsonLd([
+    { name: 'الرئيسية', path: '/ar/' },
+    { name: 'مواقيت الصلاة', path: arPath },
+    { name: cityName, path: arPath },
+  ]),
+];
+---
+
+<Base
+  title={`${pageTitle} - SunriseTime`}
+  description={pageDesc}
+  canonical={pageUrl}
+  keywords={`مواقيت الصلاة ${cityDisplayName}, الفجر ${cityDisplayName}, المغرب ${cityDisplayName}`}
+  jsonLd={jsonLd}
+  lang="ar"
+  dir="rtl"
+  alternates={alternates}
+>
+  <ArabicHeader languageLinks={languageLinks} currentLanguage="ar" />
+
+  <main class="city-page prayer-page">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/ar/">الرئيسية</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <a href={sunrisePath}>الشروق</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <span>{cityName}</span>
+      </nav>
+
+      <section class="prayer-hero glass-card-lg">
+        <div class="prayer-hero-copy">
+          <span class="city-kicker">{localDateLabel}</span>
+          <h1>مواقيت الصلاة في <span class="gradient-text">{cityName}</span></h1>
+          <p class="city-lead">
+            الصلاة القادمة هي <strong>{getArabicPrayerName(nextPrayer.name)}</strong> عند {formatTime(nextPrayer.time, city.timezone, arabicLocale)}{nextPrayerCountdown ? ` بعد ${nextPrayerCountdown}` : ''}. تعرض الصفحة اليوم الكامل مع رابط مباشر إلى الشروق والغروب.
+          </p>
+
+          <div class="city-chip-row">
+            <span class="city-chip city-country-badge">{locationLabel}</span>
+            <span class="city-chip">{city.timezone}</span>
+            <span class="city-chip">MWL · Standard</span>
+          </div>
+
+          <div class="city-action-row">
+            <a href={sunrisePath} class="btn-secondary">
+              <i data-lucide="sun" class="icon-xs"></i>
+              الشروق والغروب
+            </a>
+            <a href="/ar/cities/" class="btn-secondary">
+              <i data-lucide="search" class="icon-xs"></i>
+              مدينة أخرى
+            </a>
+          </div>
+        </div>
+
+        <div class="prayer-hero-panel">
+          <div class="prayer-next-hero glass-card">
+            <span class="prayer-next-label">الصلاة القادمة</span>
+            <strong class="prayer-next-name">{getArabicPrayerName(nextPrayer.name)}</strong>
+            <span class="prayer-next-time">{formatTime(nextPrayer.time, city.timezone, arabicLocale)}</span>
+            {nextPrayerCountdown && (
+              <span class="prayer-next-countdown">{nextPrayerCountdown}</span>
+            )}
+          </div>
+        </div>
+      </section>
+
+      <section class="detail-section" id="schedule" aria-label="جدول الصلاة">
+        <div class="detail-section-head">
+          <h2><i data-lucide="clock" class="icon-md"></i> جدول الصلاة لليوم</h2>
+          <p>المواقيت التالية تخص {cityDisplayName} في {localDateLabel}.</p>
+        </div>
+
+        <div class="prayer-grid">
+          {prayerList.map((entry) => (
+            <div class={`prayer-card glass-card ${nextPrayer.name === entry.name ? 'prayer-card-active' : ''}`}>
+              <i data-lucide={entry.icon} class="icon-md"></i>
+              <span class="prayer-name">{getArabicPrayerName(entry.name)}</span>
+              <span class="prayer-time">{formatTime(entry.time, city.timezone, arabicLocale)}</span>
+              <span class="prayer-desc">{entry.desc}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section class="detail-section" aria-label="بيانات الشمس">
+        <div class="detail-section-head">
+          <h2><i data-lucide="sun" class="icon-md"></i> الشروق والغروب المرتبطان بالصلاة</h2>
+        </div>
+        <div class="detail-grid">
+          <div class="detail-card glass-card">
+            <h3>الشروق والغروب</h3>
+            <div class="detail-time">
+              <div>
+                <span class="data-label">الشروق</span>
+                <span class="detail-time-value">{formatTime(sun.sunrise, city.timezone, arabicLocale)}</span>
+              </div>
+              <div>
+                <span class="data-label">الغروب</span>
+                <span class="detail-time-value">{formatTime(sun.sunset, city.timezone, arabicLocale)}</span>
+              </div>
+            </div>
+            <span class="detail-duration">{sun.daylightFormatted} من الضوء اليوم</span>
+          </div>
+          <div class="detail-card glass-card">
+            <h3>الفجر والغسق</h3>
+            <div class="detail-time">
+              <div>
+                <span class="data-label">الفجر</span>
+                <span class="detail-time-value">{formatTime(sun.dawn, city.timezone, arabicLocale)}</span>
+              </div>
+              <div>
+                <span class="data-label">الغسق</span>
+                <span class="detail-time-value">{formatTime(sun.dusk, city.timezone, arabicLocale)}</span>
+              </div>
+            </div>
+            <span class="detail-duration">الظهر الشمسي {formatTime(sun.solarNoon, city.timezone, arabicLocale)}</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="detail-section seo-content" aria-label="شرح مواقيت الصلاة">
+        <h2><i data-lucide="info" class="icon-md"></i> كيف تُقرأ المواقيت في {cityName}</h2>
+        <div class="seo-text glass-card">
+          <p>تعرض هذه الصفحة مواقيت الصلاة اليومية في {cityDisplayName} مع ربطها المباشر بالشروق والغروب. تعتمد النسخة الحالية على طريقة Muslim World League مع Asr القياسي.</p>
+        </div>
+      </section>
+
+      <section class="detail-section" id="nearby" aria-label="مدن أخرى">
+        <div class="detail-section-head">
+          <h2><i data-lucide="map-pin" class="icon-md"></i> مدن أخرى للمقارنة</h2>
+        </div>
+        <div class="nearby-grid">
+          {nearbyCities.map((entry) => (
+            <a href={`/ar/prayer-times/${entry.slug}/`} class="nearby-card glass-card">
+              <span class="nearby-name">{getArabicCityName(entry)}</span>
+              <span class="nearby-country">{getArabicCityLocationLabel(entry, { includeAdmin1: Boolean(entry.admin1) })}</span>
+            </a>
+          ))}
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <ArabicFooter />
+</Base>

@@ -10,9 +10,27 @@ export const supportEmailHref = `mailto:${supportEmail}`;
 export const legalLastUpdated = 'March 24, 2026';
 
 const cityMap = new Map(allCities.map((city) => [city.slug, city] as const));
+const cityNameCounts = new Map<string, number>();
+
+for (const city of allCities) {
+  cityNameCounts.set(city.name, (cityNameCounts.get(city.name) ?? 0) + 1);
+}
 
 function sortByPopulation(list: City[]) {
   return [...list].sort((a, b) => b.population - a.population);
+}
+
+function normalizeLabel(value: string) {
+  return value.trim().toLowerCase();
+}
+
+function normalizeAdmin1(admin1?: string) {
+  const value = admin1?.trim() ?? '';
+  if (!value || /^0+$/.test(value)) {
+    return '';
+  }
+
+  return value;
 }
 
 export function getCityBySlug(slug: string) {
@@ -30,7 +48,7 @@ type RegionDefinition = {
   name: string;
   description: string;
   intro: string;
-  countryCodes: string[];
+  matches: (city: City) => boolean;
   featuredCitySlugs: string[];
   audiences: string[];
   reasons: string[];
@@ -42,7 +60,7 @@ const regionDefinitions: RegionDefinition[] = [
     name: 'North America',
     description: 'Browse sunrise, sunset, golden hour, moon phase, and prayer times across major North American cities.',
     intro: 'North America mixes early East Coast commutes, long summer evenings, mountain daylight shifts, and West Coast golden hour favorites in one browseable region.',
-    countryCodes: ['US', 'CA', 'MX'],
+    matches: (city) => city.continent === 'NA',
     featuredCitySlugs: ['new-york', 'los-angeles', 'toronto', 'mexico-city', 'san-francisco', 'vancouver'],
     audiences: ['Commuters planning the first light of the day', 'Travelers moving across multiple time zones', 'Photographers chasing long summer evenings'],
     reasons: ['Coast-to-coast daylight differences are large enough to change travel and shoot plans', 'Major metro areas in the region drive a large share of recurring search demand', 'Regional browsing creates strong internal links for related city pages'],
@@ -52,7 +70,7 @@ const regionDefinitions: RegionDefinition[] = [
     name: 'South America',
     description: 'Explore sunrise and sunset times for South American cities with fast links for daylight, golden hour, moon, and prayer data.',
     intro: 'South American cities bring strong seasonal daylight swings, dense metro populations, and high travel utility for sunrise, sunset, and moon planning.',
-    countryCodes: ['BR', 'AR', 'PE', 'CO'],
+    matches: (city) => city.continent === 'SA',
     featuredCitySlugs: ['sao-paulo', 'buenos-aires', 'lima', 'bogota'],
     audiences: ['Travel planners coordinating local arrival and departure windows', 'Outdoor creators tracking warm dawn and dusk light', 'Readers comparing multiple cities in one trip corridor'],
     reasons: ['Regional grouping makes cross-border comparisons faster than starting a fresh search each time', 'Large metros in the region work well as evergreen SEO landing pages', 'Related city browsing lifts pageviews without relying on broad generic content'],
@@ -62,7 +80,7 @@ const regionDefinitions: RegionDefinition[] = [
     name: 'Europe',
     description: 'Compare sunrise, sunset, moon phase, daylight length, and prayer times across Europe\'s most searched cities.',
     intro: 'Europe is ideal for comparison browsing because nearby cities can still have noticeably different sunrise times, twilight windows, and seasonal daylight lengths.',
-    countryCodes: ['UK', 'FR', 'DE', 'TR', 'ES', 'IT', 'NL', 'RU', 'PT', 'AT', 'PL', 'GR', 'SE', 'NO'],
+    matches: (city) => city.continent === 'EU' || city.country === 'TR',
     featuredCitySlugs: ['london', 'paris', 'berlin', 'istanbul', 'madrid', 'rome'],
     audiences: ['Weekend travelers choosing the best start and end times for city days', 'Photographers comparing latitude-driven light changes', 'Users who want one region page instead of many disconnected city searches'],
     reasons: ['Northern and southern Europe create obvious daylight contrast worth comparing', 'Many high-intent travel and photography searches are region-based, not single-city only', 'Europe pages can hand off visitors to many dense clusters of city detail pages'],
@@ -72,7 +90,7 @@ const regionDefinitions: RegionDefinition[] = [
     name: 'Asia',
     description: 'Find sunrise, sunset, golden hour, moon phase, and prayer timing data for major cities across Asia.',
     intro: 'Asia combines dense megacities, diverse time zones, and high-frequency daily planning needs, which makes it one of the strongest regional hubs for repeated city searches.',
-    countryCodes: ['JP', 'AE', 'SG', 'IN', 'TH', 'KR', 'CN', 'ID', 'SA', 'MY', 'PH', 'TW'],
+    matches: (city) => city.continent === 'AS' && city.country !== 'TR',
     featuredCitySlugs: ['tokyo', 'dubai', 'singapore', 'mumbai', 'bangkok', 'shanghai'],
     audiences: ['Daily planners checking the next light window before leaving home', 'Travelers comparing multiple stopovers on one route', 'Users looking for sunrise and prayer timing in the same workflow'],
     reasons: ['Asia drives high recurring search volume for city-by-city timing questions', 'Megacity clusters make related-page navigation especially valuable', 'Use-case hubs like prayer times and golden hour fit naturally with Asian city search intent'],
@@ -82,7 +100,7 @@ const regionDefinitions: RegionDefinition[] = [
     name: 'Africa',
     description: 'Browse sunrise, sunset, moon, and prayer timing pages for major African cities in one place.',
     intro: 'African city pages are useful when users need fast daily timing for routines, prayer schedules, photography, or travel across several large urban centers.',
-    countryCodes: ['EG', 'NG', 'ZA', 'KE', 'MA'],
+    matches: (city) => city.continent === 'AF',
     featuredCitySlugs: ['cairo', 'lagos', 'cape-town', 'johannesburg', 'nairobi', 'casablanca'],
     audiences: ['People planning around prayer or commuting schedules', 'Travelers moving between north, east, and southern Africa', 'Readers comparing daylight and twilight conditions across climates'],
     reasons: ['Regional browsing improves discovery for cities that are less likely to be entered as a first search', 'The region overlaps strongly with prayer-time intent, which is valuable for monetizable depth', 'A dedicated Africa hub makes the site architecture more complete for users and crawlers'],
@@ -92,7 +110,7 @@ const regionDefinitions: RegionDefinition[] = [
     name: 'Oceania',
     description: 'Check sunrise, sunset, daylight length, and golden hour pages for key cities in Oceania.',
     intro: 'Oceania is a compact but high-value region for light planning because users often care about sunrise, sunset, and golden hour before outdoor travel or shoots.',
-    countryCodes: ['AU', 'NZ'],
+    matches: (city) => city.continent === 'OC',
     featuredCitySlugs: ['sydney', 'melbourne', 'auckland'],
     audiences: ['Photographers timing dawn and dusk shoots', 'Travelers comparing east coast and New Zealand daylight', 'Users planning outdoor sessions around short seasonal changes'],
     reasons: ['City counts are smaller, so a focused hub keeps discovery clean instead of noisy', 'Golden hour and daylight-length searches are especially relevant in this region', 'Compact regional pages are strong handoff points into detailed city pages'],
@@ -100,7 +118,7 @@ const regionDefinitions: RegionDefinition[] = [
 ];
 
 export const regionHubs = regionDefinitions.map((region) => {
-  const cities = sortByPopulation(allCities.filter((city) => region.countryCodes.includes(city.country)));
+  const cities = sortByPopulation(allCities.filter((city) => region.matches(city)));
 
   return {
     ...region,
@@ -176,6 +194,77 @@ export const useCaseHubs: UseCaseDefinition[] = [
 
 export function getUseCaseHub(slug: string) {
   return useCaseHubs.find((hub) => hub.slug === slug);
+}
+
+export function getCountryLabel(city: Pick<City, 'country' | 'countryName'>) {
+  return city.countryName ?? city.country;
+}
+
+export function hasDuplicateCityName(city: Pick<City, 'name'> | string) {
+  const name = typeof city === 'string' ? city : city.name;
+  return (cityNameCounts.get(name) ?? 0) > 1;
+}
+
+export function getCityAdminLabel(city: Pick<City, 'admin1'>) {
+  return normalizeAdmin1(city.admin1);
+}
+
+type CityLabelOptions = {
+  includeAdmin1?: boolean;
+};
+
+export function getCityLocationLabel(
+  city: Pick<City, 'name' | 'country' | 'countryName' | 'admin1'>,
+  options: CityLabelOptions = {},
+) {
+  const parts: string[] = [];
+  const admin1 = getCityAdminLabel(city);
+  const country = getCountryLabel(city);
+  const shouldIncludeAdmin1 = options.includeAdmin1 || hasDuplicateCityName(city);
+
+  if (shouldIncludeAdmin1 && admin1 && normalizeLabel(admin1) !== normalizeLabel(city.name)) {
+    parts.push(admin1);
+  }
+
+  if (country && !parts.some((part) => normalizeLabel(part) === normalizeLabel(country))) {
+    parts.push(country);
+  }
+
+  return parts.join(', ');
+}
+
+export function getCityDisplayName(
+  city: Pick<City, 'name' | 'country' | 'countryName' | 'admin1'>,
+  options: CityLabelOptions = {},
+) {
+  const locationLabel = getCityLocationLabel(city, options);
+  return locationLabel ? `${city.name}, ${locationLabel}` : city.name;
+}
+
+export function getCitySearchText(city: Pick<City, 'name' | 'country' | 'countryName' | 'admin1' | 'aliases'>) {
+  return [
+    city.name,
+    getCityAdminLabel(city),
+    getCountryLabel(city),
+    ...(city.aliases ?? []),
+  ]
+    .filter(Boolean)
+    .join(' ');
+}
+
+export function getCitySearchRecord(city: City) {
+  return {
+    name: city.name,
+    displayName: getCityDisplayName(city, { includeAdmin1: Boolean(getCityAdminLabel(city)) }),
+    slug: city.slug,
+    country: city.country,
+    countryLabel: getCountryLabel(city),
+    admin1: getCityAdminLabel(city),
+    aliases: city.aliases ?? [],
+    lat: city.lat,
+    lng: city.lng,
+    population: city.population,
+  };
 }
 
 export const featuredFooterCities = getCitiesBySlugs([

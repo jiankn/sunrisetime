@@ -1,0 +1,171 @@
+---
+import Base from '@layouts/Base.astro';
+import ChineseHeader from '@components/ChineseHeader.astro';
+import ChineseFooter from '@components/ChineseFooter.astro';
+import AdUnit from '@components/AdUnit.astro';
+import { getCitiesBySlugs, getUseCaseHub, regionHubs, useCaseHubs } from '@data/site';
+import {
+  getChineseCityLocationLabel,
+  getChineseCityName,
+  getChineseGuideContent,
+  getChineseRegionName,
+} from '@i18n/chinese';
+import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
+import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
+
+export function getStaticPaths() {
+  return useCaseHubs.map((hub) => ({
+    params: { topic: hub.slug },
+  }));
+}
+
+const hub = getUseCaseHub(Astro.params.topic ?? '');
+
+if (!hub) {
+  throw new Error(`Unknown guide topic: ${Astro.params.topic}`);
+}
+
+const content = getChineseGuideContent(hub);
+const featuredCities = getCitiesBySlugs(hub.featuredCitySlugs);
+const relatedRegions = regionHubs.filter((region) => hub.relatedRegionSlugs.includes(region.slug));
+const siblingGuides = useCaseHubs.filter((entry) => entry.slug !== hub.slug);
+const pagePath = hub.path;
+const chinesePath = localizePath('zh-cn', pagePath);
+const pageUrl = `https://sunrisetime.co${chinesePath}`;
+const alternates = buildAlternateLinks([
+  { hrefLang: 'en', path: pagePath },
+  { hrefLang: 'es', path: localizePath('es', pagePath) },
+  { hrefLang: 'zh-cn', path: chinesePath },
+  { hrefLang: 'x-default', path: pagePath },
+]);
+const languageLinks = buildLanguageSwitcherLinks(pagePath);
+
+const jsonLd = [
+  {
+    "@type": "CollectionPage",
+    "@id": `${pageUrl}#webpage`,
+    "name": `${content.name}指南`,
+    "description": content.description,
+    "url": pageUrl,
+    "inLanguage": "zh-CN",
+    "isPartOf": {
+      "@id": "https://sunrisetime.co/zh-cn/#website"
+    }
+  },
+  buildBreadcrumbJsonLd([
+    { name: '首页', path: '/zh-cn/' },
+    { name: '主题指南', path: '/zh-cn/guides/' },
+    { name: content.name, path: chinesePath },
+  ]),
+];
+---
+
+<Base
+  title={`${content.name}指南 - SunriseTime 简体中文`}
+  description={content.description}
+  canonical={pageUrl}
+  keywords={`${content.name}, ${content.name} 指南, ${content.name} 查询`}
+  jsonLd={jsonLd}
+  lang="zh-CN"
+  langPrefix="/zh-cn"
+  alternates={alternates}
+>
+  <ChineseHeader languageLinks={languageLinks} currentLanguage="zh-cn" />
+
+  <main class="resource-page">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="面包屑导航">
+        <a href="/zh-cn/">首页</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <a href="/zh-cn/guides/">主题指南</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <span>{content.name}</span>
+      </nav>
+
+      <header class="resource-header">
+        <span class="section-badge">
+          <i data-lucide="sparkles" class="icon-xs"></i>
+          {content.name}
+        </span>
+        <h1>{content.description}</h1>
+        <p class="resource-subtitle">{content.intro}</p>
+      </header>
+
+      <section class="resource-grid">
+        <article class="resource-card glass-card">
+          <h2>这个指南帮你解决什么</h2>
+          <ul class="resource-list">
+            {content.primaryBullets.map((item) => (
+              <li>{item}</li>
+            ))}
+          </ul>
+        </article>
+
+        <article class="resource-card glass-card">
+          <h2>推荐的使用顺序</h2>
+          <ul class="resource-list">
+            {content.workflowBullets.map((item) => (
+              <li>{item}</li>
+            ))}
+          </ul>
+        </article>
+      </section>
+
+      <section class="resource-section">
+        <div class="detail-section-head">
+          <h2>这个主题下值得先看的城市</h2>
+          <p>如果你想快速进入结果页，可以先从这些代表城市开始。</p>
+        </div>
+        <div class="hub-city-grid">
+          {featuredCities.map((city) => {
+            const cityPath = hub.slug === 'prayer-times' ? `/zh-cn/prayer-times/${city.slug}/` : `/zh-cn/sunrise/${city.slug}/`;
+            return (
+              <a href={cityPath} class="hub-city-card glass-card">
+                <span class="hub-city-name">{getChineseCityName(city)}</span>
+                <span class="hub-city-country">{getChineseCityLocationLabel(city)}</span>
+              </a>
+            );
+          })}
+        </div>
+      </section>
+
+      <AdUnit id={`ad-zh-guide-${hub.slug}`} />
+
+      <section class="resource-section">
+        <div class="detail-section-head">
+          <h2>相关区域页</h2>
+          <p>当你需要比较多座城市时，继续看区域页会比回搜索框更高效。</p>
+        </div>
+        <div class="resource-link-grid">
+          {relatedRegions.map((region) => (
+            <a href={`/zh-cn/cities/${region.slug}/`} class="resource-link-card glass-card">
+              <strong>{getChineseRegionName(region.slug, region.name)}</strong>
+              <span>{region.cityCount} 座城市已索引</span>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <section class="resource-section">
+        <div class="detail-section-head">
+          <h2>其他中文主题</h2>
+          <p>如果你换了关注点，也可以直接从这里切到别的主题继续看。</p>
+        </div>
+        <div class="resource-link-grid">
+          {siblingGuides.map((entry) => {
+            const siblingContent = getChineseGuideContent(entry);
+            return (
+              <a href={`/zh-cn/guides/${entry.slug}/`} class="resource-link-card glass-card">
+                <strong>{siblingContent.name}</strong>
+                <span>{siblingContent.description}</span>
+              </a>
+            );
+          })}
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <ChineseFooter />
+</Base>
+

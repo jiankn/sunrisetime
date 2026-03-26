@@ -1,0 +1,300 @@
+---
+import Base from '@layouts/Base.astro';
+import ChineseHeader from '@components/ChineseHeader.astro';
+import ChineseFooter from '@components/ChineseFooter.astro';
+import cities from '@data/cities.json';
+import {
+  chineseLocale,
+  formatChineseDuration,
+  getChineseCityDisplayName,
+  getChineseCityLocationLabel,
+  getChineseCityName,
+  getChineseMoonPhase,
+  getChinesePrayerName,
+  getChineseTimezoneLabel,
+} from '@i18n/chinese';
+import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
+import { getDaylightSeries, getGoldenHour, getSunTimes, formatTime, getSunriseDelta, getSunsetDelta } from '@utils/sun';
+import { getMoonData } from '@utils/moon';
+import { getNextPrayer } from '@utils/prayer-times';
+import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
+
+export function getStaticPaths() {
+  return cities.cities.map((city) => ({
+    params: { city: city.slug },
+    props: { city },
+  }));
+}
+
+type City = typeof cities.cities[0];
+const { city } = Astro.props as { city: City };
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(Math.max(value, min), max);
+}
+
+function formatCountdown(ms: number) {
+  const totalMinutes = Math.max(1, Math.round(ms / 60000));
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  if (hours && minutes) return `${hours}小时${minutes}分钟`;
+  if (hours) return `${hours}小时`;
+  return `${minutes}分钟`;
+}
+
+function formatMinuteShift(delta: number) {
+  if (delta === 0) return '与昨天相同';
+  return delta > 0 ? `比昨天晚 ${Math.abs(delta)} 分钟` : `比昨天早 ${Math.abs(delta)} 分钟`;
+}
+
+const today = new Date();
+const cityName = getChineseCityName(city);
+const cityDisplayName = getChineseCityDisplayName(city);
+const locationLabel = getChineseCityLocationLabel(city);
+const timezoneLabel = getChineseTimezoneLabel(city.timezone, today);
+const sun = getSunTimes(today, city.lat, city.lng);
+const golden = getGoldenHour(today, city.lat, city.lng);
+const moon = getMoonData(today, city.lat, city.lng);
+const nextPrayer = getNextPrayer(today, city.lat, city.lng, 'MWL', 'Standard');
+const sunriseDelta = getSunriseDelta(today, city.lat, city.lng, city.timezone);
+const sunsetDelta = getSunsetDelta(today, city.lat, city.lng, city.timezone);
+const series = getDaylightSeries(today, 7, city.lat, city.lng);
+const lightProgress = clamp(
+  ((today.getTime() - sun.dawn.getTime()) / (sun.dusk.getTime() - sun.dawn.getTime())) * 100,
+  0,
+  100,
+);
+
+let nextEventLabel = '下一次日出';
+let nextEventTime = formatTime(sun.sunrise, city.timezone, chineseLocale);
+let nextEventCountdown = formatCountdown(sun.sunrise.getTime() - today.getTime());
+let nextEventSupport = `晨间黄金时刻将在 ${formatTime(golden.morning.end, city.timezone, chineseLocale)} 结束。`;
+
+if (today >= sun.sunrise && today < sun.sunset) {
+  nextEventLabel = '下一次日落';
+  nextEventTime = formatTime(sun.sunset, city.timezone, chineseLocale);
+  nextEventCountdown = formatCountdown(sun.sunset.getTime() - today.getTime());
+  nextEventSupport = `傍晚黄金时刻会在 ${formatTime(golden.evening.start, city.timezone, chineseLocale)} 开始。`;
+} else if (today >= sun.sunset) {
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const tomorrowSun = getSunTimes(tomorrow, city.lat, city.lng);
+  nextEventLabel = '明日日出';
+  nextEventTime = formatTime(tomorrowSun.sunrise, city.timezone, chineseLocale);
+  nextEventCountdown = formatCountdown(tomorrowSun.sunrise.getTime() - today.getTime());
+  nextEventSupport = `明天白昼时长约为 ${formatChineseDuration(tomorrowSun.daylightDuration)}。`;
+}
+
+const localDateLabel = today.toLocaleDateString(chineseLocale, {
+  weekday: 'long',
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+  timeZone: city.timezone,
+});
+const localTimeLabel = today.toLocaleTimeString(chineseLocale, {
+  hour: 'numeric',
+  minute: '2-digit',
+  timeZone: city.timezone,
+});
+
+const nearbyCities = cities.cities
+  .filter((entry) => entry.continent === city.continent && entry.slug !== city.slug)
+  .slice(0, 6);
+
+const pagePath = `/sunrise/${city.slug}/`;
+const zhPath = localizePath('zh-cn', pagePath);
+const prayerPagePath = `/prayer-times/${city.slug}/`;
+const prayerPath = localizePath('zh-cn', prayerPagePath);
+const pageUrl = `https://sunrisetime.co${zhPath}`;
+const alternates = buildAlternateLinks([
+  { hrefLang: 'en', path: pagePath },
+  { hrefLang: 'es', path: localizePath('es', pagePath) },
+  { hrefLang: 'zh-cn', path: zhPath },
+  { hrefLang: 'x-default', path: pagePath },
+]);
+const languageLinks = buildLanguageSwitcherLinks(pagePath);
+
+const pageTitle = `${cityDisplayName}今日日出日落时间`;
+const pageDesc = `${cityDisplayName}今天的日出时间为 ${formatTime(sun.sunrise, city.timezone, chineseLocale)}，日落时间为 ${formatTime(sun.sunset, city.timezone, chineseLocale)}，并提供黄金时刻、月相和礼拜时间入口。`;
+
+const jsonLd = [
+  {
+    "@type": "WebPage",
+    "@id": `${pageUrl}#webpage`,
+    "name": pageTitle,
+    "description": pageDesc,
+    "url": pageUrl,
+    "inLanguage": "zh-CN",
+  },
+  buildBreadcrumbJsonLd([
+    { name: '首页', path: '/zh-cn/' },
+    { name: '城市索引', path: '/zh-cn/cities/' },
+    { name: cityName, path: zhPath },
+  ]),
+];
+---
+
+<Base
+  title={`${pageTitle} - SunriseTime`}
+  description={pageDesc}
+  canonical={pageUrl}
+  keywords={`${cityDisplayName} 日出时间, ${cityDisplayName} 日落时间, ${cityDisplayName} 日出日落时间, ${cityDisplayName} 黄金时刻`}
+  jsonLd={jsonLd}
+  lang="zh-CN"
+  langPrefix="/zh-cn"
+  alternates={alternates}
+>
+  <ChineseHeader languageLinks={languageLinks} currentLanguage="zh-cn" />
+
+  <main class="city-page">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="面包屑导航">
+        <a href="/zh-cn/">首页</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <a href="/zh-cn/cities/">城市索引</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <span>{cityName}</span>
+      </nav>
+
+      <section class="city-snapshot glass-card-lg">
+        <div class="city-snapshot-copy">
+          <span class="city-kicker">{cityName} 今日日出日落</span>
+          <h1><span class="gradient-text">{cityName}</span>的日出日落时间</h1>
+          <p class="city-lead">
+            当前本地时间为 {localTimeLabel}。{nextEventLabel}还有 {nextEventCountdown}，时间是 {nextEventTime}。本页同时给出黄金时刻、月相和礼拜时间入口。
+          </p>
+
+          <div class="city-chip-row">
+            <span class="city-chip city-country-badge">{locationLabel}</span>
+            <span class="city-chip">{timezoneLabel}</span>
+            <span class="city-chip">{localDateLabel}</span>
+          </div>
+
+          <div class="city-action-row">
+            <a href="/zh-cn/cities/" class="btn-primary">
+              <i data-lucide="search" class="icon-xs"></i>
+              换一座城市
+            </a>
+            <a href={prayerPath} class="btn-secondary">
+              <i data-lucide="clock" class="icon-xs"></i>
+              查看礼拜时间
+            </a>
+          </div>
+        </div>
+
+        <div class="city-snapshot-panel">
+          <div class="city-next-event glass-card">
+            <span class="city-next-label">{nextEventLabel}</span>
+            <strong>{nextEventCountdown}</strong>
+            <span class="city-next-time">{nextEventTime}</span>
+            <p>{nextEventSupport}</p>
+          </div>
+
+          <div class="city-light-track glass-card">
+            <div class="city-track-head">
+              <span>晨光 {formatTime(sun.dawn, city.timezone, chineseLocale)}</span>
+              <strong>核心时间一页看完</strong>
+              <span>暮光 {formatTime(sun.dusk, city.timezone, chineseLocale)}</span>
+            </div>
+            <div class="city-track-bar">
+              <span class="city-track-fill" style={`width:${lightProgress}%`}></span>
+              <span class="city-track-marker" style={`left:${lightProgress}%`}></span>
+            </div>
+            <div class="city-track-points">
+              <span>日出 {formatTime(sun.sunrise, city.timezone, chineseLocale)}</span>
+              <span>太阳中天 {formatTime(sun.solarNoon, city.timezone, chineseLocale)}</span>
+              <span>日落 {formatTime(sun.sunset, city.timezone, chineseLocale)}</span>
+            </div>
+          </div>
+
+          <div class="city-snapshot-metrics">
+            <div class="city-metric-card glass-card accent-sunrise">
+              <span class="city-metric-label">日出时间</span>
+              <strong class="city-metric-value">{formatTime(sun.sunrise, city.timezone, chineseLocale)}</strong>
+              <small class="city-metric-note">{formatMinuteShift(sunriseDelta)}</small>
+            </div>
+            <div class="city-metric-card glass-card accent-sunset">
+              <span class="city-metric-label">日落时间</span>
+              <strong class="city-metric-value">{formatTime(sun.sunset, city.timezone, chineseLocale)}</strong>
+              <small class="city-metric-note">{formatMinuteShift(sunsetDelta)}</small>
+            </div>
+            <div class="city-metric-card glass-card accent-daylight">
+              <span class="city-metric-label">日照时长</span>
+              <strong class="city-metric-value">{formatChineseDuration(sun.daylightDuration)}</strong>
+              <small class="city-metric-note">近 7 天对比</small>
+            </div>
+            <div class="city-metric-card glass-card accent-moon">
+              <span class="city-metric-label">月相</span>
+              <strong class="city-metric-value">{getChineseMoonPhase(moon.phaseName)}</strong>
+              <small class="city-metric-note">照明比例 {moon.illumination}%</small>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="city-highlight-grid" aria-label="快捷入口">
+        <div class="city-highlight-card glass-card">
+          <span class="city-highlight-label">黄金时刻</span>
+          <strong>{formatTime(golden.morning.start, city.timezone, chineseLocale)} - {formatTime(golden.morning.end, city.timezone, chineseLocale)}</strong>
+          <p>傍晚黄金时刻从 {formatTime(golden.evening.start, city.timezone, chineseLocale)} 开始。</p>
+        </div>
+        <div class="city-highlight-card glass-card">
+          <span class="city-highlight-label">月相</span>
+          <strong>{getChineseMoonPhase(moon.phaseName)}</strong>
+          <p>今晚的月面照明比例约为 {moon.illumination}%。</p>
+        </div>
+        <a href={prayerPath} class="city-highlight-card glass-card">
+          <span class="city-highlight-label">礼拜时间</span>
+          <strong>{getChinesePrayerName(nextPrayer.name)} {formatTime(nextPrayer.time, city.timezone, chineseLocale)}</strong>
+          <p>进入完整礼拜时间页继续查看。</p>
+        </a>
+      </section>
+
+      <section class="detail-section" aria-label="白昼趋势">
+        <div class="detail-section-head">
+          <h2><i data-lucide="bar-chart-3" class="icon-md"></i> 近 7 天白昼变化</h2>
+        </div>
+        <div class="daylight-chart glass-card">
+          <div class="chart-bars-static">
+            {series.map((entry, index) => {
+              const pct = Math.round((entry.hours / 16) * 100);
+              const dayName = entry.date.toLocaleDateString(chineseLocale, { weekday: 'short', timeZone: city.timezone });
+              return (
+                <div class={`chart-col ${index === 0 ? 'active' : ''}`}>
+                  <span class="chart-val">{entry.hours.toFixed(1)}h</span>
+                  <div class="chart-fill" style={`height:${pct}%`}></div>
+                  <span class="chart-day">{dayName}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      <section class="detail-section seo-content" aria-label="页面说明">
+        <h2><i data-lucide="info" class="icon-md"></i> {cityName} 今天的日出日落怎么看</h2>
+        <div class="seo-text glass-card">
+          <p>{cityDisplayName}今天的日出时间是 {formatTime(sun.sunrise, city.timezone, chineseLocale)}，日落时间是 {formatTime(sun.sunset, city.timezone, chineseLocale)}。除了基础时间外，这页也补充了黄金时刻、月相和礼拜时间入口，方便你一次把当天常用的信息看全。</p>
+        </div>
+      </section>
+
+      <section class="detail-section" id="nearby" aria-label="相近城市">
+        <div class="detail-section-head">
+          <h2><i data-lucide="map-pin" class="icon-md"></i> 同区域其他城市</h2>
+        </div>
+        <div class="nearby-grid">
+          {nearbyCities.map((entry) => (
+            <a href={`/zh-cn/sunrise/${entry.slug}/`} class="nearby-card glass-card">
+              <span class="nearby-name">{getChineseCityName(entry)}</span>
+              <span class="nearby-country">{getChineseCityLocationLabel(entry)}</span>
+            </a>
+          ))}
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <ChineseFooter />
+</Base>
+

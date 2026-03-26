@@ -1,0 +1,97 @@
+---
+import Base from '@layouts/Base.astro';
+import LocalizedHeader from '@components/LocalizedHeader.astro';
+import LocalizedFooter from '@components/LocalizedFooter.astro';
+import { regionHubs, useCaseHubs } from '@data/site';
+import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
+import { getSpanishGuideContent, getSpanishRegionName } from '@i18n/spanish';
+import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
+
+const pagePath = '/guides/';
+const spanishPath = localizePath('es', pagePath);
+const pageUrl = `https://sunrisetime.co${spanishPath}`;
+const alternates = buildAlternateLinks([
+  { hrefLang: 'en', path: pagePath },
+  { hrefLang: 'es', path: spanishPath },
+  { hrefLang: 'x-default', path: pagePath },
+]);
+const languageLinks = buildLanguageSwitcherLinks(pagePath);
+
+const jsonLd = [
+  {
+    "@type": "CollectionPage",
+    "@id": `${pageUrl}#webpage`,
+    "name": "Guías de SunriseTime",
+    "description": "Guías en español para hora dorada, fase lunar, duración del día y horarios de oración.",
+    "url": pageUrl,
+    "inLanguage": "es",
+    "isPartOf": {
+      "@id": "https://sunrisetime.co/es/#website"
+    }
+  },
+  buildBreadcrumbJsonLd([
+    { name: 'Inicio', path: '/es/' },
+    { name: 'Guías', path: spanishPath },
+  ]),
+];
+---
+
+<Base
+  title="Guías de planificación - SunriseTime Español"
+  description="Consulta las guías en español de SunriseTime para hora dorada, fase lunar, horarios de oración y duración del día."
+  canonical={pageUrl}
+  keywords="guía hora dorada, guía fase lunar, guía horarios de oración"
+  jsonLd={jsonLd}
+  lang="es"
+  alternates={alternates}
+>
+  <LocalizedHeader languageLinks={languageLinks} currentLanguage="es" />
+
+  <main class="resource-page">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/es/">Inicio</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <span>Guías</span>
+      </nav>
+
+      <header class="resource-header">
+        <span class="section-badge">
+          <i data-lucide="compass" class="icon-xs"></i>
+          Guías
+        </span>
+        <h1>Usa guías cuando la pregunta es más grande que una sola ciudad.</h1>
+        <p class="resource-subtitle">Las guías conectan la intención amplia con la respuesta local. Empieza aquí si primero necesitas el tema correcto y después entrar en la ciudad adecuada.</p>
+      </header>
+
+      <section class="resource-link-grid">
+        {useCaseHubs.map((hub) => {
+          const content = getSpanishGuideContent(hub);
+          return (
+            <a href={`/es/guides/${hub.slug}/`} class="resource-link-card resource-link-card-rich glass-card">
+              <strong>{content.name}</strong>
+              <span>{content.description}</span>
+            </a>
+          );
+        })}
+      </section>
+
+      <section class="resource-section">
+        <div class="detail-section-head">
+          <h2>Combina guías con hubs regionales</h2>
+          <p>La intención temática gana fuerza cuando el usuario puede comparar varias ciudades relacionadas sin reiniciar la búsqueda.</p>
+        </div>
+        <div class="resource-link-grid">
+          {regionHubs.map((region) => (
+            <a href={`/es/cities/${region.slug}/`} class="resource-link-card glass-card">
+              <strong>{getSpanishRegionName(region.slug, region.name)}</strong>
+              <span>{region.cityCount} ciudades indexadas</span>
+            </a>
+          ))}
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <LocalizedFooter />
+</Base>

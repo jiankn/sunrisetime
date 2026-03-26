@@ -3,9 +3,17 @@ import Base from '@layouts/Base.astro';
 import Header from '@components/Header.astro';
 import Footer from '@components/Footer.astro';
 import { cityIndexLabel, legalLastUpdated, totalCities } from '@data/site';
-import { buildBreadcrumbJsonLd } from '@utils/seo';
+import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
+import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
 
 const pageUrl = 'https://sunrisetime.co/methodology/';
+const pagePath = '/methodology/';
+const alternates = buildAlternateLinks([
+  { hrefLang: 'en', path: pagePath },
+  { hrefLang: 'es', path: localizePath('es', pagePath) },
+  { hrefLang: 'x-default', path: pagePath },
+]);
+const languageLinks = buildLanguageSwitcherLinks(pagePath);
 
 const jsonLd = [
   {
@@ -31,8 +39,10 @@ const jsonLd = [
   canonical={pageUrl}
   keywords="sunrise methodology, sunset calculation, moon phase method, prayer times method"
   jsonLd={jsonLd}
+  lang="en"
+  alternates={alternates}
 >
-  <Header />
+  <Header languageLinks={languageLinks} currentLanguage="en" />
 
   <main class="resource-page">
     <div class="container">
@@ -92,7 +102,8 @@ const jsonLd = [
           <h2>City directory</h2>
           <p class="resource-text">The public index currently covers {totalCities} major cities. The list is curated from a GeoNames-based seed so the highest-demand locations are easy to browse and search first.</p>
           <ul class="resource-list">
-            <li>Each city stores a name, slug, country code, timezone, and coordinates.</li>
+            <li>Each city stores a canonical slug, country metadata, timezone, coordinates, and search aliases.</li>
+            <li>Administrative region labels are used when a city needs stronger disambiguation in search or UI.</li>
             <li>Regional hubs group cities for easier comparison and deeper internal linking.</li>
             <li>The indexed directory can expand as coverage priorities change.</li>
           </ul>

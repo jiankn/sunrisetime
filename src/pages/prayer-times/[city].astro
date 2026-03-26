@@ -1,0 +1,396 @@
+---
+/**
+ * [city].astro — Prayer Times 独立页面
+ *
+ * 路由: /prayer-times/london/, /prayer-times/dubai/, etc.
+ * SSG: getStaticPaths() 从 cities.json 生成
+ * 精准匹配搜索意图: "prayer times [city]"
+ */
+import Base from '@layouts/Base.astro';
+import Header from '@components/Header.astro';
+import Footer from '@components/Footer.astro';
+import AdUnit from '@components/AdUnit.astro';
+import cities from '@data/cities.json';
+import { getCityDisplayName, getCityLocationLabel } from '@data/site';
+import { getSunTimes, formatTime } from '@utils/sun';
+import { getPrayerTimes, getNextPrayer } from '@utils/prayer-times';
+import type { CalculationMethod, AsrJuristic } from '@utils/prayer-times';
+import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
+import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
+
+export function getStaticPaths() {
+  return cities.cities.map(city => ({
+    params: { city: city.slug },
+    props: { city },
+  }));
+}
+
+type City = typeof cities.cities[0];
+const { city } = Astro.props as { city: City };
+const cityLabel = getCityDisplayName(city, { includeAdmin1: Boolean(city.admin1) });
+const cityLocationLabel = getCityLocationLabel(city, { includeAdmin1: Boolean(city.admin1) });
+
+const today = new Date();
+const sun = getSunTimes(today, city.lat, city.lng);
+const prayers = getPrayerTimes(today, city.lat, city.lng, 'MWL', 'Standard');
+const nextPrayer = getNextPrayer(today, city.lat, city.lng, 'MWL', 'Standard');
+
+function formatCountdown(ms: number) {
+  const totalMinutes = Math.max(1, Math.round(ms / 60000));
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  if (hours && minutes) return `${hours}h ${minutes}m`;
+  if (hours) return `${hours}h`;
+  return `${minutes}m`;
+}
+
+const localDateLabel = today.toLocaleDateString('en-US', {
+  weekday: 'long',
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+  timeZone: city.timezone,
+});
+const localTimeLabel = today.toLocaleTimeString('en-US', {
+  hour: 'numeric',
+  minute: '2-digit',
+  hour12: true,
+  timeZone: city.timezone,
+});
+
+// Nearby cities for internal linking (same continent, exclude self)
+const nearbyCities = cities.cities
+  .filter(c => c.continent === city.continent && c.slug !== city.slug)
+  .slice(0, 6);
+
+// Cross-continent cities
+const otherCities = cities.cities
+  .filter(c => c.continent !== city.continent)
+  .sort(() => Math.random() - 0.5)
+  .slice(0, 4);
+
+const nextPrayerCountdown = nextPrayer.time > today
+  ? formatCountdown(nextPrayer.time.getTime() - today.getTime())
+  : '';
+
+const pageTitle = `Prayer Times in ${cityLabel} Today — SunriseTime`;
+const pageDesc = `Today's prayer times in ${cityLabel}: Fajr ${formatTime(prayers.fajr, city.timezone)}, Dhuhr ${formatTime(prayers.dhuhr, city.timezone)}, Asr ${formatTime(prayers.asr, city.timezone)}, Maghrib ${formatTime(prayers.maghrib, city.timezone)}, Isha ${formatTime(prayers.isha, city.timezone)}. Accurate times using MWL method.`;
+const pagePath = `/prayer-times/${city.slug}/`;
+const pageUrl = `https://sunrisetime.co${pagePath}`;
+const alternates = buildAlternateLinks([
+  { hrefLang: 'en', path: pagePath },
+  { hrefLang: 'es', path: localizePath('es', pagePath) },
+  { hrefLang: 'x-default', path: pagePath },
+]);
+const languageLinks = buildLanguageSwitcherLinks(pagePath);
+const breadcrumbItems = [
+  { name: 'Home', path: '/' },
+  { name: 'Prayer Times Guide', path: '/guides/prayer-times/' },
+  { name: city.name, path: `/prayer-times/${city.slug}/` },
+];
+
+const CALCULATION_METHODS: { value: CalculationMethod; label: string; detail: string }[] = [
+  { value: 'MWL',     label: 'Muslim World League', detail: 'Fajr 18°, Isha 17°' },
+  { value: 'ISNA',    label: 'ISNA (North America)', detail: 'Fajr 15°, Isha 15°' },
+  { value: 'Egypt',   label: 'Egyptian General Authority', detail: 'Fajr 19.5°, Isha 17.5°' },
+  { value: 'Makkah',  label: 'Umm al-Qura (Makkah)', detail: 'Fajr 18.5°, Isha 90min' },
+  { value: 'Karachi', label: 'University of Islamic Sciences', detail: 'Fajr 18°, Isha 18°' },
+];
+
+const JURISTIC_METHODS: { value: AsrJuristic; label: string; detail: string }[] = [
+  { value: 'Standard', label: 'Shafi\'i / Maliki / Hanbali', detail: 'Shadow = object height + noon shadow' },
+  { value: 'Hanafi',   label: 'Hanafi', detail: 'Shadow = 2× object height + noon shadow' },
+];
+
+const prayerList = [
+  { name: 'Fajr',    time: prayers.fajr,    icon: 'cloud-moon', desc: 'Pre-dawn prayer' },
+  { name: 'Sunrise', time: prayers.sunrise,  icon: 'sunrise',    desc: 'Sun rises — Fajr ends' },
+  { name: 'Dhuhr',   time: prayers.dhuhr,   icon: 'sun',        desc: 'Midday prayer' },
+  { name: 'Asr',     time: prayers.asr,     icon: 'cloud-sun',  desc: 'Afternoon prayer' },
+  { name: 'Maghrib', time: prayers.maghrib,  icon: 'sunset',     desc: 'Sunset prayer' },
+  { name: 'Isha',    time: prayers.isha,     icon: 'moon',       desc: 'Night prayer' },
+];
+
+const jsonLd = [
+  {
+    "@type": "WebPage",
+    "@id": `${pageUrl}#webpage`,
+    "name": pageTitle,
+    "description": pageDesc,
+    "url": pageUrl,
+    "isPartOf": {
+      "@id": "https://sunrisetime.co/#website"
+    }
+  },
+  buildBreadcrumbJsonLd(breadcrumbItems),
+  {
+    "@type": "FAQPage",
+    "@id": `${pageUrl}#faq`,
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": `What are the prayer times in ${cityLabel} today?`,
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": `Today's prayer times in ${cityLabel}: Fajr at ${formatTime(prayers.fajr, city.timezone)}, Dhuhr at ${formatTime(prayers.dhuhr, city.timezone)}, Asr at ${formatTime(prayers.asr, city.timezone)}, Maghrib at ${formatTime(prayers.maghrib, city.timezone)}, and Isha at ${formatTime(prayers.isha, city.timezone)}. Calculated using the Muslim World League (MWL) method.`
+        }
+      },
+      {
+        "@type": "Question",
+        "name": `What time is Fajr in ${cityLabel}?`,
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": `Fajr prayer time in ${cityLabel} today is ${formatTime(prayers.fajr, city.timezone)}. This is calculated when the sun is 18° below the horizon before sunrise (MWL method).`
+        }
+      },
+      {
+        "@type": "Question",
+        "name": `What time is Maghrib in ${cityLabel}?`,
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": `Maghrib prayer time in ${cityLabel} today is ${formatTime(prayers.maghrib, city.timezone)}, which is shortly after sunset at ${formatTime(sun.sunset, city.timezone)}.`
+        }
+      },
+      {
+        "@type": "Question",
+        "name": `What calculation method is used for prayer times in ${cityLabel}?`,
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": `Prayer times on this page default to the Muslim World League (MWL) method with Fajr at 18° and Isha at 17° below the horizon. You can switch between five calculation methods (MWL, ISNA, Egyptian, Umm al-Qura, Karachi) and two Asr juristic schools (Standard and Hanafi).`
+        }
+      }
+    ]
+  }
+];
+---
+
+<Base
+  title={pageTitle}
+  description={pageDesc}
+  canonical={pageUrl}
+  keywords={`prayer times ${cityLabel}, salah time ${cityLabel}, namaz time ${cityLabel}, fajr time ${cityLabel}, maghrib time ${cityLabel}`}
+  jsonLd={jsonLd}
+  lang="en"
+  alternates={alternates}
+>
+  <Header languageLinks={languageLinks} currentLanguage="en" />
+
+  <main class="city-page prayer-page">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/">Home</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <a href="/guides/prayer-times/">Prayer Times</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <span>{city.name}</span>
+      </nav>
+
+      <!-- Hero Section -->
+      <section class="prayer-hero glass-card-lg">
+        <div class="prayer-hero-copy">
+          <span class="city-kicker">{localDateLabel}</span>
+          <h1>Prayer Times in <span class="gradient-text">{city.name}</span></h1>
+          <p class="city-lead">
+            Local time is {localTimeLabel}. Next prayer is <strong>{nextPrayer.name}</strong> at {formatTime(nextPrayer.time, city.timezone)}{nextPrayerCountdown ? ` — ${nextPrayerCountdown} from now` : ''}.
+          </p>
+
+          <div class="city-chip-row">
+            <span class="city-chip city-country-badge">{cityLocationLabel}</span>
+            <span class="city-chip">{city.timezone}</span>
+            <span class="city-chip">MWL · Standard</span>
+          </div>
+
+          <div class="city-action-row">
+            <a href={`/sunrise/${city.slug}/`} class="btn-secondary">
+              <i data-lucide="sun" class="icon-xs"></i>
+              Sunrise &amp; Sunset
+            </a>
+            <a href="/guides/prayer-times/" class="btn-secondary">
+              <i data-lucide="book-open" class="icon-xs"></i>
+              Prayer Guide
+            </a>
+          </div>
+        </div>
+
+        <!-- Next Prayer Highlight -->
+        <div class="prayer-hero-panel">
+          <div class="prayer-next-hero glass-card">
+            <span class="prayer-next-label">Next prayer</span>
+            <strong class="prayer-next-name">{nextPrayer.name}</strong>
+            <span class="prayer-next-time">{formatTime(nextPrayer.time, city.timezone)}</span>
+            {nextPrayerCountdown && (
+              <span class="prayer-next-countdown">{nextPrayerCountdown} from now</span>
+            )}
+          </div>
+        </div>
+      </section>
+
+      <!-- Full Prayer Schedule -->
+      <section class="detail-section" id="schedule" aria-label="Today's prayer schedule">
+        <div class="detail-section-head">
+          <h2><i data-lucide="clock" class="icon-md"></i> Today&apos;s Prayer Schedule</h2>
+          <p>All five daily prayers plus sunrise. Times are for {city.name} ({city.timezone}) on {localDateLabel}.</p>
+        </div>
+
+        <div class="prayer-grid">
+          {prayerList.map(p => (
+            <div class={`prayer-card glass-card ${nextPrayer.name === p.name ? 'prayer-card-active' : ''}`}>
+              <i data-lucide={p.icon} class="icon-md"></i>
+              <span class="prayer-name">{p.name}</span>
+              <span class="prayer-time">{formatTime(p.time, city.timezone)}</span>
+              <span class="prayer-desc">{p.desc}</span>
+            </div>
+          ))}
+        </div>
+        <p class="prayer-note">
+          Default: Muslim World League (MWL) method · Standard (Shafi&apos;i) Asr calculation.
+          <a href="#methods">Change method below ↓</a>
+        </p>
+      </section>
+
+      <!-- Sun Data Quick Summary -->
+      <section class="detail-section" aria-label="Sun data summary">
+        <div class="detail-section-head">
+          <h2><i data-lucide="sun" class="icon-md"></i> Sun Data for {city.name}</h2>
+          <p>Prayer times are derived from the sun&apos;s position. Here&apos;s today&apos;s key solar data.</p>
+        </div>
+
+        <div class="detail-grid">
+          <div class="detail-card glass-card">
+            <h3>Sunrise &amp; Sunset</h3>
+            <div class="detail-time">
+              <div>
+                <span class="data-label">Sunrise</span>
+                <span class="detail-time-value">{formatTime(sun.sunrise, city.timezone)}</span>
+              </div>
+              <div>
+                <span class="data-label">Sunset</span>
+                <span class="detail-time-value">{formatTime(sun.sunset, city.timezone)}</span>
+              </div>
+            </div>
+            <span class="detail-duration">{sun.daylightFormatted} of daylight today</span>
+          </div>
+          <div class="detail-card glass-card">
+            <h3>Twilight</h3>
+            <div class="detail-time">
+              <div>
+                <span class="data-label">Dawn</span>
+                <span class="detail-time-value">{formatTime(sun.dawn, city.timezone)}</span>
+              </div>
+              <div>
+                <span class="data-label">Dusk</span>
+                <span class="detail-time-value">{formatTime(sun.dusk, city.timezone)}</span>
+              </div>
+            </div>
+            <span class="detail-duration">Solar noon at {formatTime(sun.solarNoon, city.timezone)}</span>
+          </div>
+        </div>
+
+        <div class="prayer-sun-cta">
+          <a href={`/sunrise/${city.slug}/`} class="btn-primary">
+            <i data-lucide="arrow-right" class="icon-xs"></i>
+            Full sunrise &amp; sunset page for {city.name}
+          </a>
+        </div>
+      </section>
+
+      <AdUnit id="ad-prayer-mid" />
+
+      <!-- Calculation Method Explanation -->
+      <section class="detail-section" id="methods" aria-label="Calculation methods">
+        <div class="detail-section-head">
+          <h2><i data-lucide="settings" class="icon-md"></i> Calculation Methods</h2>
+          <p>Different regions use different conventions to determine Fajr and Isha times based on the sun&apos;s angle below the horizon.</p>
+        </div>
+
+        <div class="method-grid">
+          {CALCULATION_METHODS.map(m => (
+            <div class={`method-card glass-card ${m.value === 'MWL' ? 'method-card-active' : ''}`}>
+              <strong>{m.label}</strong>
+              <span class="method-detail">{m.detail}</span>
+              {m.value === 'MWL' && <span class="method-badge">Current</span>}
+            </div>
+          ))}
+        </div>
+
+        <div class="method-subsection">
+          <h3>Asr Juristic Method</h3>
+          <div class="method-grid method-grid-narrow">
+            {JURISTIC_METHODS.map(j => (
+              <div class={`method-card glass-card ${j.value === 'Standard' ? 'method-card-active' : ''}`}>
+                <strong>{j.label}</strong>
+                <span class="method-detail">{j.detail}</span>
+                {j.value === 'Standard' && <span class="method-badge">Current</span>}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <!-- SEO Content -->
+      <section class="detail-section seo-content" aria-label="About prayer times">
+        <h2><i data-lucide="info" class="icon-md"></i> About Prayer Times in {city.name}</h2>
+        <div class="seo-text glass-card">
+          <p>
+            Islamic prayer times in {city.name} are calculated based on the position of the sun relative to the horizon. The five daily prayers — Fajr, Dhuhr, Asr, Maghrib, and Isha — each correspond to specific solar positions. Today, {localDateLabel}, the first prayer (Fajr) begins at {formatTime(prayers.fajr, city.timezone)}, well before sunrise at {formatTime(prayers.sunrise, city.timezone)}.
+          </p>
+
+          <h3>How Prayer Times Are Calculated</h3>
+          <p>
+            SunriseTime calculates prayer times using {city.name}&apos;s geographic coordinates (latitude {city.lat.toFixed(4)}°, longitude {city.lng.toFixed(4)}°) and the NOAA solar position algorithm. Fajr is determined when the sun reaches a specific angle below the horizon before dawn — 18° for the Muslim World League method. Dhuhr begins just after solar noon. Asr timing depends on the juristic school: the Standard (Shafi&apos;i) method triggers when an object&apos;s shadow equals its height plus the noon shadow length, while the Hanafi method uses twice the object height. Maghrib follows sunset, and Isha is calculated when the sun reaches 17° below the horizon after dusk.
+          </p>
+
+          <h3>Choosing the Right Calculation Method</h3>
+          <p>
+            The default calculation method on this page is the Muslim World League (MWL), which is widely used across Europe, the Far East, and parts of the Americas. If you are in North America, you may prefer the ISNA method. Users in the Middle East may find the Umm al-Qura (Makkah) method most appropriate, while those in South Asia often use the Karachi university standard. For Egypt and North Africa, the Egyptian General Authority of Survey is commonly used.
+          </p>
+
+          <h3>Prayer Times and Sunrise Connection</h3>
+          <p>
+            Prayer times are fundamentally linked to sunrise and sunset. Fajr begins before sunrise, Maghrib follows sunset, and every prayer window shifts as daylight hours change throughout the year. For the full sunrise, sunset, golden hour, and moon phase data for {city.name}, visit the <a href={`/sunrise/${city.slug}/`}>sunrise and sunset page</a>.
+          </p>
+        </div>
+      </section>
+
+      <AdUnit id="ad-prayer-bottom" />
+
+      <!-- Nearby Cities -->
+      <section class="detail-section" id="nearby" aria-label="Nearby cities">
+        <div class="detail-section-head">
+          <h2><i data-lucide="map-pin" class="icon-md"></i> Prayer Times in Nearby Cities</h2>
+          <p>Compare prayer schedules in cities close to {city.name}.</p>
+        </div>
+
+        <div class="nearby-grid">
+          {nearbyCities.map(c => (
+            <a href={`/prayer-times/${c.slug}/`} class="nearby-card glass-card">
+              <span class="nearby-name">{c.name}</span>
+              <span class="nearby-country">{getCityLocationLabel(c, { includeAdmin1: Boolean(c.admin1) })}</span>
+            </a>
+          ))}
+        </div>
+        {otherCities.length > 0 && (
+          <>
+            <h3 class="other-cities-title">Popular Cities Worldwide</h3>
+            <div class="nearby-grid">
+              {otherCities.map(c => (
+                <a href={`/prayer-times/${c.slug}/`} class="nearby-card glass-card">
+                  <span class="nearby-name">{c.name}</span>
+                  <span class="nearby-country">{getCityLocationLabel(c, { includeAdmin1: Boolean(c.admin1) })}</span>
+                </a>
+              ))}
+            </div>
+          </>
+        )}
+        <div class="cities-cta" style="margin-top:2rem;">
+          <a href="/cities/" class="btn-secondary">
+            <i data-lucide="globe" class="icon-xs"></i>
+            View All Cities
+          </a>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <Footer />
+</Base>

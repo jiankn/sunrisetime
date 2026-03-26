@@ -1,0 +1,133 @@
+---
+import Base from '@layouts/Base.astro';
+import ArabicHeader from '@components/ArabicHeader.astro';
+import ArabicFooter from '@components/ArabicFooter.astro';
+import { supportEmail, supportEmailHref } from '@data/site';
+import { arabicLegalLastUpdated } from '@i18n/arabic';
+import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
+import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
+
+const pagePath = '/privacy/';
+const arabicPath = localizePath('ar', pagePath);
+const pageUrl = `https://sunrisetime.co${arabicPath}`;
+const alternates = buildAlternateLinks([
+  { hrefLang: 'en', path: pagePath },
+  { hrefLang: 'es', path: localizePath('es', pagePath) },
+  { hrefLang: 'ar', path: arabicPath },
+  { hrefLang: 'x-default', path: pagePath },
+]);
+const languageLinks = buildLanguageSwitcherLinks(pagePath);
+
+const jsonLd = [
+  {
+    "@type": "WebPage",
+    "@id": `${pageUrl}#webpage`,
+    "name": "سياسة الخصوصية",
+    "description": "اقرأ كيف يتعامل SunriseTime مع بيانات الاستخدام المحدودة وملفات تعريف الارتباط والإفصاحات الإعلانية.",
+    "url": pageUrl,
+    "inLanguage": "ar",
+    "isPartOf": {
+      "@id": "https://sunrisetime.co/ar/#website"
+    }
+  },
+  buildBreadcrumbJsonLd([
+    { name: 'الرئيسية', path: '/ar/' },
+    { name: 'الخصوصية', path: arabicPath },
+  ]),
+];
+---
+
+<Base
+  title="سياسة الخصوصية - SunriseTime"
+  description="اقرأ كيف يتعامل SunriseTime مع ملفات تعريف الارتباط وبيانات الاستخدام المحدودة والإفصاحات الإعلانية في موقع منفعة مجاني."
+  canonical={pageUrl}
+  keywords="سياسة الخصوصية, خصوصية SunriseTime, ملفات تعريف الارتباط"
+  jsonLd={jsonLd}
+  lang="ar"
+  dir="rtl"
+  alternates={alternates}
+>
+  <ArabicHeader languageLinks={languageLinks} currentLanguage="ar" />
+
+  <main class="resource-page">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/ar/">الرئيسية</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <span>الخصوصية</span>
+      </nav>
+
+      <header class="resource-header">
+        <span class="section-badge">
+          <i data-lucide="shield" class="icon-xs"></i>
+          سياسة الخصوصية
+        </span>
+        <h1>يحاول SunriseTime إبقاء المنتج بسيطًا، لذلك يفترض أن يبقى نموذج الخصوصية بسيطًا أيضًا.</h1>
+        <p class="resource-subtitle">نهدف إلى جمع أقل قدر ممكن من المعلومات الشخصية مع تشغيل موقع عام سريع ومدعوم بالإعلانات. تشرح هذه الصفحة ما قد تتم معالجته عند استخدام الموقع.</p>
+        <div class="resource-meta">
+          <span class="resource-meta-chip">آخر تحديث {arabicLegalLastUpdated}</span>
+          <span class="resource-meta-chip">موقع مجاني مدعوم بالإعلانات</span>
+        </div>
+      </header>
+
+      <section class="resource-grid">
+        <article class="resource-card glass-card">
+          <h2>ما المعلومات التي قد نعالجها</h2>
+          <ul class="resource-list">
+            <li>بيانات تقنية أساسية مثل نوع المتصفح والجهاز والموقع الشبكي التقريبي وطلبات الصفحات.</li>
+            <li>مصطلحات البحث أو صفحات المدن التي تفتحها أثناء استخدام SunriseTime.</li>
+            <li>بيانات الموقع الجغرافي فقط عندما تختار بنفسك استخدام ميزة "موقعي" في المتصفح.</li>
+          </ul>
+        </article>
+
+        <article class="resource-card glass-card">
+          <h2>كيف تستخدم هذه المعلومات</h2>
+          <ul class="resource-list">
+            <li>لتقديم صفحة المدينة الصحيحة وحساب بيانات التوقيت ذات الصلة وتحسين أداء الصفحات.</li>
+            <li>لفهم الصفحات المفيدة وأين يجب تحسين الروابط الداخلية أو بنية الصفحة.</li>
+            <li>للحفاظ على أمان الخدمة ومراقبة الإساءة ودعم التشغيل المعتاد للموقع.</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="resource-grid">
+        <article class="resource-card glass-card">
+          <h2>ملفات تعريف الارتباط والإعلانات والخدمات الخارجية</h2>
+          <ul class="resource-list">
+            <li>قد يستخدم SunriseTime ملفات تعريف الارتباط أو تقنيات مشابهة لوظائف الموقع الأساسية ولدعم الإعلانات.</li>
+            <li>إذا تم تفعيل Google AdSense فقد تستخدم Google وشركاؤها ملفات تعريف الارتباط لعرض الإعلانات أو قياسها.</li>
+            <li>قد تعالج الخدمات الخارجية البيانات وفق سياسات الخصوصية الخاصة بها عندما تكون مفعلة على الموقع.</li>
+          </ul>
+        </article>
+
+        <article class="resource-card glass-card">
+          <h2>خياراتك</h2>
+          <ul class="resource-list">
+            <li>يمكنك حظر ملفات تعريف الارتباط أو مسحها من إعدادات المتصفح.</li>
+            <li>يمكنك رفض إذن تحديد الموقع على مستوى المتصفح في أي وقت.</li>
+            <li>يمكنك التوقف عن استخدام الموقع إذا كنت لا تريد أي معالجة تقنية أو إعلانية مرتبطة به.</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="resource-grid">
+        <article class="resource-card glass-card">
+          <h2>الاحتفاظ بالبيانات والأمان</h2>
+          <ul class="resource-list">
+            <li>نحاول الاحتفاظ فقط بالمعلومات اللازمة لتشغيل الخدمة وتأمينها وتحسينها.</li>
+            <li>لا يوجد نظام يضمن أمانًا كاملًا، لكننا نصمم SunriseTime لتجنب جمع بيانات شخصية غير ضرورية.</li>
+            <li>قد تُحتفظ السجلات التشغيلية لأغراض تشخيص الأعطال ومنع الإساءة واستقرار المنصة.</li>
+          </ul>
+        </article>
+
+        <article class="resource-card glass-card">
+          <h2>التواصل بخصوص الخصوصية</h2>
+          <p class="resource-text">إذا كان لديك سؤال أو طلب متعلق بالخصوصية، راسلنا عبر <a href={supportEmailHref}>{supportEmail}</a>.</p>
+          <p class="resource-text">إذا أضاف SunriseTime لاحقًا أدوات إضافية للتحليلات أو الإعلانات أو الموافقة، فيجب تحديث هذه السياسة لتعكس الإعداد الحي.</p>
+        </article>
+      </section>
+    </div>
+  </main>
+
+  <ArabicFooter />
+</Base>

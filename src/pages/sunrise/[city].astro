@@ -10,10 +10,12 @@ import Header from '@components/Header.astro';
 import Footer from '@components/Footer.astro';
 import AdUnit from '@components/AdUnit.astro';
 import cities from '@data/cities.json';
+import { getCityDisplayName, getCityLocationLabel } from '@data/site';
 import { getSunTimes, getGoldenHour, getDaylightSeries, formatTime, getSunriseDelta, getSunsetDelta } from '@utils/sun';
 import { getMoonData, getNextMoonEvent } from '@utils/moon';
 import { getPrayerTimes, getNextPrayer } from '@utils/prayer-times';
-import { buildBreadcrumbJsonLd } from '@utils/seo';
+import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
+import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
 
 export function getStaticPaths() {
   return cities.cities.map(city => ({
@@ -24,6 +26,8 @@ export function getStaticPaths() {
 
 type City = typeof cities.cities[0];
 const { city } = Astro.props as { city: City };
+const cityLabel = getCityDisplayName(city, { includeAdmin1: Boolean(city.admin1) });
+const cityLocationLabel = getCityLocationLabel(city, { includeAdmin1: Boolean(city.admin1) });
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
@@ -153,9 +157,17 @@ const otherCities = cities.cities
   .sort(() => Math.random() - 0.5)
   .slice(0, 4);
 
-const pageTitle = `Sunrise & Sunset Times in ${city.name} Today — SunriseTime`;
-const pageDesc = `Today's sunrise in ${city.name} is at ${formatTime(sun.sunrise, city.timezone)}, sunset at ${formatTime(sun.sunset, city.timezone)}. ${sun.daylightFormatted} of daylight. Golden hour, moon phase, and prayer times included.`;
-const pageUrl = `https://sunrisetime.co/sunrise/${city.slug}/`;
+const pageTitle = `Sunrise & Sunset Times in ${cityLabel} Today — SunriseTime`;
+const pageDesc = `Today's sunrise in ${cityLabel} is at ${formatTime(sun.sunrise, city.timezone)}, sunset at ${formatTime(sun.sunset, city.timezone)}. ${sun.daylightFormatted} of daylight. Golden hour, moon phase, and prayer times included.`;
+const pagePath = `/sunrise/${city.slug}/`;
+const pageUrl = `https://sunrisetime.co${pagePath}`;
+const alternates = buildAlternateLinks([
+  { hrefLang: 'en', path: pagePath },
+  { hrefLang: 'es', path: localizePath('es', pagePath) },
+  { hrefLang: 'x-default', path: pagePath },
+]);
+const languageLinks = buildLanguageSwitcherLinks(pagePath);
+const UrlPrayerTimes = `/prayer-times/${city.slug}/`;
 const breadcrumbItems = [
   { name: 'Home', path: '/' },
   { name: 'Cities', path: '/cities/' },
@@ -180,18 +192,18 @@ const jsonLd = [
     "mainEntity": [
       {
         "@type": "Question",
-        "name": `What time is sunrise in ${city.name} today?`,
+        "name": `What time is sunrise in ${cityLabel} today?`,
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": `Sunrise in ${city.name} today is at ${formatTime(sun.sunrise, city.timezone)}.`
+          "text": `Sunrise in ${cityLabel} today is at ${formatTime(sun.sunrise, city.timezone)}.`
         }
       },
       {
         "@type": "Question",
-        "name": `What time is sunset in ${city.name} today?`,
+        "name": `What time is sunset in ${cityLabel} today?`,
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": `Sunset in ${city.name} today is at ${formatTime(sun.sunset, city.timezone)}.`
+          "text": `Sunset in ${cityLabel} today is at ${formatTime(sun.sunset, city.timezone)}.`
         }
       }
     ]
@@ -203,10 +215,12 @@ const jsonLd = [
   title={pageTitle}
   description={pageDesc}
   canonical={pageUrl}
-  keywords={`sunrise ${city.name}, sunset ${city.name}, golden hour ${city.name}, ${city.name} sun times`}
+  keywords={`sunrise ${cityLabel}, sunset ${cityLabel}, golden hour ${cityLabel}, ${cityLabel} sun times`}
   jsonLd={jsonLd}
+  lang="en"
+  alternates={alternates}
 >
-  <Header />
+  <Header languageLinks={languageLinks} currentLanguage="en" />
 
   <main class="city-page">
     <div class="container">
@@ -228,7 +242,7 @@ const jsonLd = [
           </p>
 
           <div class="city-chip-row">
-            <span class="city-chip city-country-badge">{city.country}</span>
+            <span class="city-chip city-country-badge">{cityLocationLabel}</span>
             <span class="city-chip">{city.timezone}</span>
             <span class="city-chip">{localDateLabel}</span>
           </div>
@@ -242,12 +256,16 @@ const jsonLd = [
               <i data-lucide="camera" class="icon-xs"></i>
               See golden hour
             </a>
+            <a href={UrlPrayerTimes} class="btn-secondary">
+              <i data-lucide="clock" class="icon-xs"></i>
+              Prayer times
+            </a>
           </div>
 
           <div class="city-jump-nav">
             <a href="#photography" class="city-jump-chip">Photography</a>
             <a href="#moon" class="city-jump-chip">Moon</a>
-            <a href="#prayer" class="city-jump-chip">Prayer</a>
+            <a href={UrlPrayerTimes} class="city-jump-chip">Prayer Times</a>
             <a href="#nearby" class="city-jump-chip">Nearby Cities</a>
           </div>
         </div>
@@ -462,6 +480,12 @@ const jsonLd = [
         <p class="prayer-note">
           Calculated using Muslim World League (MWL) method. Standard (Shafi&apos;i) juristic method for Asr.
         </p>
+        <div class="prayer-sun-cta" style="margin-top:1rem;">
+          <a href={UrlPrayerTimes} class="btn-primary">
+            <i data-lucide="arrow-right" class="icon-xs"></i>
+            Full prayer times page for {city.name}
+          </a>
+        </div>
       </section>
 
       <AdUnit id="ad-city-bottom" />
@@ -510,7 +534,7 @@ const jsonLd = [
           {nearbyCities.map(c => (
             <a href={`/sunrise/${c.slug}/`} class="nearby-card glass-card">
               <span class="nearby-name">{c.name}</span>
-              <span class="nearby-country">{c.country}</span>
+              <span class="nearby-country">{getCityLocationLabel(c, { includeAdmin1: Boolean(c.admin1) })}</span>
             </a>
           ))}
         </div>
@@ -521,7 +545,7 @@ const jsonLd = [
               {otherCities.map(c => (
                 <a href={`/sunrise/${c.slug}/`} class="nearby-card glass-card">
                   <span class="nearby-name">{c.name}</span>
-                  <span class="nearby-country">{c.country}</span>
+                  <span class="nearby-country">{getCityLocationLabel(c, { includeAdmin1: Boolean(c.admin1) })}</span>
                 </a>
               ))}
             </div>

@@ -1,0 +1,118 @@
+---
+import Base from '@layouts/Base.astro';
+import LocalizedHeader from '@components/LocalizedHeader.astro';
+import LocalizedFooter from '@components/LocalizedFooter.astro';
+import { getCitySearchText, regionHubs, totalCities } from '@data/site';
+import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
+import {
+  getSpanishCityDisplayName,
+  getSpanishCityLocationLabel,
+  getSpanishCityName,
+  getSpanishRegionName,
+} from '@i18n/spanish';
+import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
+
+const pagePath = '/cities/';
+const alternates = buildAlternateLinks([
+  { hrefLang: 'en', path: pagePath },
+  { hrefLang: 'es', path: localizePath('es', pagePath) },
+  { hrefLang: 'x-default', path: pagePath },
+]);
+const languageLinks = buildLanguageSwitcherLinks(pagePath);
+const pageUrl = 'https://sunrisetime.co/es/cities/';
+
+const jsonLd = [
+  {
+    "@type": "CollectionPage",
+    "@id": `${pageUrl}#webpage`,
+    "name": "Índice de ciudades de SunriseTime",
+    "description": `Explora las páginas de amanecer y atardecer de ${totalCities} ciudades indexadas en español.`,
+    "url": pageUrl,
+    "inLanguage": "es",
+    "isPartOf": {
+      "@id": "https://sunrisetime.co/es/#website"
+    }
+  },
+  buildBreadcrumbJsonLd([
+    { name: 'Inicio', path: '/es/' },
+    { name: 'Ciudades', path: '/es/cities/' },
+  ]),
+];
+---
+
+<Base
+  title={`Índice de amanecer y atardecer para ${totalCities} ciudades - SunriseTime`}
+  description={`Consulta el amanecer, el atardecer y la duración del día de ${totalCities} ciudades. Índice en español con enlaces rastreables a cada ciudad.`}
+  canonical={pageUrl}
+  keywords="índice de ciudades, amanecer por ciudad, atardecer por ciudad"
+  jsonLd={jsonLd}
+  lang="es"
+  alternates={alternates}
+>
+  <LocalizedHeader languageLinks={languageLinks} currentLanguage="es" />
+
+  <main class="cities-hub">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/es/">Inicio</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <span>Ciudades</span>
+      </nav>
+
+      <header class="cities-hub-header">
+        <h1>Índice de <span class="gradient-text">{totalCities} ciudades</span> con amanecer y atardecer</h1>
+        <p>Busca una ciudad o navega por región. Todas las URLs enlazan a páginas en español con canonical propio y contenido principal localizado.</p>
+        <div class="hub-search">
+          <i data-lucide="search" class="icon-sm" style="color:var(--text-tertiary);flex-shrink:0;"></i>
+          <input type="text" id="hubCitySearch" placeholder="Buscar ciudad..." autocomplete="off" />
+        </div>
+      </header>
+
+      {regionHubs.map((region) => (
+        <section class="continent-section" data-continent={region.slug}>
+          <h2>
+            <i data-lucide="globe" class="icon-md"></i>
+            {getSpanishRegionName(region.slug, region.name)}
+          </h2>
+          <div class="hub-city-grid">
+            {region.cities.map((city) => (
+              <a
+                href={`/es/sunrise/${city.slug}/`}
+                class="hub-city-card glass-card"
+                data-city-search={`${getSpanishCityDisplayName(city, { includeAdmin1: Boolean(city.admin1) })} ${getCitySearchText(city)}`.toLowerCase()}
+              >
+                <span class="hub-city-name">{getSpanishCityName(city)}</span>
+                <span class="hub-city-country">{getSpanishCityLocationLabel(city, { includeAdmin1: Boolean(city.admin1) })}</span>
+              </a>
+            ))}
+          </div>
+        </section>
+      ))}
+    </div>
+  </main>
+
+  <LocalizedFooter />
+</Base>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const input = document.getElementById('hubCitySearch');
+    if (!input) return;
+
+    input.addEventListener('input', (event) => {
+      const query = (event.target as HTMLInputElement).value.toLowerCase().trim();
+      const cards = document.querySelectorAll<HTMLElement>('.hub-city-card');
+      const sections = document.querySelectorAll<HTMLElement>('.continent-section');
+
+      cards.forEach((card) => {
+        const name = card.dataset.citySearch || '';
+        card.style.display = name.includes(query) ? '' : 'none';
+      });
+
+      sections.forEach((section) => {
+        const visible = section.querySelectorAll<HTMLElement>('.hub-city-card:not([style*="display: none"])');
+        section.style.display = visible.length > 0 ? '' : 'none';
+      });
+    });
+  });
+</script>

@@ -1,0 +1,58 @@
+---
+import { featuredFooterCities } from '@data/site';
+import { spanishFooter } from '@i18n/spanish';
+import { getSpanishCityName } from '@i18n/spanish';
+---
+
+<footer class="footer">
+  <div class="container footer-grid">
+    <div class="footer-brand">
+      <div class="nav-logo">
+        <span class="logo-icon"><img src="/logo.svg" alt="SunriseTime" width="28" height="28"></span>
+        <span class="logo-text">Sunrise<span class="logo-accent">Time</span></span>
+      </div>
+      <p>{spanishFooter.summary}</p>
+      <div class="footer-chip-list" style="margin-top:1rem;">
+        {featuredFooterCities.map((city) => (
+          <a href={`/es/sunrise/${city.slug}/`} class="footer-chip">
+            {getSpanishCityName(city)}
+          </a>
+        ))}
+      </div>
+    </div>
+
+    <div class="footer-links">
+      <h4>Continuar</h4>
+      <ul>
+        {spanishFooter.coreLinks.map((link) => (
+          <li><a href={link.path}>{link.name}</a></li>
+        ))}
+      </ul>
+    </div>
+
+    <div class="footer-links">
+      <h4>Confianza</h4>
+      <ul>
+        {spanishFooter.trustLinks.map((link) => (
+          <li><a href={link.path}>{link.name}</a></li>
+        ))}
+      </ul>
+    </div>
+  </div>
+
+  <div class="container footer-bottom">
+    <div class="footer-bottom-copy">
+      <p>&copy; {new Date().getFullYear()} SunriseTime. Versión piloto en español con rutas indexables, hreflang real y contenido principal localizado.</p>
+    </div>
+
+    <div class="footer-bottom-links">
+      <a href="/es/about/">Sobre</a>
+      <a href="/es/methodology/">Metodología</a>
+      <a href="/es/privacy/">Privacidad</a>
+      <a href="/es/terms/">Términos</a>
+      <a href="/es/contact/">Contacto</a>
+      <a href="/es/guides/">Guías</a>
+      <a href="/es/sitemap/">Mapa del sitio</a>
+    </div>
+  </div>
+</footer>

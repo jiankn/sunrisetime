@@ -15,6 +15,16 @@ import FAQ from '@components/FAQ.astro';
 import CTA from '@components/CTA.astro';
 import Footer from '@components/Footer.astro';
 import { totalCities } from '@data/site';
+import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
+import { buildAlternateLinks } from '@utils/seo';
+
+const pagePath = '/';
+const alternates = buildAlternateLinks([
+  { hrefLang: 'en', path: pagePath },
+  { hrefLang: 'es', path: localizePath('es', pagePath) },
+  { hrefLang: 'x-default', path: pagePath },
+]);
+const languageLinks = buildLanguageSwitcherLinks(pagePath);
 
 const jsonLd = [
   {
@@ -72,8 +82,10 @@ const jsonLd = [
   description={`Search today's sunrise, sunset, golden hour, moon phase, and prayer times for ${totalCities} indexed cities worldwide. Find your city fast and plan the light in seconds.`}
   keywords="sunrise time, sunset time, city search, golden hour, moon phase, prayer times, daylight"
   jsonLd={jsonLd}
+  lang="en"
+  alternates={alternates}
 >
-  <Header />
+  <Header languageLinks={languageLinks} currentLanguage="en" />
   <Hero />
   <TrustBadges />
   <Features />

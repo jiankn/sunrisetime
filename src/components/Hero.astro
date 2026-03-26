@@ -2,13 +2,17 @@
 /**
  * Hero Section — 搜索优先的首屏快照
  */
-import cities from '@data/cities.json';
-import { totalCities } from '@data/site';
+import {
+  allCities,
+  getCityLocationLabel,
+  getCitySearchRecord,
+  totalCities,
+} from '@data/site';
 import { getSunTimes, getGoldenHour, formatTime } from '@utils/sun';
 import { getMoonData } from '@utils/moon';
 import { getNextPrayer } from '@utils/prayer-times';
 
-type City = typeof cities.cities[0];
+type City = (typeof allCities)[number];
 
 const now = new Date();
 const previewSlugs = ['new-york', 'london', 'tokyo', 'dubai', 'sydney', 'sao-paulo'];
@@ -49,7 +53,7 @@ function getNextSunSnapshot(date: Date, city: City) {
 }
 
 const previewCities = previewSlugs
-  .map(slug => cities.cities.find(city => city.slug === slug))
+  .map(slug => allCities.find(city => city.slug === slug))
   .filter((city): city is City => Boolean(city))
   .map(city => {
     const sun = getSunTimes(now, city.lat, city.lng);
@@ -61,7 +65,7 @@ const previewCities = previewSlugs
     return {
       slug: city.slug,
       name: city.name,
-      country: city.country,
+      country: getCityLocationLabel(city),
       timezone: city.timezone,
       caption: `${getTimezoneLabel(city.timezone)} local time · ${now.toLocaleDateString('en-US', {
         weekday: 'short',
@@ -82,17 +86,10 @@ const previewCities = previewSlugs
   });
 
 const heroCity = previewCities[0];
-const searchCities = cities.cities
+const searchCities = allCities
   .slice()
   .sort((a, b) => b.population - a.population)
-  .map(city => ({
-    name: city.name,
-    slug: city.slug,
-    country: city.country,
-    lat: city.lat,
-    lng: city.lng,
-    population: city.population,
-  }));
+  .map((city) => getCitySearchRecord(city));
 ---
 
 <section class="snapshot-hero" id="search">

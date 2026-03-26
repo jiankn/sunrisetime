@@ -2,7 +2,7 @@
 /**
  * Top Cities — 按大洲分组的城市内链网格
  */
-import { regionHubs, totalCities } from '@data/site';
+import { getCityLocationLabel, regionHubs, totalCities } from '@data/site';
 
 const groups = regionHubs.map((region) => ({
   name: region.name,
@@ -35,7 +35,7 @@ const groups = regionHubs.map((region) => ({
               <li>
                 <a href={`/sunrise/${city.slug}/`} class="city-link">
                   <span class="city-name">{city.name}</span>
-                  <span class="city-country">{city.country}</span>
+                  <span class="city-country">{getCityLocationLabel(city)}</span>
                 </a>
               </li>
             ))}

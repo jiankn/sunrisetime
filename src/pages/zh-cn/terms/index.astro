@@ -1,0 +1,133 @@
+---
+import Base from '@layouts/Base.astro';
+import ChineseHeader from '@components/ChineseHeader.astro';
+import ChineseFooter from '@components/ChineseFooter.astro';
+import { supportEmail, supportEmailHref } from '@data/site';
+import { chineseLegalLastUpdated } from '@i18n/chinese';
+import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
+import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
+
+const pagePath = '/terms/';
+const chinesePath = localizePath('zh-cn', pagePath);
+const pageUrl = `https://sunrisetime.co${chinesePath}`;
+const alternates = buildAlternateLinks([
+  { hrefLang: 'en', path: pagePath },
+  { hrefLang: 'es', path: localizePath('es', pagePath) },
+  { hrefLang: 'zh-cn', path: chinesePath },
+  { hrefLang: 'x-default', path: pagePath },
+]);
+const languageLinks = buildLanguageSwitcherLinks(pagePath);
+
+const jsonLd = [
+  {
+    "@type": "WebPage",
+    "@id": `${pageUrl}#webpage`,
+    "name": "使用条款",
+    "description": "查看使用 SunriseTime 的基本规则、免责声明和广告相关披露。",
+    "url": pageUrl,
+    "inLanguage": "zh-CN",
+    "isPartOf": {
+      "@id": "https://sunrisetime.co/zh-cn/#website"
+    }
+  },
+  buildBreadcrumbJsonLd([
+    { name: '首页', path: '/zh-cn/' },
+    { name: '使用条款', path: chinesePath },
+  ]),
+];
+---
+
+<Base
+  title="使用条款 - SunriseTime"
+  description="查看使用 SunriseTime 的基本条款，包括信息用途边界和广告披露。"
+  canonical={pageUrl}
+  keywords="使用条款, SunriseTime 条款, 网站使用"
+  jsonLd={jsonLd}
+  lang="zh-CN"
+  langPrefix="/zh-cn"
+  alternates={alternates}
+>
+  <ChineseHeader languageLinks={languageLinks} currentLanguage="zh-cn" />
+
+  <main class="resource-page">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="面包屑导航">
+        <a href="/zh-cn/">首页</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <span>使用条款</span>
+      </nav>
+
+      <header class="resource-header">
+        <span class="section-badge">
+          <i data-lucide="file-text" class="icon-xs"></i>
+          使用条款
+        </span>
+        <h1>请把 SunriseTime 当作日常规划工具使用，而不是高风险场景下的唯一依据。</h1>
+        <p class="resource-subtitle">这份条款面向公开站点，聚焦基础使用规则、免责声明和服务边界，不涉及账户体系或付费计划。</p>
+        <div class="resource-meta">
+          <span class="resource-meta-chip">最后更新：{chineseLegalLastUpdated}</span>
+          <span class="resource-meta-chip">公开服务</span>
+        </div>
+      </header>
+
+      <section class="resource-grid">
+        <article class="resource-card glass-card">
+          <h2>允许的使用方式</h2>
+          <ul class="resource-list">
+            <li>你可以把 SunriseTime 作为查询城市时间信息的公开工具使用。</li>
+            <li>你可以链接到本站页面，并把它作为公开信息资源引用。</li>
+            <li>不得以破坏服务、过度抓取或滥用基础设施的方式使用本站。</li>
+          </ul>
+        </article>
+
+        <article class="resource-card glass-card">
+          <h2>信息性质免责声明</h2>
+          <ul class="resource-list">
+            <li>SunriseTime 提供的是便于规划的时间信息和参考数据。</li>
+            <li>在宗教、法律、安全或其他高风险场景中，请自行核验正式依据。</li>
+            <li>我们不保证服务永不出错，也不保证适用于所有目的。</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="resource-grid">
+        <article class="resource-card glass-card">
+          <h2>广告与变现</h2>
+          <ul class="resource-list">
+            <li>本站可能展示广告，以支持免费公开版本的持续运行。</li>
+            <li>广告合作方可能有自己的 Cookie 和测量规则。</li>
+            <li>除非明确说明，广告不代表官方背书。</li>
+          </ul>
+        </article>
+
+        <article class="resource-card glass-card">
+          <h2>内容与知识产权</h2>
+          <ul class="resource-list">
+            <li>除非另有说明，站点结构、文案组织和品牌归 SunriseTime 所有。</li>
+            <li>第三方数据集、库和名称归各自权利方所有。</li>
+            <li>不得以误导性的方式复制或冒充本站内容。</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="resource-grid">
+        <article class="resource-card glass-card">
+          <h2>外部服务与链接</h2>
+          <ul class="resource-list">
+            <li>SunriseTime 可能依赖第三方基础设施或链接到外部资源。</li>
+            <li>我们不对外部服务的内容、可用性或政策负责。</li>
+            <li>访问第三方服务时，你可能还会受到其自身条款约束。</li>
+          </ul>
+        </article>
+
+        <article class="resource-card glass-card">
+          <h2>联系条款问题</h2>
+          <p class="resource-text">如果你对这些条款有疑问，可以发邮件到 <a href={supportEmailHref}>{supportEmail}</a>。</p>
+        </article>
+      </section>
+    </div>
+  </main>
+
+  <ChineseFooter />
+</Base>
+

@@ -1,0 +1,189 @@
+---
+import Base from '@layouts/Base.astro';
+import ArabicHeader from '@components/ArabicHeader.astro';
+import ArabicFooter from '@components/ArabicFooter.astro';
+import AdUnit from '@components/AdUnit.astro';
+import { getRegionHub, regionHubs, useCaseHubs } from '@data/site';
+import {
+  getArabicCityLocationLabel,
+  getArabicCityName,
+  getArabicGuideContent,
+  getArabicRegionContent,
+  getArabicRegionName,
+} from '@i18n/arabic';
+import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
+import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
+
+export function getStaticPaths() {
+  return regionHubs.map((region) => ({
+    params: { region: region.slug },
+  }));
+}
+
+const region = getRegionHub(Astro.params.region ?? '');
+
+if (!region) {
+  throw new Error(`Unknown region hub: ${Astro.params.region}`);
+}
+
+const localizedRegion = getArabicRegionContent(region);
+const relatedGuides = useCaseHubs.filter((hub) => hub.relatedRegionSlugs.includes(region.slug));
+const otherRegions = regionHubs.filter((entry) => entry.slug !== region.slug);
+const leadCity = region.featuredCities[0] ?? region.cities[0];
+const pagePath = region.path;
+const arabicPath = localizePath('ar', pagePath);
+const pageUrl = `https://sunrisetime.co${arabicPath}`;
+const alternates = buildAlternateLinks([
+  { hrefLang: 'en', path: pagePath },
+  { hrefLang: 'es', path: localizePath('es', pagePath) },
+  { hrefLang: 'ar', path: arabicPath },
+  { hrefLang: 'x-default', path: pagePath },
+]);
+const languageLinks = buildLanguageSwitcherLinks(pagePath);
+const breadcrumbItems = [
+  { name: 'الرئيسية', path: '/ar/' },
+  { name: 'المدن', path: '/ar/cities/' },
+  { name: getArabicRegionName(region.slug, region.name), path: arabicPath },
+];
+
+const jsonLd = [
+  {
+    "@type": "CollectionPage",
+    "@id": `${pageUrl}#webpage`,
+    "name": `${getArabicRegionName(region.slug, region.name)} - الشروق والغروب`,
+    "description": localizedRegion.description,
+    "url": pageUrl,
+    "inLanguage": "ar",
+    "isPartOf": {
+      "@id": "https://sunrisetime.co/ar/#website"
+    }
+  },
+  buildBreadcrumbJsonLd(breadcrumbItems),
+];
+---
+
+<Base
+  title={`${getArabicRegionName(region.slug, region.name)} - الشروق والغروب | SunriseTime`}
+  description={localizedRegion.description}
+  canonical={pageUrl}
+  keywords={`${getArabicRegionName(region.slug, region.name)}, الشروق, الغروب, المدن`}
+  jsonLd={jsonLd}
+  lang="ar"
+  dir="rtl"
+  alternates={alternates}
+>
+  <ArabicHeader languageLinks={languageLinks} currentLanguage="ar" />
+
+  <main class="resource-page">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/ar/">الرئيسية</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <a href="/ar/cities/">المدن</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <span>{getArabicRegionName(region.slug, region.name)}</span>
+      </nav>
+
+      <header class="resource-header">
+        <span class="section-badge">
+          <i data-lucide="globe-2" class="icon-xs"></i>
+          {getArabicRegionName(region.slug, region.name)}
+        </span>
+        <h1>{localizedRegion.description}</h1>
+        <p class="resource-subtitle">{localizedRegion.intro}</p>
+        <div class="resource-meta">
+          <span class="resource-meta-chip">{region.cityCount} مدينة مفهرسة</span>
+          {leadCity && <span class="resource-meta-chip">ابدأ بـ {getArabicCityName(leadCity)}</span>}
+          <span class="resource-meta-chip">مركز مقارنة إقليمي</span>
+        </div>
+      </header>
+
+      <section class="resource-grid">
+        <article class="resource-card glass-card">
+          <h2>لماذا تتصفح هذا الإقليم</h2>
+          <ul class="resource-list">
+            {localizedRegion.reasons.map((item) => (
+              <li>{item}</li>
+            ))}
+          </ul>
+        </article>
+
+        <article class="resource-card glass-card">
+          <h2>الأكثر ملاءمة لـ</h2>
+          <ul class="resource-list">
+            {localizedRegion.audiences.map((item) => (
+              <li>{item}</li>
+            ))}
+          </ul>
+        </article>
+      </section>
+
+      <section class="resource-section">
+        <div class="detail-section-head">
+          <h2>مدن مميزة</h2>
+          <p>افتح واحدة من هذه المدن أولًا إذا كنت تريد أقصر طريق من التصفح إلى الإجابة.</p>
+        </div>
+        <div class="hub-city-grid">
+          {region.featuredCities.map((city) => (
+            <a href={`/ar/sunrise/${city.slug}/`} class="hub-city-card glass-card">
+              <span class="hub-city-name">{getArabicCityName(city)}</span>
+              <span class="hub-city-country">{getArabicCityLocationLabel(city, { includeAdmin1: Boolean(city.admin1) })}</span>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <AdUnit id={`ad-ar-region-${region.slug}`} />
+
+      <section class="resource-section">
+        <div class="detail-section-head">
+          <h2>كل المدن المفهرسة في هذا الإقليم</h2>
+          <p>استخدم القائمة الكاملة عندما تحتاج مقارنة أعمق بين عدة مدن.</p>
+        </div>
+        <div class="hub-city-grid">
+          {region.cities.map((city) => (
+            <a href={`/ar/sunrise/${city.slug}/`} class="hub-city-card glass-card">
+              <span class="hub-city-name">{getArabicCityName(city)}</span>
+              <span class="hub-city-country">{getArabicCityLocationLabel(city, { includeAdmin1: Boolean(city.admin1) })}</span>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <section class="resource-section">
+        <div class="detail-section-head">
+          <h2>أدلة مرتبطة</h2>
+          <p>تلتقط الأدلة نية أوسع ثم تعيد المستخدم إلى صفحات المدن ومسارات التصفح الإقليمية.</p>
+        </div>
+        <div class="resource-link-grid">
+          {relatedGuides.map((hub) => {
+            const guideContent = getArabicGuideContent(hub);
+            return (
+              <a href={`/ar/guides/${hub.slug}/`} class="resource-link-card glass-card">
+                <strong>{guideContent.name}</strong>
+                <span>{guideContent.description}</span>
+              </a>
+            );
+          })}
+        </div>
+      </section>
+
+      <section class="resource-section">
+        <div class="detail-section-head">
+          <h2>أقاليم أخرى</h2>
+          <p>استخدم مركزًا إقليميًا آخر بدل العودة إلى الصفحة الرئيسية وبدء التصفح من جديد.</p>
+        </div>
+        <div class="resource-link-grid">
+          {otherRegions.map((entry) => (
+            <a href={`/ar/cities/${entry.slug}/`} class="resource-link-card glass-card">
+              <strong>{getArabicRegionName(entry.slug, entry.name)}</strong>
+              <span>{entry.cityCount} مدينة مفهرسة</span>
+            </a>
+          ))}
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <ArabicFooter />
+</Base>

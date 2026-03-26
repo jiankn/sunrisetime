@@ -8,19 +8,13 @@ import {
   featuredFooterCities,
   footerCompanyLinks,
   footerCoreLinks,
+  getCitySearchRecord,
   regionHubs,
   totalCities,
   useCaseHubs,
 } from '@data/site';
 
-const footerSearchCities = allCities.map((city) => ({
-  name: city.name,
-  slug: city.slug,
-  country: city.country,
-  lat: city.lat,
-  lng: city.lng,
-  population: city.population,
-}));
+const footerSearchCities = allCities.map((city) => getCitySearchRecord(city));
 ---
 
 <footer class="footer">

@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://sunrisetime.co/sitemap.xml
+Sitemap: https://sunrisetime.co/sitemap-index.xml

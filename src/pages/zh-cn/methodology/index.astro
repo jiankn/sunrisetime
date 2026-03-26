@@ -1,0 +1,153 @@
+---
+import Base from '@layouts/Base.astro';
+import ChineseHeader from '@components/ChineseHeader.astro';
+import ChineseFooter from '@components/ChineseFooter.astro';
+import { totalCities } from '@data/site';
+import { chineseLegalLastUpdated } from '@i18n/chinese';
+import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
+import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
+
+const pagePath = '/methodology/';
+const chinesePath = localizePath('zh-cn', pagePath);
+const pageUrl = `https://sunrisetime.co${chinesePath}`;
+const alternates = buildAlternateLinks([
+  { hrefLang: 'en', path: pagePath },
+  { hrefLang: 'es', path: localizePath('es', pagePath) },
+  { hrefLang: 'zh-cn', path: chinesePath },
+  { hrefLang: 'x-default', path: pagePath },
+]);
+const languageLinks = buildLanguageSwitcherLinks(pagePath);
+
+const jsonLd = [
+  {
+    "@type": "TechArticle",
+    "@id": `${pageUrl}#article`,
+    "headline": "SunriseTime 方法说明",
+    "description": "说明 SunriseTime 如何计算日出日落、月相和礼拜时间，以及城市索引如何组织。",
+    "url": pageUrl,
+    "inLanguage": "zh-CN",
+    "isPartOf": {
+      "@id": "https://sunrisetime.co/zh-cn/#website"
+    }
+  },
+  buildBreadcrumbJsonLd([
+    { name: '首页', path: '/zh-cn/' },
+    { name: '方法说明', path: chinesePath },
+  ]),
+];
+---
+
+<Base
+  title="方法说明 - SunriseTime 如何计算日出、月相与礼拜时间"
+  description="查看 SunriseTime 的计算方式和使用边界，包括日出日落、黄金时刻、月相和礼拜时间。"
+  canonical={pageUrl}
+  keywords="日出计算方法, 日落计算方法, 礼拜时间方法, 月相算法"
+  jsonLd={jsonLd}
+  lang="zh-CN"
+  langPrefix="/zh-cn"
+  alternates={alternates}
+>
+  <ChineseHeader languageLinks={languageLinks} currentLanguage="zh-cn" />
+
+  <main class="resource-page">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="面包屑导航">
+        <a href="/zh-cn/">首页</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <span>方法说明</span>
+      </nav>
+
+      <header class="resource-header">
+        <span class="section-badge">
+          <i data-lucide="flask-conical" class="icon-xs"></i>
+          方法说明
+        </span>
+        <h1>如果数据来源不清楚，城市页的可信度就站不住。</h1>
+        <p class="resource-subtitle">这页会说明这些时间数据大致是怎么来的、适合怎么用，以及它的边界在哪里。</p>
+        <div class="resource-meta">
+          <span class="resource-meta-chip">最后更新：{chineseLegalLastUpdated}</span>
+          <span class="resource-meta-chip">{totalCities} 座城市</span>
+        </div>
+      </header>
+
+      <section class="resource-grid">
+        <article class="resource-card glass-card">
+          <h2>太阳时间计算</h2>
+          <p class="resource-text">日出、日落、太阳中天、晨光、暮光和黄金时刻会根据城市坐标与日期计算，再换算成当地时区展示。</p>
+          <ul class="resource-list">
+            <li>每座城市都按自己的经纬度独立计算。</li>
+            <li>黄金时刻和晨昏光来自同一套日光模型。</li>
+            <li>所有展示时间都会转换为该城市的本地时区。</li>
+          </ul>
+        </article>
+
+        <article class="resource-card glass-card">
+          <h2>月相数据</h2>
+          <p class="resource-text">月相名称和照明比例来自同一套天文计算，用来帮助你快速判断今晚月亮的大致状态。</p>
+          <ul class="resource-list">
+            <li>月相名称会按当前亮面区间归类。</li>
+            <li>照明比例会做适度取整，方便快速阅读。</li>
+            <li>它适合日常规划，不是专业天文观测工具。</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="resource-grid">
+        <article class="resource-card glass-card">
+          <h2>礼拜时间</h2>
+          <p class="resource-text">当前公开版本默认按穆斯林世界联盟（MWL）标准计算，晡礼使用标准影长规则。</p>
+          <ul class="resource-list">
+            <li>晨礼以太阳位于地平线下 18 度为准。</li>
+            <li>宵礼以太阳位于地平线下 17 度为准。</li>
+            <li>当前公开界面还不支持区域化自定义计算法。</li>
+          </ul>
+        </article>
+
+        <article class="resource-card glass-card">
+          <h2>城市索引</h2>
+          <p class="resource-text">当前索引覆盖 {totalCities} 座重点城市。城市数据以 GeoNames 为基础，再结合时区、坐标和常用别名做整理。</p>
+          <ul class="resource-list">
+            <li>每座城市都带有 slug、国家、时区、坐标和搜索别名。</li>
+            <li>遇到重名城市时，会补充州省或行政区进行区分。</li>
+            <li>区域页和主题页方便你从不同入口继续找到相关城市。</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="resource-grid">
+        <article class="resource-card glass-card">
+          <h2>内容更新机制</h2>
+          <ul class="resource-list">
+            <li>页面内容会在构建时按当前代码和数据层重新生成。</li>
+            <li>只要算法、文案、城市覆盖或页面结构变化，就需要重新构建和部署。</li>
+            <li>产品变动时，方法说明和政策页也要同步更新。</li>
+          </ul>
+        </article>
+
+        <article class="resource-card glass-card">
+          <h2>已知边界</h2>
+          <ul class="resource-list">
+            <li>这些结果适合日常规划，不应直接替代法律、宗教或航海等高风险场景的正式依据。</li>
+            <li>天气、地形、建筑遮挡和本地能见度不会改变计算结果。</li>
+            <li>不同地区的礼拜时间偏好规则仍有继续细化的空间。</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="resource-callout glass-card-lg">
+        <div>
+          <span class="resource-callout-label">继续使用</span>
+          <h2>方法说明只有和城市页结合起来，才真正有价值。</h2>
+          <p>看完这一页后，最适合的下一步是进入城市页、区域页或主题指南，查看这些计算在真实页面中的表现。</p>
+        </div>
+        <div class="resource-link-row">
+          <a href="/zh-cn/cities/" class="btn-primary-sm">城市索引</a>
+          <a href="/zh-cn/guides/" class="btn-secondary-sm">主题指南</a>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <ChineseFooter />
+</Base>
+

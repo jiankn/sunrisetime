@@ -1,0 +1,119 @@
+---
+import Base from '@layouts/Base.astro';
+import ChineseHeader from '@components/ChineseHeader.astro';
+import ChineseFooter from '@components/ChineseFooter.astro';
+import { getCitySearchText, regionHubs, totalCities } from '@data/site';
+import {
+  getChineseCityDisplayName,
+  getChineseCityLocationLabel,
+  getChineseCityName,
+  getChineseRegionName,
+} from '@i18n/chinese';
+import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
+import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
+
+const pagePath = '/cities/';
+const chinesePath = localizePath('zh-cn', pagePath);
+const pageUrl = `https://sunrisetime.co${chinesePath}`;
+const alternates = buildAlternateLinks([
+  { hrefLang: 'en', path: pagePath },
+  { hrefLang: 'es', path: localizePath('es', pagePath) },
+  { hrefLang: 'zh-cn', path: chinesePath },
+  { hrefLang: 'x-default', path: pagePath },
+]);
+const languageLinks = buildLanguageSwitcherLinks(pagePath);
+
+const jsonLd = [
+  {
+    "@type": "CollectionPage",
+    "@id": `${pageUrl}#webpage`,
+    "name": "简体中文城市索引",
+    "description": `按区域浏览 ${totalCities} 座城市的日出时间、日落时间和礼拜时间页面。`,
+    "url": pageUrl,
+    "inLanguage": "zh-CN",
+  },
+  buildBreadcrumbJsonLd([
+    { name: '首页', path: '/zh-cn/' },
+    { name: '城市索引', path: chinesePath },
+  ]),
+];
+---
+
+<Base
+  title={`城市日出日落索引 - ${totalCities} 座城市 | SunriseTime 简体中文`}
+  description={`浏览 ${totalCities} 座城市的日出时间、日落时间和礼拜时间页面，支持按区域查找。`}
+  canonical={pageUrl}
+  keywords="城市索引, 日出时间, 日落时间, 礼拜时间"
+  jsonLd={jsonLd}
+  lang="zh-CN"
+  langPrefix="/zh-cn"
+  alternates={alternates}
+>
+  <ChineseHeader languageLinks={languageLinks} currentLanguage="zh-cn" />
+
+  <main class="cities-hub">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="面包屑导航">
+        <a href="/zh-cn/">首页</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <span>城市索引</span>
+      </nav>
+
+      <header class="cities-hub-header">
+        <h1><span class="gradient-text">{totalCities} 座城市</span>日出日落索引</h1>
+        <p>输入城市名可以直接进入详情页；如果你还在比较目的地，也可以先按区域浏览。</p>
+        <div class="hub-search">
+          <i data-lucide="search" class="icon-sm" style="color:var(--text-tertiary);flex-shrink:0;"></i>
+          <input type="text" id="hubCitySearch" placeholder="搜索城市，例如：北京、上海、迪拜" autocomplete="off" />
+        </div>
+      </header>
+
+      {regionHubs.map((region) => (
+        <section class="continent-section" data-continent={region.slug}>
+          <h2>
+            <i data-lucide="globe" class="icon-md"></i>
+            {getChineseRegionName(region.slug, region.name)}
+          </h2>
+          <div class="hub-city-grid">
+            {region.cities.map((city) => (
+              <a
+                href={`/zh-cn/sunrise/${city.slug}/`}
+                class="hub-city-card glass-card"
+                data-city-search={`${getChineseCityDisplayName(city)} ${getCitySearchText(city)}`.toLowerCase()}
+              >
+                <span class="hub-city-name">{getChineseCityName(city)}</span>
+                <span class="hub-city-country">{getChineseCityLocationLabel(city)}</span>
+              </a>
+            ))}
+          </div>
+        </section>
+      ))}
+    </div>
+  </main>
+
+  <ChineseFooter />
+</Base>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const input = document.getElementById('hubCitySearch');
+    if (!input) return;
+
+    input.addEventListener('input', (event) => {
+      const query = (event.target as HTMLInputElement).value.toLowerCase().trim();
+      const cards = document.querySelectorAll<HTMLElement>('.hub-city-card');
+      const sections = document.querySelectorAll<HTMLElement>('.continent-section');
+
+      cards.forEach((card) => {
+        const name = card.dataset.citySearch || '';
+        card.style.display = name.includes(query) ? '' : 'none';
+      });
+
+      sections.forEach((section) => {
+        const visible = section.querySelectorAll<HTMLElement>('.hub-city-card:not([style*="display: none"])');
+        section.style.display = visible.length > 0 ? '' : 'none';
+      });
+    });
+  });
+</script>
+

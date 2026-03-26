@@ -1,0 +1,287 @@
+---
+import Base from '@layouts/Base.astro';
+import ArabicHeader from '@components/ArabicHeader.astro';
+import ArabicFooter from '@components/ArabicFooter.astro';
+import cities from '@data/cities.json';
+import {
+  arabicLocale,
+  getArabicCityDisplayName,
+  getArabicCityLocationLabel,
+  getArabicCityName,
+  getArabicMoonPhase,
+  getArabicPrayerName,
+} from '@i18n/arabic';
+import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
+import { getDaylightSeries, getGoldenHour, getSunTimes, formatTime, getSunriseDelta, getSunsetDelta } from '@utils/sun';
+import { getMoonData } from '@utils/moon';
+import { getNextPrayer } from '@utils/prayer-times';
+import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
+
+export function getStaticPaths() {
+  return cities.cities.map((city) => ({
+    params: { city: city.slug },
+    props: { city },
+  }));
+}
+
+type City = typeof cities.cities[0];
+const { city } = Astro.props as { city: City };
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(Math.max(value, min), max);
+}
+
+function formatCountdown(ms: number) {
+  const totalMinutes = Math.max(1, Math.round(ms / 60000));
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  if (hours && minutes) return `${hours} س ${minutes} د`;
+  if (hours) return `${hours} س`;
+  return `${minutes} د`;
+}
+
+function formatMinuteShift(delta: number) {
+  if (delta === 0) return 'مثل الأمس';
+  return `${Math.abs(delta)} دقيقة ${delta > 0 ? 'أبعد' : 'أبكر'} من الأمس`;
+}
+
+const today = new Date();
+const cityName = getArabicCityName(city);
+const cityDisplayName = getArabicCityDisplayName(city, { includeAdmin1: Boolean(city.admin1) });
+const locationLabel = getArabicCityLocationLabel(city, { includeAdmin1: Boolean(city.admin1) });
+const sun = getSunTimes(today, city.lat, city.lng);
+const golden = getGoldenHour(today, city.lat, city.lng);
+const moon = getMoonData(today, city.lat, city.lng);
+const nextPrayer = getNextPrayer(today, city.lat, city.lng, 'MWL', 'Standard');
+const sunriseDelta = getSunriseDelta(today, city.lat, city.lng, city.timezone);
+const sunsetDelta = getSunsetDelta(today, city.lat, city.lng, city.timezone);
+const series = getDaylightSeries(today, 7, city.lat, city.lng);
+const lightProgress = clamp(
+  ((today.getTime() - sun.dawn.getTime()) / (sun.dusk.getTime() - sun.dawn.getTime())) * 100,
+  0,
+  100,
+);
+
+let nextEventLabel = 'الشروق القادم';
+let nextEventTime = formatTime(sun.sunrise, city.timezone, arabicLocale);
+let nextEventCountdown = formatCountdown(sun.sunrise.getTime() - today.getTime());
+let nextEventSupport = `تنتهي الساعة الذهبية الصباحية عند ${formatTime(golden.morning.end, city.timezone, arabicLocale)}.`;
+
+if (today >= sun.sunrise && today < sun.sunset) {
+  nextEventLabel = 'الغروب القادم';
+  nextEventTime = formatTime(sun.sunset, city.timezone, arabicLocale);
+  nextEventCountdown = formatCountdown(sun.sunset.getTime() - today.getTime());
+  nextEventSupport = `تبدأ الساعة الذهبية المسائية عند ${formatTime(golden.evening.start, city.timezone, arabicLocale)}.`;
+}
+
+const localDateLabel = today.toLocaleDateString(arabicLocale, {
+  weekday: 'long',
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+  timeZone: city.timezone,
+});
+const localTimeLabel = today.toLocaleTimeString(arabicLocale, {
+  hour: 'numeric',
+  minute: '2-digit',
+  timeZone: city.timezone,
+});
+
+const nearbyCities = cities.cities
+  .filter((entry) => entry.continent === city.continent && entry.slug !== city.slug)
+  .slice(0, 6);
+
+const pagePath = `/sunrise/${city.slug}/`;
+const arPath = localizePath('ar', pagePath);
+const prayerPath = localizePath('ar', `/prayer-times/${city.slug}/`);
+const pageUrl = `https://sunrisetime.co${arPath}`;
+const alternates = buildAlternateLinks([
+  { hrefLang: 'en', path: pagePath },
+  { hrefLang: 'es', path: localizePath('es', pagePath) },
+  { hrefLang: 'ar', path: arPath },
+  { hrefLang: 'x-default', path: pagePath },
+]);
+const languageLinks = buildLanguageSwitcherLinks(pagePath);
+
+const pageTitle = `الشروق والغروب في ${cityDisplayName} اليوم`;
+const pageDesc = `الشروق في ${cityDisplayName} اليوم عند ${formatTime(sun.sunrise, city.timezone, arabicLocale)} والغروب عند ${formatTime(sun.sunset, city.timezone, arabicLocale)} مع الساعة الذهبية ومرحلة القمر.`;
+
+const jsonLd = [
+  {
+    "@type": "WebPage",
+    "@id": `${pageUrl}#webpage`,
+    "name": pageTitle,
+    "description": pageDesc,
+    "url": pageUrl,
+    "inLanguage": "ar",
+  },
+  buildBreadcrumbJsonLd([
+    { name: 'الرئيسية', path: '/ar/' },
+    { name: 'المدن', path: '/ar/cities/' },
+    { name: cityName, path: arPath },
+  ]),
+];
+---
+
+<Base
+  title={`${pageTitle} - SunriseTime`}
+  description={pageDesc}
+  canonical={pageUrl}
+  keywords={`الشروق ${cityDisplayName}, الغروب ${cityDisplayName}, الساعة الذهبية ${cityDisplayName}`}
+  jsonLd={jsonLd}
+  lang="ar"
+  dir="rtl"
+  alternates={alternates}
+>
+  <ArabicHeader languageLinks={languageLinks} currentLanguage="ar" />
+
+  <main class="city-page">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/ar/">الرئيسية</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <a href="/ar/cities/">المدن</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <span>{cityName}</span>
+      </nav>
+
+      <section class="city-snapshot glass-card-lg">
+        <div class="city-snapshot-copy">
+          <span class="city-kicker">شروق وغروب اليوم في {cityName}</span>
+          <h1>الشروق والغروب في <span class="gradient-text">{cityName}</span></h1>
+          <p class="city-lead">
+            الوقت المحلي الآن {localTimeLabel}. {nextEventLabel} بعد {nextEventCountdown} عند {nextEventTime}. تعرض الصفحة أيضًا الساعة الذهبية والقمر والصلاة القادمة.
+          </p>
+
+          <div class="city-chip-row">
+            <span class="city-chip city-country-badge">{locationLabel}</span>
+            <span class="city-chip">{city.timezone}</span>
+            <span class="city-chip">{localDateLabel}</span>
+          </div>
+
+          <div class="city-action-row">
+            <a href="/ar/cities/" class="btn-primary">
+              <i data-lucide="search" class="icon-xs"></i>
+              مدينة أخرى
+            </a>
+            <a href={prayerPath} class="btn-secondary">
+              <i data-lucide="clock" class="icon-xs"></i>
+              مواقيت الصلاة
+            </a>
+          </div>
+        </div>
+
+        <div class="city-snapshot-panel">
+          <div class="city-next-event glass-card">
+            <span class="city-next-label">{nextEventLabel}</span>
+            <strong>{nextEventCountdown}</strong>
+            <span class="city-next-time">{nextEventTime}</span>
+            <p>{nextEventSupport}</p>
+          </div>
+
+          <div class="city-light-track glass-card">
+            <div class="city-track-head">
+              <span>الفجر {formatTime(sun.dawn, city.timezone, arabicLocale)}</span>
+              <strong>الإجابة الأساسية في صفحة واحدة</strong>
+              <span>الغسق {formatTime(sun.dusk, city.timezone, arabicLocale)}</span>
+            </div>
+            <div class="city-track-bar">
+              <span class="city-track-fill" style={`width:${lightProgress}%`}></span>
+              <span class="city-track-marker" style={`left:${lightProgress}%`}></span>
+            </div>
+            <div class="city-track-points">
+              <span>الشروق {formatTime(sun.sunrise, city.timezone, arabicLocale)}</span>
+              <span>الظهر الشمسي {formatTime(sun.solarNoon, city.timezone, arabicLocale)}</span>
+              <span>الغروب {formatTime(sun.sunset, city.timezone, arabicLocale)}</span>
+            </div>
+          </div>
+
+          <div class="city-snapshot-metrics">
+            <div class="city-metric-card glass-card accent-sunrise">
+              <span class="city-metric-label">الشروق</span>
+              <strong class="city-metric-value">{formatTime(sun.sunrise, city.timezone, arabicLocale)}</strong>
+              <small class="city-metric-note">{formatMinuteShift(sunriseDelta)}</small>
+            </div>
+            <div class="city-metric-card glass-card accent-sunset">
+              <span class="city-metric-label">الغروب</span>
+              <strong class="city-metric-value">{formatTime(sun.sunset, city.timezone, arabicLocale)}</strong>
+              <small class="city-metric-note">{formatMinuteShift(sunsetDelta)}</small>
+            </div>
+            <div class="city-metric-card glass-card accent-daylight">
+              <span class="city-metric-label">مدة النهار</span>
+              <strong class="city-metric-value">{sun.daylightFormatted}</strong>
+              <small class="city-metric-note">مقارنة 7 أيام</small>
+            </div>
+            <div class="city-metric-card glass-card accent-moon">
+              <span class="city-metric-label">القمر</span>
+              <strong class="city-metric-value">{getArabicMoonPhase(moon.phaseName)}</strong>
+              <small class="city-metric-note">{moon.illumination}% إضاءة</small>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="city-highlight-grid" aria-label="Quick paths">
+        <div class="city-highlight-card glass-card">
+          <span class="city-highlight-label">الساعة الذهبية</span>
+          <strong>{formatTime(golden.morning.start, city.timezone, arabicLocale)} - {formatTime(golden.morning.end, city.timezone, arabicLocale)}</strong>
+          <p>الفترة المسائية تبدأ عند {formatTime(golden.evening.start, city.timezone, arabicLocale)}.</p>
+        </div>
+        <div class="city-highlight-card glass-card">
+          <span class="city-highlight-label">القمر</span>
+          <strong>{getArabicMoonPhase(moon.phaseName)}</strong>
+          <p>{moon.illumination}% إضاءة هذه الليلة.</p>
+        </div>
+        <a href={prayerPath} class="city-highlight-card glass-card">
+          <span class="city-highlight-label">الصلاة</span>
+          <strong>{getArabicPrayerName(nextPrayer.name)} {formatTime(nextPrayer.time, city.timezone, arabicLocale)}</strong>
+          <p>افتح صفحة المواقيت الكاملة.</p>
+        </a>
+      </section>
+
+      <section class="detail-section" aria-label="اتجاه الضوء">
+        <div class="detail-section-head">
+          <h2><i data-lucide="bar-chart-3" class="icon-md"></i> اتجاه الضوء خلال 7 أيام</h2>
+        </div>
+        <div class="daylight-chart glass-card">
+          <div class="chart-bars-static">
+            {series.map((entry, index) => {
+              const pct = Math.round((entry.hours / 16) * 100);
+              const dayName = entry.date.toLocaleDateString(arabicLocale, { weekday: 'short', timeZone: city.timezone });
+              return (
+                <div class={`chart-col ${index === 0 ? 'active' : ''}`}>
+                  <span class="chart-val">{entry.hours.toFixed(1)}h</span>
+                  <div class="chart-fill" style={`height:${pct}%`}></div>
+                  <span class="chart-day">{dayName}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      <section class="detail-section seo-content" aria-label="شرح الصفحة">
+        <h2><i data-lucide="info" class="icon-md"></i> حول الشروق والغروب في {cityName}</h2>
+        <div class="seo-text glass-card">
+          <p>الشروق اليوم في {cityDisplayName} عند {formatTime(sun.sunrise, city.timezone, arabicLocale)} والغروب عند {formatTime(sun.sunset, city.timezone, arabicLocale)}. تعتمد الحسابات على إحداثيات المدينة وتعرض النتائج في المنطقة الزمنية المحلية.</p>
+        </div>
+      </section>
+
+      <section class="detail-section" id="nearby" aria-label="مدن أخرى">
+        <div class="detail-section-head">
+          <h2><i data-lucide="map-pin" class="icon-md"></i> مدن أخرى للمقارنة</h2>
+        </div>
+        <div class="nearby-grid">
+          {nearbyCities.map((entry) => (
+            <a href={`/ar/sunrise/${entry.slug}/`} class="nearby-card glass-card">
+              <span class="nearby-name">{getArabicCityName(entry)}</span>
+              <span class="nearby-country">{getArabicCityLocationLabel(entry, { includeAdmin1: Boolean(entry.admin1) })}</span>
+            </a>
+          ))}
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <ArabicFooter />
+</Base>
