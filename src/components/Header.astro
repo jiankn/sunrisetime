@@ -28,11 +28,10 @@ const { languageLinks = [], currentLanguage = 'en' } = Astro.props;
       <li><a href="/#faq">FAQ</a></li>
     </ul>
     <div class="nav-actions">
-      <LanguageSwitcher links={languageLinks} currentLanguage={currentLanguage} />
-      <a href="/#search" class="btn-secondary-sm" data-search-city-trigger>Search City</a>
       <a href="/cities/" class="btn-primary-sm">Browse Cities</a>
+      <LanguageSwitcher links={languageLinks} currentLanguage={currentLanguage} />
     </div>
-    <button class="hamburger" id="hamburger" aria-label="Toggle navigation menu" type="button">
+    <button class="hamburger" id="hamburger" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="mobileMenu" type="button">
       <i data-lucide="menu" class="icon-sm"></i>
     </button>
   </div>
@@ -40,16 +39,18 @@ const { languageLinks = [], currentLanguage = 'en' } = Astro.props;
 
 <!-- Mobile Menu Overlay -->
 <div class="mobile-menu" id="mobileMenu">
-  <ul>
+  <ul class="mobile-menu-list">
     <li><a href="/#search" data-search-city-trigger>Search</a></li>
     <li><a href="/#planner">Plan Your Day</a></li>
     <li><a href="/#cities">Popular Cities</a></li>
     <li><a href="/#faq">FAQ</a></li>
-    {languageLinks.length > 1 && (
-      <li>
-        <LanguageSwitcher links={languageLinks} currentLanguage={currentLanguage} />
-      </li>
-    )}
-    <li><a href="/#search" class="btn-primary-sm" style="display:inline-block;margin-top:1rem;" data-search-city-trigger>Search Your City</a></li>
   </ul>
+  <div class="mobile-menu-section">
+    <a href="/cities/" class="btn-primary-sm mobile-menu-cta">Browse Cities</a>
+  </div>
+  {languageLinks.length > 1 && (
+    <div class="mobile-menu-section">
+      <LanguageSwitcher links={languageLinks} currentLanguage={currentLanguage} variant="mobile" />
+    </div>
+  )}
 </div>

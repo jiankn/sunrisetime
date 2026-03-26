@@ -25,27 +25,28 @@ const { languageLinks = [], currentLanguage = 'zh-cn' } = Astro.props;
       <li><a href="/zh-cn/contact/">{chineseNavigation.contact}</a></li>
     </ul>
     <div class="nav-actions">
-      <LanguageSwitcher links={languageLinks} currentLanguage={currentLanguage} ariaLabel="语言切换" />
-      <a href="/zh-cn/#search" class="btn-secondary-sm" data-search-city-trigger>{chineseNavigation.searchCity}</a>
       <a href="/zh-cn/cities/" class="btn-primary-sm">{chineseNavigation.browseCities}</a>
+      <LanguageSwitcher links={languageLinks} currentLanguage={currentLanguage} ariaLabel="语言切换" />
     </div>
-    <button class="hamburger" id="hamburger" aria-label="打开菜单" type="button">
+    <button class="hamburger" id="hamburger" aria-label="打开菜单" aria-expanded="false" aria-controls="mobileMenu" type="button">
       <i data-lucide="menu" class="icon-sm"></i>
     </button>
   </div>
 </nav>
 
 <div class="mobile-menu" id="mobileMenu">
-  <ul>
+  <ul class="mobile-menu-list">
     <li><a href="/zh-cn/#search" data-search-city-trigger>{chineseNavigation.search}</a></li>
     <li><a href="/zh-cn/cities/">{chineseNavigation.cities}</a></li>
     <li><a href="/zh-cn/guides/">{chineseNavigation.guides}</a></li>
     <li><a href="/zh-cn/contact/">{chineseNavigation.contact}</a></li>
-    {languageLinks.length > 1 && (
-      <li>
-        <LanguageSwitcher links={languageLinks} currentLanguage={currentLanguage} ariaLabel="语言切换" />
-      </li>
-    )}
-    <li><a href="/zh-cn/#search" class="btn-primary-sm" style="display:inline-block;margin-top:1rem;" data-search-city-trigger>{chineseNavigation.searchYourCity}</a></li>
   </ul>
+  <div class="mobile-menu-section">
+    <a href="/zh-cn/cities/" class="btn-primary-sm mobile-menu-cta">{chineseNavigation.browseCities}</a>
+  </div>
+  {languageLinks.length > 1 && (
+    <div class="mobile-menu-section">
+      <LanguageSwitcher links={languageLinks} currentLanguage={currentLanguage} ariaLabel="语言切换" variant="mobile" />
+    </div>
+  )}
 </div>
