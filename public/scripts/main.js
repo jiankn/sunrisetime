@@ -9,7 +9,9 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   initNavbar();
+  initLanguageSwitchers();
   initMobileMenu();
+  initSearchCityTriggers();
   initScrollAnimations();
   initHeroSearch();
   initFooterSearch();
@@ -51,6 +53,78 @@ function initMobileMenu() {
       mobileMenu.classList.remove('active');
       hamburger.setAttribute('aria-expanded', 'false');
     }
+  });
+}
+
+function initLanguageSwitchers() {
+  document.querySelectorAll('[data-lang-switcher]').forEach((switcher) => {
+    const toggle = switcher.querySelector('[data-lang-switcher-toggle]');
+    const menu = switcher.querySelector('[data-lang-switcher-menu]');
+    if (!toggle || !menu) return;
+
+    const closeMenu = () => {
+      switcher.classList.remove('active');
+      toggle.setAttribute('aria-expanded', 'false');
+    };
+
+    const openMenu = () => {
+      switcher.classList.add('active');
+      toggle.setAttribute('aria-expanded', 'true');
+    };
+
+    toggle.addEventListener('click', (event) => {
+      event.stopPropagation();
+      if (switcher.classList.contains('active')) {
+        closeMenu();
+        return;
+      }
+
+      document.querySelectorAll('[data-lang-switcher].active').forEach((entry) => {
+        if (entry !== switcher) {
+          entry.classList.remove('active');
+          entry.querySelector('[data-lang-switcher-toggle]')?.setAttribute('aria-expanded', 'false');
+        }
+      });
+      openMenu();
+    });
+
+    menu.querySelectorAll('a').forEach((link) => {
+      link.addEventListener('click', () => {
+        closeMenu();
+      });
+    });
+
+    switcher.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        closeMenu();
+        toggle.focus();
+      }
+    });
+
+    document.addEventListener('pointerdown', (event) => {
+      if (!(event.target instanceof Node) || switcher.contains(event.target)) {
+        return;
+      }
+
+      closeMenu();
+    });
+  });
+}
+
+function initSearchCityTriggers() {
+  document.querySelectorAll('[data-search-city-trigger]').forEach((link) => {
+    link.addEventListener('click', (event) => {
+      const targetUrl = new URL(link.href, window.location.href);
+      const currentUrl = new URL(window.location.href);
+      const isSamePageSearch = targetUrl.origin === currentUrl.origin
+        && targetUrl.pathname === currentUrl.pathname
+        && targetUrl.hash === '#search';
+
+      if (!isSamePageSearch) return;
+
+      event.preventDefault();
+      document.dispatchEvent(new CustomEvent('sunrisetime:focus-hero-search'));
+    });
   });
 }
 
@@ -203,6 +277,7 @@ function initHeroSearch() {
 
   let matches = [];
   let activeIndex = -1;
+  let guidanceTimer = null;
 
   function isInsideSearchRoot(target) {
     return target instanceof Node && searchRoot.contains(target);
@@ -268,8 +343,8 @@ function initHeroSearch() {
     if (!snapshot) return;
 
     const fieldMap = {
-      '[data-hero-city-name]': snapshot.name,
-      '[data-hero-country]': snapshot.country,
+      '[data-hero-city-name]': snapshot.displayName || snapshot.name,
+      '[data-hero-country]': snapshot.countryLabel || snapshot.country,
       '[data-hero-caption]': snapshot.caption,
       '[data-hero-next-label]': snapshot.nextEventLabel,
       '[data-hero-next-time]': snapshot.nextEventTime,
@@ -297,6 +372,38 @@ function initHeroSearch() {
     previewButtons.forEach(button => {
       button.classList.toggle('active', button.dataset.heroCity === slug);
     });
+  }
+
+  function clearGuidedState() {
+    searchRoot.classList.remove('is-guided');
+    searchShell?.classList.remove('is-guided');
+
+    if (guidanceTimer) {
+      window.clearTimeout(guidanceTimer);
+      guidanceTimer = null;
+    }
+  }
+
+  function spotlightSearch() {
+    clearGuidedState();
+    searchRoot.classList.add('is-guided');
+    searchShell?.classList.add('is-guided');
+    guidanceTimer = window.setTimeout(() => {
+      searchRoot.classList.remove('is-guided');
+      searchShell?.classList.remove('is-guided');
+      guidanceTimer = null;
+    }, 2200);
+
+    input.focus({ preventScroll: true });
+
+    if (!input.value.trim()) {
+      matches = searchData.slice(0, 6);
+      renderResults(matches);
+      return;
+    }
+
+    matches = getRankedCityMatches(input.value, searchData, 8);
+    renderResults(matches);
   }
 
   if (searchShell) {
@@ -368,6 +475,20 @@ function initHeroSearch() {
     if (!isInsideSearchRoot(event.target)) {
       closeResults();
     }
+  });
+
+  document.addEventListener('sunrisetime:focus-hero-search', () => {
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const targetTop = Math.max(searchRoot.getBoundingClientRect().top + window.scrollY - 112, 0);
+
+    window.scrollTo({
+      top: targetTop,
+      behavior: prefersReducedMotion ? 'auto' : 'smooth',
+    });
+
+    window.setTimeout(() => {
+      spotlightSearch();
+    }, prefersReducedMotion ? 0 : 260);
   });
 
   previewButtons.forEach(button => {

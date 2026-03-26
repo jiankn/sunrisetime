@@ -1,0 +1,97 @@
+---
+import Base from '@layouts/Base.astro';
+import FrenchHeader from '@components/FrenchHeader.astro';
+import FrenchFooter from '@components/FrenchFooter.astro';
+import { regionHubs, useCaseHubs } from '@data/site';
+import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
+import { getFrenchGuideContent, getFrenchRegionName } from '@i18n/french';
+import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
+
+const pagePath = '/guides/';
+const frenchPath = localizePath('fr', pagePath);
+const pageUrl = `https://sunrisetime.co${frenchPath}`;
+const alternates = buildAlternateLinks([
+  { hrefLang: 'en', path: pagePath },
+  { hrefLang: 'fr', path: frenchPath },
+  { hrefLang: 'x-default', path: pagePath },
+]);
+const languageLinks = buildLanguageSwitcherLinks(pagePath);
+
+const jsonLd = [
+  {
+    "@type": "CollectionPage",
+    "@id": `${pageUrl}#webpage`,
+    "name": "Guides de SunriseTime",
+    "description": "Guides en francais pour l heure doree, la phase lunaire, la duree du jour et les horaires de priere.",
+    "url": pageUrl,
+    "inLanguage": "fr",
+    "isPartOf": {
+      "@id": "https://sunrisetime.co/fr/#website"
+    }
+  },
+  buildBreadcrumbJsonLd([
+    { name: 'Accueil', path: '/fr/' },
+    { name: 'Guides', path: frenchPath },
+  ]),
+];
+---
+
+<Base
+  title="Guides de planification - SunriseTime Francais"
+  description="Consultez les guides en francais de SunriseTime pour l heure doree, la phase lunaire, les horaires de priere et la duree du jour."
+  canonical={pageUrl}
+  keywords="guide heure doree, guide phase lunaire, guide horaires de priere"
+  jsonLd={jsonLd}
+  lang="fr"
+  alternates={alternates}
+>
+  <FrenchHeader languageLinks={languageLinks} currentLanguage="fr" />
+
+  <main class="resource-page">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/fr/">Accueil</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <span>Guides</span>
+      </nav>
+
+      <header class="resource-header">
+        <span class="section-badge">
+          <i data-lucide="compass" class="icon-xs"></i>
+          Guides
+        </span>
+        <h1>Utilisez les guides quand la question depasse une seule ville.</h1>
+        <p class="resource-subtitle">Les guides relient une intention large a une reponse locale. Commencez ici si vous avez d abord besoin du bon sujet avant d entrer dans la bonne ville.</p>
+      </header>
+
+      <section class="resource-link-grid">
+        {useCaseHubs.map((hub) => {
+          const content = getFrenchGuideContent(hub);
+          return (
+            <a href={`/fr/guides/${hub.slug}/`} class="resource-link-card resource-link-card-rich glass-card">
+              <strong>{content.name}</strong>
+              <span>{content.description}</span>
+            </a>
+          );
+        })}
+      </section>
+
+      <section class="resource-section">
+        <div class="detail-section-head">
+          <h2>Combinez guides et hubs regionaux</h2>
+          <p>L intention thematique devient plus utile quand l utilisateur peut comparer plusieurs villes proches sans relancer toute sa recherche.</p>
+        </div>
+        <div class="resource-link-grid">
+          {regionHubs.map((region) => (
+            <a href={`/fr/cities/${region.slug}/`} class="resource-link-card glass-card">
+              <strong>{getFrenchRegionName(region.slug, region.name)}</strong>
+              <span>{region.cityCount} villes indexees</span>
+            </a>
+          ))}
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <FrenchFooter />
+</Base>

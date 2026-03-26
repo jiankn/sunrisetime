@@ -1,0 +1,168 @@
+---
+import Base from '@layouts/Base.astro';
+import FrenchHeader from '@components/FrenchHeader.astro';
+import FrenchFooter from '@components/FrenchFooter.astro';
+import AdUnit from '@components/AdUnit.astro';
+import { getCitiesBySlugs, getUseCaseHub, regionHubs, useCaseHubs } from '@data/site';
+import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
+import {
+  getFrenchCityLocationLabel,
+  getFrenchCityName,
+  getFrenchGuideContent,
+  getFrenchRegionName,
+} from '@i18n/french';
+import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
+
+export function getStaticPaths() {
+  return useCaseHubs.map((hub) => ({
+    params: { topic: hub.slug },
+  }));
+}
+
+const hub = getUseCaseHub(Astro.params.topic ?? '');
+
+if (!hub) {
+  throw new Error(`Unknown guide topic: ${Astro.params.topic}`);
+}
+
+const content = getFrenchGuideContent(hub);
+const featuredCities = getCitiesBySlugs(hub.featuredCitySlugs);
+const relatedRegions = regionHubs.filter((region) => hub.relatedRegionSlugs.includes(region.slug));
+const siblingGuides = useCaseHubs.filter((entry) => entry.slug !== hub.slug);
+const pagePath = hub.path;
+const frenchPath = localizePath('fr', pagePath);
+const pageUrl = `https://sunrisetime.co${frenchPath}`;
+const alternates = buildAlternateLinks([
+  { hrefLang: 'en', path: pagePath },
+  { hrefLang: 'fr', path: frenchPath },
+  { hrefLang: 'x-default', path: pagePath },
+]);
+const languageLinks = buildLanguageSwitcherLinks(pagePath);
+
+const jsonLd = [
+  {
+    "@type": "CollectionPage",
+    "@id": `${pageUrl}#webpage`,
+    "name": `${content.name} - guide`,
+    "description": content.description,
+    "url": pageUrl,
+    "inLanguage": "fr",
+    "isPartOf": {
+      "@id": "https://sunrisetime.co/fr/#website"
+    }
+  },
+  buildBreadcrumbJsonLd([
+    { name: 'Accueil', path: '/fr/' },
+    { name: 'Guides', path: '/fr/guides/' },
+    { name: content.name, path: frenchPath },
+  ]),
+];
+---
+
+<Base
+  title={`${content.name} - Guide de planification | SunriseTime Francais`}
+  description={content.description}
+  canonical={pageUrl}
+  keywords={`${content.name.toLowerCase()}, guide ${content.name.toLowerCase()}, planification solaire`}
+  jsonLd={jsonLd}
+  lang="fr"
+  alternates={alternates}
+>
+  <FrenchHeader languageLinks={languageLinks} currentLanguage="fr" />
+
+  <main class="resource-page">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/fr/">Accueil</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <a href="/fr/guides/">Guides</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <span>{content.name}</span>
+      </nav>
+
+      <header class="resource-header">
+        <span class="section-badge">
+          <i data-lucide="sparkles" class="icon-xs"></i>
+          {content.name}
+        </span>
+        <h1>{content.description}</h1>
+        <p class="resource-subtitle">{content.intro}</p>
+      </header>
+
+      <section class="resource-grid">
+        <article class="resource-card glass-card">
+          <h2>Ce que resout ce guide</h2>
+          <ul class="resource-list">
+            {content.primaryBullets.map((item) => (
+              <li>{item}</li>
+            ))}
+          </ul>
+        </article>
+
+        <article class="resource-card glass-card">
+          <h2>Flux recommande</h2>
+          <ul class="resource-list">
+            {content.workflowBullets.map((item) => (
+              <li>{item}</li>
+            ))}
+          </ul>
+        </article>
+      </section>
+
+      <section class="resource-section">
+        <div class="detail-section-head">
+          <h2>Villes mises en avant pour {content.name.toLowerCase()}</h2>
+          <p>Ces pages servent souvent de meilleur point d entree quand vous cherchez d abord une reponse rapide puis un maillage interne clair.</p>
+        </div>
+        <div class="hub-city-grid">
+          {featuredCities.map((city) => {
+            const cityPath = hub.slug === 'prayer-times' ? `/fr/prayer-times/${city.slug}/` : `/fr/sunrise/${city.slug}/`;
+            return (
+              <a href={cityPath} class="hub-city-card glass-card">
+                <span class="hub-city-name">{getFrenchCityName(city)}</span>
+                <span class="hub-city-country">{getFrenchCityLocationLabel(city, { includeAdmin1: Boolean(city.admin1) })}</span>
+              </a>
+            );
+          })}
+        </div>
+      </section>
+
+      <AdUnit id={`ad-fr-guide-${hub.slug}`} />
+
+      <section class="resource-section">
+        <div class="detail-section-head">
+          <h2>Hubs regionaux associes</h2>
+          <p>Utilisez une page regionale quand vous devez comparer plusieurs villes proches sans repasser par le meme flux de recherche.</p>
+        </div>
+        <div class="resource-link-grid">
+          {relatedRegions.map((region) => (
+            <a href={`/fr/cities/${region.slug}/`} class="resource-link-card glass-card">
+              <strong>{getFrenchRegionName(region.slug, region.name)}</strong>
+              <span>{region.cityCount} villes indexees</span>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <section class="resource-section">
+        <div class="detail-section-head">
+          <h2>Autres guides</h2>
+          <p>Chaque guide repond a une intention differente, mais tous renvoient vers les memes pages de ville.</p>
+        </div>
+        <div class="resource-link-grid">
+          {siblingGuides.map((entry) => {
+            const siblingContent = getFrenchGuideContent(entry);
+            return (
+              <a href={`/fr/guides/${entry.slug}/`} class="resource-link-card glass-card">
+                <strong>{siblingContent.name}</strong>
+                <span>{siblingContent.description}</span>
+              </a>
+            );
+          })}
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <FrenchFooter />
+</Base>

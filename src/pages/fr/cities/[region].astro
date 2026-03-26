@@ -1,0 +1,187 @@
+---
+import Base from '@layouts/Base.astro';
+import FrenchHeader from '@components/FrenchHeader.astro';
+import FrenchFooter from '@components/FrenchFooter.astro';
+import AdUnit from '@components/AdUnit.astro';
+import { getRegionHub, regionHubs, useCaseHubs } from '@data/site';
+import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
+import {
+  getFrenchCityLocationLabel,
+  getFrenchCityName,
+  getFrenchGuideContent,
+  getFrenchRegionContent,
+  getFrenchRegionName,
+} from '@i18n/french';
+import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
+
+export function getStaticPaths() {
+  return regionHubs.map((region) => ({
+    params: { region: region.slug },
+  }));
+}
+
+const region = getRegionHub(Astro.params.region ?? '');
+
+if (!region) {
+  throw new Error(`Unknown region hub: ${Astro.params.region}`);
+}
+
+const content = getFrenchRegionContent(region);
+const relatedGuides = useCaseHubs.filter((hub) => hub.relatedRegionSlugs.includes(region.slug));
+const otherRegions = regionHubs.filter((entry) => entry.slug !== region.slug);
+const leadCity = region.featuredCities[0] ?? region.cities[0];
+const pagePath = region.path;
+const frenchPath = localizePath('fr', pagePath);
+const pageUrl = `https://sunrisetime.co${frenchPath}`;
+const alternates = buildAlternateLinks([
+  { hrefLang: 'en', path: pagePath },
+  { hrefLang: 'fr', path: frenchPath },
+  { hrefLang: 'x-default', path: pagePath },
+]);
+const languageLinks = buildLanguageSwitcherLinks(pagePath);
+const regionName = getFrenchRegionName(region.slug, region.name);
+
+const jsonLd = [
+  {
+    "@type": "CollectionPage",
+    "@id": `${pageUrl}#webpage`,
+    "name": `${regionName} - lever du soleil et coucher du soleil`,
+    "description": content.description,
+    "url": pageUrl,
+    "inLanguage": "fr",
+    "isPartOf": {
+      "@id": "https://sunrisetime.co/fr/#website"
+    }
+  },
+  buildBreadcrumbJsonLd([
+    { name: 'Accueil', path: '/fr/' },
+    { name: 'Villes', path: '/fr/cities/' },
+    { name: regionName, path: frenchPath },
+  ]),
+];
+---
+
+<Base
+  title={`${regionName} - lever du soleil et coucher du soleil | SunriseTime Francais`}
+  description={content.description}
+  canonical={pageUrl}
+  keywords={`${regionName.toLowerCase()} lever du soleil, ${regionName.toLowerCase()} coucher du soleil`}
+  jsonLd={jsonLd}
+  lang="fr"
+  alternates={alternates}
+>
+  <FrenchHeader languageLinks={languageLinks} currentLanguage="fr" />
+
+  <main class="resource-page">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/fr/">Accueil</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <a href="/fr/cities/">Villes</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <span>{regionName}</span>
+      </nav>
+
+      <header class="resource-header">
+        <span class="section-badge">
+          <i data-lucide="globe-2" class="icon-xs"></i>
+          {regionName}
+        </span>
+        <h1>{content.description}</h1>
+        <p class="resource-subtitle">{content.intro}</p>
+        <div class="resource-meta">
+          <span class="resource-meta-chip">{region.cityCount} villes indexees</span>
+          {leadCity && <span class="resource-meta-chip">Commencez par {getFrenchCityName(leadCity)}</span>}
+          <span class="resource-meta-chip">Hub regional en francais</span>
+        </div>
+      </header>
+
+      <section class="resource-grid">
+        <article class="resource-card glass-card">
+          <h2>Pourquoi parcourir cette region</h2>
+          <ul class="resource-list">
+            {content.reasons.map((item) => (
+              <li>{item}</li>
+            ))}
+          </ul>
+        </article>
+
+        <article class="resource-card glass-card">
+          <h2>Pour qui ce hub convient</h2>
+          <ul class="resource-list">
+            {content.audiences.map((item) => (
+              <li>{item}</li>
+            ))}
+          </ul>
+        </article>
+      </section>
+
+      <section class="resource-section">
+        <div class="detail-section-head">
+          <h2>Villes mises en avant</h2>
+          <p>Ce sont de bons points d entree si vous voulez passer rapidement d une navigation regionale a une reponse locale.</p>
+        </div>
+        <div class="hub-city-grid">
+          {region.featuredCities.map((city) => (
+            <a href={`/fr/sunrise/${city.slug}/`} class="hub-city-card glass-card">
+              <span class="hub-city-name">{getFrenchCityName(city)}</span>
+              <span class="hub-city-country">{getFrenchCityLocationLabel(city, { includeAdmin1: Boolean(city.admin1) })}</span>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <AdUnit id={`ad-fr-region-${region.slug}`} />
+
+      <section class="resource-section">
+        <div class="detail-section-head">
+          <h2>Toutes les villes indexees dans {regionName}</h2>
+          <p>Utilisez la liste complete si vous avez besoin de plus de profondeur ou de comparaison dans la meme region.</p>
+        </div>
+        <div class="hub-city-grid">
+          {region.cities.map((city) => (
+            <a href={`/fr/sunrise/${city.slug}/`} class="hub-city-card glass-card">
+              <span class="hub-city-name">{getFrenchCityName(city)}</span>
+              <span class="hub-city-country">{getFrenchCityLocationLabel(city, { includeAdmin1: Boolean(city.admin1) })}</span>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <section class="resource-section">
+        <div class="detail-section-head">
+          <h2>Guides associes</h2>
+          <p>Les guides captent une intention plus large puis la renvoient vers des pages de ville ou des hubs regionaux.</p>
+        </div>
+        <div class="resource-link-grid">
+          {relatedGuides.map((hub) => {
+            const guideContent = getFrenchGuideContent(hub);
+            return (
+              <a href={`/fr/guides/${hub.slug}/`} class="resource-link-card glass-card">
+                <strong>{guideContent.name}</strong>
+                <span>{guideContent.description}</span>
+              </a>
+            );
+          })}
+        </div>
+      </section>
+
+      <section class="resource-section">
+        <div class="detail-section-head">
+          <h2>Autres regions</h2>
+          <p>Si votre comparaison change, passez a un autre hub regional plutot que de revenir au debut.</p>
+        </div>
+        <div class="resource-link-grid">
+          {otherRegions.map((entry) => (
+            <a href={`/fr/cities/${entry.slug}/`} class="resource-link-card glass-card">
+              <strong>{getFrenchRegionName(entry.slug, entry.name)}</strong>
+              <span>{entry.cityCount} villes indexees</span>
+            </a>
+          ))}
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <FrenchFooter />
+</Base>

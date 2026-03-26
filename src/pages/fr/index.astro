@@ -1,21 +1,21 @@
 ---
 import Base from '@layouts/Base.astro';
-import LocalizedHeader from '@components/LocalizedHeader.astro';
-import LocalizedFooter from '@components/LocalizedFooter.astro';
+import FrenchHeader from '@components/FrenchHeader.astro';
+import FrenchFooter from '@components/FrenchFooter.astro';
 import { allCities, regionHubs, totalCities } from '@data/site';
 import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
 import {
-  getSpanishCityAliases,
-  getSpanishCityDisplayName,
-  getSpanishCityName,
-  getSpanishCityLocationLabel,
-  getSpanishCountryName,
-  getSpanishMoonPhase,
-  getSpanishPrayerName,
-  getSpanishRegionName,
-  spanishHomeFaqs,
-  spanishLocale,
-} from '@i18n/spanish';
+  getFrenchCityAliases,
+  getFrenchCityDisplayName,
+  getFrenchCityName,
+  getFrenchCityLocationLabel,
+  getFrenchCountryName,
+  getFrenchMoonPhase,
+  getFrenchPrayerName,
+  getFrenchRegionName,
+  frenchHomeFaqs,
+  frenchLocale,
+} from '@i18n/french';
 import { getGoldenHour, getSunTimes, formatTime } from '@utils/sun';
 import { getMoonData } from '@utils/moon';
 import { getNextPrayer } from '@utils/prayer-times';
@@ -24,7 +24,7 @@ import { buildAlternateLinks } from '@utils/seo';
 const pagePath = '/';
 const alternates = buildAlternateLinks([
   { hrefLang: 'en', path: pagePath },
-  { hrefLang: 'es', path: localizePath('es', pagePath) },
+  { hrefLang: 'fr', path: localizePath('fr', pagePath) },
   { hrefLang: 'x-default', path: pagePath },
 ]);
 const languageLinks = buildLanguageSwitcherLinks(pagePath);
@@ -41,44 +41,44 @@ function buildPreviewEntry(slug: string) {
   const moon = getMoonData(now, city.lat, city.lng);
   const nextPrayer = getNextPrayer(now, city.lat, city.lng, 'MWL', 'Standard');
 
-  let nextEventLabel = 'Próximo amanecer';
-  let nextEventTime = formatTime(sun.sunrise, city.timezone, spanishLocale);
-  let nextEventSupport = `La hora dorada de la mañana termina a las ${formatTime(golden.morning.end, city.timezone, spanishLocale)}.`;
+  let nextEventLabel = 'Prochain lever du soleil';
+  let nextEventTime = formatTime(sun.sunrise, city.timezone, frenchLocale);
+  let nextEventSupport = `L heure doree du matin se termine a ${formatTime(golden.morning.end, city.timezone, frenchLocale)}.`;
 
   if (now >= sun.sunrise && now < sun.sunset) {
-    nextEventLabel = 'Próximo atardecer';
-    nextEventTime = formatTime(sun.sunset, city.timezone, spanishLocale);
-    nextEventSupport = `La hora dorada de la tarde empieza a las ${formatTime(golden.evening.start, city.timezone, spanishLocale)}.`;
+    nextEventLabel = 'Prochain coucher du soleil';
+    nextEventTime = formatTime(sun.sunset, city.timezone, frenchLocale);
+    nextEventSupport = `L heure doree du soir commence a ${formatTime(golden.evening.start, city.timezone, frenchLocale)}.`;
   } else if (now >= sun.sunset) {
     const tomorrow = new Date(now);
     tomorrow.setDate(tomorrow.getDate() + 1);
     const tomorrowSun = getSunTimes(tomorrow, city.lat, city.lng);
-    nextEventLabel = 'Amanecer de mañana';
-    nextEventTime = formatTime(tomorrowSun.sunrise, city.timezone, spanishLocale);
-    nextEventSupport = `Mañana habrá ${tomorrowSun.daylightFormatted} de luz natural.`;
+    nextEventLabel = 'Lever du soleil de demain';
+    nextEventTime = formatTime(tomorrowSun.sunrise, city.timezone, frenchLocale);
+    nextEventSupport = `Demain offre ${tomorrowSun.daylightFormatted} de lumiere du jour.`;
   }
 
   return {
     slug: city.slug,
     name: city.name,
-    displayName: getSpanishCityDisplayName(city, { includeAdmin1: Boolean(city.admin1) }),
+    displayName: getFrenchCityDisplayName(city, { includeAdmin1: Boolean(city.admin1) }),
     country: city.country,
-    countryLabel: getSpanishCityLocationLabel(city, { includeAdmin1: Boolean(city.admin1) }),
+    countryLabel: getFrenchCityLocationLabel(city, { includeAdmin1: Boolean(city.admin1) }),
     timezone: city.timezone,
-    aliases: getSpanishCityAliases(city),
+    aliases: getFrenchCityAliases(city),
     admin1: city.admin1 ?? '',
-    caption: `${getSpanishCityLocationLabel(city, { includeAdmin1: Boolean(city.admin1) })} · ${now.toLocaleDateString(spanishLocale, {
+    caption: `${getFrenchCityLocationLabel(city, { includeAdmin1: Boolean(city.admin1) })} · ${now.toLocaleDateString(frenchLocale, {
       weekday: 'short',
       month: 'short',
       day: 'numeric',
       timeZone: city.timezone,
     })}`,
-    sunrise: formatTime(sun.sunrise, city.timezone, spanishLocale),
-    sunset: formatTime(sun.sunset, city.timezone, spanishLocale),
+    sunrise: formatTime(sun.sunrise, city.timezone, frenchLocale),
+    sunset: formatTime(sun.sunset, city.timezone, frenchLocale),
     daylight: sun.daylightFormatted,
-    golden: `${formatTime(golden.evening.start, city.timezone, spanishLocale)} - ${formatTime(golden.evening.end, city.timezone, spanishLocale)}`,
-    moon: `${getSpanishMoonPhase(moon.phaseName)} · ${moon.illumination}%`,
-    prayer: `${getSpanishPrayerName(nextPrayer.name)} ${formatTime(nextPrayer.time, city.timezone, spanishLocale)}`,
+    golden: `${formatTime(golden.evening.start, city.timezone, frenchLocale)} - ${formatTime(golden.evening.end, city.timezone, frenchLocale)}`,
+    moon: `${getFrenchMoonPhase(moon.phaseName)} · ${moon.illumination}%`,
+    prayer: `${getFrenchPrayerName(nextPrayer.name)} ${formatTime(nextPrayer.time, city.timezone, frenchLocale)}`,
     nextEventLabel,
     nextEventTime,
     nextEventSupport,
@@ -93,12 +93,12 @@ const heroCity = previewCities[0];
 
 const searchCities = allCities.map((city) => ({
   name: city.name,
-  displayName: getSpanishCityDisplayName(city, { includeAdmin1: Boolean(city.admin1) }),
+  displayName: getFrenchCityDisplayName(city, { includeAdmin1: Boolean(city.admin1) }),
   slug: city.slug,
   country: city.country,
-  countryLabel: getSpanishCityLocationLabel(city, { includeAdmin1: Boolean(city.admin1) }),
+  countryLabel: getFrenchCityLocationLabel(city, { includeAdmin1: Boolean(city.admin1) }),
   admin1: city.admin1 ?? '',
-  aliases: getSpanishCityAliases(city),
+  aliases: getFrenchCityAliases(city),
   lat: city.lat,
   lng: city.lng,
   population: city.population,
@@ -106,22 +106,22 @@ const searchCities = allCities.map((city) => ({
 
 const regionGroups = regionHubs.map((region) => ({
   id: region.slug,
-  name: getSpanishRegionName(region.slug, region.name),
+  name: getFrenchRegionName(region.slug, region.name),
   cities: region.cities.slice(0, 6).map((city) => ({
     slug: city.slug,
-    name: getSpanishCityName(city),
-    country: getSpanishCityLocationLabel(city, { includeAdmin1: Boolean(city.admin1) }),
+    name: getFrenchCityName(city),
+    country: getFrenchCityLocationLabel(city, { includeAdmin1: Boolean(city.admin1) }),
   })),
 }));
 
 const jsonLd = [
   {
     "@type": "WebSite",
-    "@id": "https://sunrisetime.co/es/#website",
-    "name": "SunriseTime Español",
-    "url": "https://sunrisetime.co/es/",
-    "description": `Consulta el amanecer, el atardecer, la hora dorada y los horarios de oración de ${totalCities} ciudades indexadas.`,
-    "inLanguage": "es",
+    "@id": "https://sunrisetime.co/fr/#website",
+    "name": "SunriseTime en francais",
+    "url": "https://sunrisetime.co/fr/",
+    "description": `Consultez le lever du soleil, le coucher du soleil, l heure doree et les horaires de priere de ${totalCities} villes indexees.`,
+    "inLanguage": "fr",
     "publisher": {
       "@id": "https://sunrisetime.co/#organization"
     }
@@ -134,8 +134,8 @@ const jsonLd = [
   },
   {
     "@type": "FAQPage",
-    "@id": "https://sunrisetime.co/es/#faq",
-    "mainEntity": spanishHomeFaqs.map((item) => ({
+    "@id": "https://sunrisetime.co/fr/#faq",
+    "mainEntity": frenchHomeFaqs.map((item) => ({
       "@type": "Question",
       "name": item.question,
       "acceptedAnswer": {
@@ -148,15 +148,15 @@ const jsonLd = [
 ---
 
 <Base
-  title={`Hora del amanecer y atardecer hoy en ${totalCities} ciudades - SunriseTime`}
-  description={`Busca el amanecer, el atardecer, la hora dorada, la fase lunar y los horarios de oración de ${totalCities} ciudades. Versión SEO en español con URLs indexables y contenido principal localizado.`}
-  canonical="https://sunrisetime.co/es/"
-  keywords="amanecer hoy, atardecer hoy, hora dorada, horarios de oración, ciudades"
+  title={`Lever du soleil et coucher du soleil aujourd hui dans ${totalCities} villes - SunriseTime`}
+  description={`Recherchez le lever du soleil, le coucher du soleil, l heure doree, la phase lunaire et les horaires de priere de ${totalCities} villes. Version SEO en francais avec URLs indexables et contenu principal localise.`}
+  canonical="https://sunrisetime.co/fr/"
+  keywords="lever du soleil aujourd hui, coucher du soleil aujourd hui, heure doree, horaires de priere, villes"
   jsonLd={jsonLd}
-  lang="es"
+  lang="fr"
   alternates={alternates}
 >
-  <LocalizedHeader languageLinks={languageLinks} currentLanguage="es" />
+  <FrenchHeader languageLinks={languageLinks} currentLanguage="fr" />
 
   <main class="resource-page">
     <section class="snapshot-hero" id="search">
@@ -164,14 +164,14 @@ const jsonLd = [
         <div class="snapshot-hero-copy">
           <div class="hero-badge">
             <i data-lucide="languages" class="icon-xs"></i>
-            <span>Piloto SEO en español</span>
+            <span>Pilote SEO en francais</span>
           </div>
 
           <div class="hero-search-panel glass-card-lg" data-hero-search>
             <div class="hero-search-head">
               <div>
-                <span class="hero-search-label">Encuentra la respuesta de hoy</span>
-                <strong class="hero-search-title">Busca una ciudad y abre su página local en segundos</strong>
+                <span class="hero-search-label">Trouvez la reponse du jour</span>
+                <strong class="hero-search-title">Recherchez une ville et ouvrez sa page locale en quelques secondes</strong>
               </div>
             </div>
             <div class="hero-search-shell hero-search-shell-lg">
@@ -180,24 +180,24 @@ const jsonLd = [
                 id="heroCitySearch"
                 type="text"
                 data-city-search-input
-                placeholder="Ejemplo: Madrid, Nueva York, Bogotá"
+                placeholder="Exemple : Paris, New York, Montreal"
                 autocomplete="off"
                 aria-autocomplete="list"
                 aria-controls="heroSearchResults"
                 aria-expanded="false"
-                aria-label="Buscar una ciudad"
+                aria-label="Rechercher une ville"
                 role="combobox"
               >
               <button type="button" class="hero-location-btn hero-location-btn-inline" data-use-location>
                 <i data-lucide="locate-fixed" class="icon-sm"></i>
-                <span class="hero-location-text" data-location-label aria-live="polite" aria-atomic="true">Usar mi ubicación</span>
+                <span class="hero-location-text" data-location-label aria-live="polite" aria-atomic="true">Utiliser ma position</span>
               </button>
             </div>
-            <p class="hero-search-helper">Empieza a escribir una ciudad, un país o un alias común.</p>
+            <p class="hero-search-helper">Commencez par une ville, un pays ou un alias courant.</p>
             <div class="hero-search-results" id="heroSearchResults" data-search-results role="listbox"></div>
 
             <div class="hero-quick-row">
-              <span class="hero-quick-label">Vistas rápidas</span>
+              <span class="hero-quick-label">Apercus rapides</span>
               <div class="hero-preview-switches">
                 {previewCities.map((city, index) => (
                   <button
@@ -215,14 +215,14 @@ const jsonLd = [
           <header class="resource-header" style="padding-top:0;margin-top:2rem;">
             <span class="section-badge">
               <i data-lucide="sun-medium" class="icon-xs"></i>
-              Amanecer, atardecer y oración
+              Lever du soleil, coucher du soleil et priere
             </span>
-            <h1>Consulta el amanecer y el atardecer de hoy por ciudad.</h1>
-            <p class="resource-subtitle">SunriseTime en español responde primero a la intención principal: hora del amanecer, hora del atardecer, duración del día, hora dorada, fase lunar y acceso rápido a horarios de oración.</p>
+            <h1>Consultez le lever et le coucher du soleil d aujourd hui par ville.</h1>
+            <p class="resource-subtitle">SunriseTime en francais repond d abord a l intention principale: heure du lever du soleil, heure du coucher du soleil, duree du jour, heure doree, phase lunaire et acces rapide aux horaires de priere.</p>
             <div class="resource-meta">
-              <span class="resource-meta-chip">{totalCities} ciudades indexadas</span>
-              <span class="resource-meta-chip">Canonical propio</span>
-              <span class="resource-meta-chip">hreflang real</span>
+              <span class="resource-meta-chip">{totalCities} villes indexees</span>
+              <span class="resource-meta-chip">Canonical dedie</span>
+              <span class="resource-meta-chip">hreflang reel</span>
             </div>
           </header>
         </div>
@@ -230,15 +230,15 @@ const jsonLd = [
         <div class="hero-snapshot-panel glass-card-lg">
           <div class="hero-panel-top">
             <div class="hero-panel-copy">
-              <span class="hero-panel-label">Vista previa instantánea</span>
+              <span class="hero-panel-label">Apercu instantane</span>
               <h2>
                 <span data-hero-city-name>{heroCity.displayName}</span>
                 <span class="hero-panel-country" data-hero-country>{heroCity.countryLabel}</span>
               </h2>
               <p data-hero-caption>{heroCity.caption}</p>
             </div>
-            <a class="btn-secondary-sm hero-open-link" data-hero-open href={`/es/sunrise/${heroCity.slug}/`}>
-              <span>Abrir página</span>
+            <a class="btn-secondary-sm hero-open-link" data-hero-open href={`/fr/sunrise/${heroCity.slug}/`}>
+              <span>Ouvrir la page</span>
               <i data-lucide="arrow-up-right" class="icon-sm"></i>
             </a>
           </div>
@@ -251,19 +251,19 @@ const jsonLd = [
 
           <div class="hero-mini-grid">
             <div class="hero-mini-card glass-card">
-              <span class="hero-mini-label">Amanecer</span>
+              <span class="hero-mini-label">Lever du soleil</span>
               <strong data-hero-sunrise>{heroCity.sunrise}</strong>
             </div>
             <div class="hero-mini-card glass-card">
-              <span class="hero-mini-label">Atardecer</span>
+              <span class="hero-mini-label">Coucher du soleil</span>
               <strong data-hero-sunset>{heroCity.sunset}</strong>
             </div>
             <div class="hero-mini-card glass-card">
-              <span class="hero-mini-label">Luz diurna</span>
+              <span class="hero-mini-label">Lumiere du jour</span>
               <strong data-hero-daylight>{heroCity.daylight}</strong>
             </div>
             <div class="hero-mini-card glass-card">
-              <span class="hero-mini-label">Hora dorada</span>
+              <span class="hero-mini-label">Heure doree</span>
               <strong data-hero-golden>{heroCity.golden}</strong>
             </div>
             <div class="hero-mini-card glass-card">
@@ -271,7 +271,7 @@ const jsonLd = [
               <strong data-hero-moon>{heroCity.moon}</strong>
             </div>
             <div class="hero-mini-card glass-card">
-              <span class="hero-mini-label">Próxima oración</span>
+              <span class="hero-mini-label">Prochaine priere</span>
               <strong data-hero-prayer>{heroCity.prayer}</strong>
             </div>
           </div>
@@ -282,33 +282,33 @@ const jsonLd = [
     <div class="container">
       <section class="resource-grid">
         <article class="resource-card glass-card">
-          <h2>Qué cubre esta versión</h2>
+          <h2>Ce que couvre cette version</h2>
           <ul class="resource-list">
-            <li>Home en español con búsqueda real por ciudad y rutas indexables bajo `/es/`.</li>
-            <li>Páginas de amanecer, atardecer y oración por ciudad con metadata localizada.</li>
-            <li>Páginas de confianza: sobre nosotros, privacidad, términos, contacto y sitemap HTML.</li>
+            <li>Une page d accueil en francais avec recherche par ville et routes indexables sous `/fr/`.</li>
+            <li>Des pages de lever du soleil, coucher du soleil et priere par ville avec metadonnees localisees.</li>
+            <li>Des pages de confiance: a propos, confidentialite, conditions, contact et sitemap HTML.</li>
           </ul>
         </article>
 
         <article class="resource-card glass-card">
-          <h2>Qué ve primero Google</h2>
+          <h2>Ce que Google voit d abord</h2>
           <ul class="resource-list">
-            <li>Title, description, H1 y cuerpo principal en español.</li>
-            <li>Canonical propio para cada URL en español.</li>
-            <li>Clúster hreflang consistente entre inglés y español.</li>
+            <li>Title, description, H1 et corps principal en francais.</li>
+            <li>Un canonical dedie pour chaque URL francaise.</li>
+            <li>Un cluster hreflang coherent entre anglais et francais.</li>
           </ul>
         </article>
       </section>
 
       <section class="resource-section" id="top-cities">
         <div class="detail-section-head">
-          <h2>Ciudades destacadas</h2>
-          <p>Abre una ciudad popular y entra directamente a la respuesta de hoy.</p>
+          <h2>Villes mises en avant</h2>
+          <p>Ouvrez une ville populaire et allez directement a la reponse du jour.</p>
         </div>
 
         <div class="cities-grid">
           {regionGroups.map((group) => (
-            <div class="city-group glass-card" id={`es-${group.id}`}>
+            <div class="city-group glass-card" id={`fr-${group.id}`}>
               <h3>
                 <i data-lucide="globe" class="icon-sm"></i>
                 {group.name}
@@ -316,7 +316,7 @@ const jsonLd = [
               <ul class="city-list">
                 {group.cities.map((city) => (
                   <li>
-                    <a href={`/es/sunrise/${city.slug}/`} class="city-link">
+                    <a href={`/fr/sunrise/${city.slug}/`} class="city-link">
                       <span class="city-name">{city.name}</span>
                       <span class="city-country">{city.country}</span>
                     </a>
@@ -328,9 +328,9 @@ const jsonLd = [
         </div>
 
         <div class="cities-cta">
-          <a href="/es/cities/" class="btn-secondary">
+          <a href="/fr/cities/" class="btn-secondary">
             <i data-lucide="globe" class="icon-xs"></i>
-            Ver índice completo de ciudades
+            Voir l index complet des villes
           </a>
         </div>
       </section>
@@ -341,13 +341,13 @@ const jsonLd = [
             <i data-lucide="help-circle" class="icon-xs"></i>
             FAQ
           </span>
-          <h2>Preguntas frecuentes sobre la versión en español</h2>
-          <p class="section-subtitle">La intención de esta capa multilingüe es sumar URLs útiles y rastreables, no duplicar el inglés con una traducción superficial.</p>
+          <h2>Questions frequentes sur la version francaise</h2>
+          <p class="section-subtitle">Cette couche multilingue sert a ajouter des URLs utiles et explorables, pas a dupliquer l anglais avec une traduction superficielle.</p>
         </div>
 
         <div class="faq-list">
-          {spanishHomeFaqs.map((item, index) => (
-            <details class="faq-item glass-card" id={`es-faq-${index + 1}`}>
+          {frenchHomeFaqs.map((item, index) => (
+            <details class="faq-item glass-card" id={`fr-faq-${index + 1}`}>
               <summary>
                 <span>{item.question}</span>
                 <i data-lucide="chevron-down" class="icon-sm faq-icon"></i>
@@ -362,21 +362,21 @@ const jsonLd = [
 
       <section class="resource-callout glass-card-lg" style="margin-top:2rem;">
         <div>
-          <span class="resource-callout-label">Siguiente paso</span>
-          <h2>Empieza por una ciudad y entra en la URL correcta desde la primera búsqueda.</h2>
-          <p>Si ya sabes la ciudad, abre su página de amanecer o de oración. Si todavía comparas destinos, entra por el índice de ciudades.</p>
+          <span class="resource-callout-label">Etape suivante</span>
+          <h2>Commencez par une ville et ouvrez la bonne URL des la premiere recherche.</h2>
+          <p>Si vous connaissez deja la ville, ouvrez sa page de lever du soleil ou de priere. Si vous comparez encore des destinations, passez par l index des villes.</p>
         </div>
         <div class="resource-link-row">
-          <a href="/es/cities/" class="btn-primary-sm">Índice de ciudades</a>
-          <a href="/es/guides/" class="btn-secondary-sm">Guías</a>
-          <a href="/es/methodology/" class="btn-secondary-sm">Metodología</a>
-          <a href="/es/about/" class="btn-secondary-sm">Sobre SunriseTime</a>
+          <a href="/fr/cities/" class="btn-primary-sm">Index des villes</a>
+          <a href="/fr/guides/" class="btn-secondary-sm">Guides</a>
+          <a href="/fr/methodology/" class="btn-secondary-sm">Methodologie</a>
+          <a href="/fr/about/" class="btn-secondary-sm">A propos de SunriseTime</a>
         </div>
       </section>
     </div>
   </main>
 
-  <LocalizedFooter />
+  <FrenchFooter />
 
   <script type="application/json" id="heroPreviewData" set:html={JSON.stringify(previewCities)} />
   <script type="application/json" id="heroSearchData" set:html={JSON.stringify(searchCities)} />
@@ -384,14 +384,16 @@ const jsonLd = [
     type="application/json"
     id="heroSearchConfig"
     set:html={JSON.stringify({
-      noMatchTitle: 'No encontramos esa ciudad',
-      noMatchSubtitle: 'Prueba otra escritura o una ciudad cercana',
-      openCityPage: 'Abrir página',
-      useMyLocation: 'Usar mi ubicación',
-      locationUnavailable: 'Ubicación no disponible',
-      locating: 'Buscando...',
-      nearestUnavailable: 'No encontramos una ciudad cercana',
-      locationBlocked: 'Permiso bloqueado',
+      noMatchTitle: 'Nous n avons pas trouve cette ville',
+      noMatchSubtitle: 'Essayez une autre orthographe ou une ville voisine',
+      openCityPage: 'Ouvrir la page',
+      useMyLocation: 'Utiliser ma position',
+      locationUnavailable: 'Localisation indisponible',
+      locating: 'Localisation...',
+      nearestUnavailable: 'Aucune ville proche trouvee',
+      locationBlocked: 'Permission bloquee',
     })}
   />
 </Base>
+
+

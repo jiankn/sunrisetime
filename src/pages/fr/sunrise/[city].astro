@@ -1,0 +1,489 @@
+---
+import Base from '@layouts/Base.astro';
+import FrenchHeader from '@components/FrenchHeader.astro';
+import FrenchFooter from '@components/FrenchFooter.astro';
+import cities from '@data/cities.json';
+import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
+import {
+  getFrenchCityLocationLabel,
+  getFrenchCityName,
+  getFrenchMoonPhase,
+  getFrenchPrayerName,
+  frenchLocale,
+} from '@i18n/french';
+import { getDaylightSeries, getGoldenHour, getSunTimes, formatTime, getSunriseDelta, getSunsetDelta } from '@utils/sun';
+import { getMoonData, getNextMoonEvent } from '@utils/moon';
+import { getNextPrayer, getPrayerTimes } from '@utils/prayer-times';
+import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
+
+export function getStaticPaths() {
+  return cities.cities.map((city) => ({
+    params: { city: city.slug },
+    props: { city },
+  }));
+}
+
+type City = typeof cities.cities[0];
+const { city } = Astro.props as { city: City };
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(Math.max(value, min), max);
+}
+
+function formatCountdown(ms: number) {
+  const totalMinutes = Math.max(1, Math.round(ms / 60000));
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+
+  if (hours && minutes) return `${hours} h ${minutes} min`;
+  if (hours) return `${hours} h`;
+  return `${minutes} min`;
+}
+
+function formatMinuteShift(delta: number) {
+  if (delta === 0) return 'Comme hier';
+  return `${Math.abs(delta)} min ${delta > 0 ? 'plus tard' : 'plus tot'} qu hier`;
+}
+
+function formatMinuteShiftSentence(delta: number) {
+  if (delta === 0) return 'a la meme heure locale qu hier';
+  return `${Math.abs(delta)} minutes ${delta > 0 ? 'plus tard' : 'plus tot'} qu hier`;
+}
+
+function formatDaylightTrend(minutes: number) {
+  if (minutes === 0) return 'Stable sur 7 jours';
+  return `${Math.abs(minutes)} min ${minutes > 0 ? 'de plus' : 'de moins'} sur 7 jours`;
+}
+
+const today = new Date();
+const cityName = getFrenchCityName(city);
+const cityLocationLabel = getFrenchCityLocationLabel(city, { includeAdmin1: Boolean(city.admin1) });
+const sun = getSunTimes(today, city.lat, city.lng);
+const golden = getGoldenHour(today, city.lat, city.lng);
+const moon = getMoonData(today, city.lat, city.lng);
+const nextMoonEvent = getNextMoonEvent(today);
+const prayers = getPrayerTimes(today, city.lat, city.lng, 'MWL', 'Standard');
+const nextPrayer = getNextPrayer(today, city.lat, city.lng, 'MWL', 'Standard');
+const sunriseDelta = getSunriseDelta(today, city.lat, city.lng, city.timezone);
+const sunsetDelta = getSunsetDelta(today, city.lat, city.lng, city.timezone);
+const series = getDaylightSeries(today, 7, city.lat, city.lng);
+const lightProgress = clamp(
+  ((today.getTime() - sun.dawn.getTime()) / (sun.dusk.getTime() - sun.dawn.getTime())) * 100,
+  0,
+  100,
+);
+const daylightTrendMinutes = Math.round((series[series.length - 1].hours - series[0].hours) * 60);
+const daylightTrendCopy = formatDaylightTrend(daylightTrendMinutes);
+const nextMoonEventLabel = nextMoonEvent.type === 'Full Moon' ? 'pleine lune' : 'nouvelle lune';
+const daysUntilMoonEvent = Math.max(1, Math.ceil((nextMoonEvent.date.getTime() - today.getTime()) / 86400000));
+
+function getNextSunEvent() {
+  if (today < sun.sunrise) {
+    return {
+      label: 'Lever du soleil dans',
+      countdown: formatCountdown(sun.sunrise.getTime() - today.getTime()),
+      time: formatTime(sun.sunrise, city.timezone, frenchLocale),
+      support: `L heure doree du matin se termine a ${formatTime(golden.morning.end, city.timezone, frenchLocale)}.`,
+    };
+  }
+
+  if (today < sun.sunset) {
+    return {
+      label: 'Coucher du soleil dans',
+      countdown: formatCountdown(sun.sunset.getTime() - today.getTime()),
+      time: formatTime(sun.sunset, city.timezone, frenchLocale),
+      support: `L heure doree du soir commence a ${formatTime(golden.evening.start, city.timezone, frenchLocale)}.`,
+    };
+  }
+
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const tomorrowSun = getSunTimes(tomorrow, city.lat, city.lng);
+
+  return {
+    label: 'Lever du soleil de demain',
+    countdown: formatCountdown(tomorrowSun.sunrise.getTime() - today.getTime()),
+    time: formatTime(tomorrowSun.sunrise, city.timezone, frenchLocale),
+    support: `Demain offre ${tomorrowSun.daylightFormatted} de lumiere du jour.`,
+  };
+}
+
+const nextSunEvent = getNextSunEvent();
+const localDateLabel = today.toLocaleDateString(frenchLocale, {
+  weekday: 'long',
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+  timeZone: city.timezone,
+});
+const localTimeLabel = today.toLocaleTimeString(frenchLocale, {
+  hour: 'numeric',
+  minute: '2-digit',
+  timeZone: city.timezone,
+});
+const lightStatus = today < sun.dawn
+  ? 'La nuit domine encore.'
+  : today < sun.sunrise
+    ? 'L aube civile a commence.'
+    : today < sun.sunset
+      ? 'La lumiere du jour est active en ce moment.'
+      : today < sun.dusk
+        ? 'Le crepuscule civil s estompe.'
+        : 'La nuit est de retour.';
+
+const nearbyCities = cities.cities
+  .filter((entry) => entry.continent === city.continent && entry.slug !== city.slug)
+  .slice(0, 6);
+
+const otherCities = cities.cities
+  .filter((entry) => entry.continent !== city.continent)
+  .slice(0, 4);
+
+const pagePath = `/sunrise/${city.slug}/`;
+const frenchPath = localizePath('fr', pagePath);
+const pageUrl = `https://sunrisetime.co${frenchPath}`;
+const alternates = buildAlternateLinks([
+  { hrefLang: 'en', path: pagePath },
+  { hrefLang: 'fr', path: frenchPath },
+  { hrefLang: 'x-default', path: pagePath },
+]);
+const languageLinks = buildLanguageSwitcherLinks(pagePath);
+
+const pageTitle = `Lever du soleil et coucher du soleil a ${cityName} aujourd hui - SunriseTime`;
+const pageDesc = `Aujourd hui, le lever du soleil a ${cityName} est a ${formatTime(sun.sunrise, city.timezone, frenchLocale)} et le coucher du soleil a ${formatTime(sun.sunset, city.timezone, frenchLocale)}. ${sun.daylightFormatted} de lumiere du jour, heure doree, phase lunaire et lien vers les horaires de priere.`;
+
+const jsonLd = [
+  {
+    "@type": "WebPage",
+    "@id": `${pageUrl}#webpage`,
+    "name": pageTitle,
+    "description": pageDesc,
+    "url": pageUrl,
+    "inLanguage": "fr",
+    "isPartOf": {
+      "@id": "https://sunrisetime.co/fr/#website"
+    }
+  },
+  buildBreadcrumbJsonLd([
+    { name: 'Accueil', path: '/fr/' },
+    { name: 'Villes', path: '/fr/cities/' },
+    { name: cityName, path: frenchPath },
+  ]),
+  {
+    "@type": "FAQPage",
+    "@id": `${pageUrl}#faq`,
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": `A quelle heure a lieu le lever du soleil aujourd hui a ${cityName} ?`,
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": `Aujourd hui, le lever du soleil a ${cityName} est a ${formatTime(sun.sunrise, city.timezone, frenchLocale)}.`
+        }
+      },
+      {
+        "@type": "Question",
+        "name": `A quelle heure a lieu le coucher du soleil aujourd hui a ${cityName} ?`,
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": `Aujourd hui, le coucher du soleil a ${cityName} est a ${formatTime(sun.sunset, city.timezone, frenchLocale)} et la lumiere du jour dure ${sun.daylightFormatted}.`
+        }
+      },
+      {
+        "@type": "Question",
+        "name": `La page affiche-t-elle aussi l heure doree et les horaires de priere a ${cityName} ?`,
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": `Oui. La page inclut l heure doree, la phase lunaire et un acces direct aux horaires de priere de ${cityName}.`
+        }
+      }
+    ]
+  }
+];
+---
+
+<Base
+  title={pageTitle}
+  description={pageDesc}
+  canonical={pageUrl}
+  keywords={`lever du soleil ${cityName}, coucher du soleil ${cityName}, heure doree ${cityName}, horaires de priere ${cityName}`}
+  jsonLd={jsonLd}
+  lang="fr"
+  alternates={alternates}
+>
+  <FrenchHeader languageLinks={languageLinks} currentLanguage="fr" />
+
+  <main class="city-page">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/fr/">Accueil</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <a href="/fr/cities/">Villes</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <span>{cityName}</span>
+      </nav>
+
+      <section class="city-snapshot glass-card-lg">
+        <div class="city-snapshot-copy">
+          <span class="city-kicker">Lumiere du jour a {cityName}</span>
+          <h1>Lever du soleil et coucher du soleil a <span class="gradient-text">{cityName}</span></h1>
+          <p class="city-lead">
+            Aujourd hui, {localDateLabel}, l heure locale est {localTimeLabel}. Le lever du soleil a {cityName} est a {formatTime(sun.sunrise, city.timezone, frenchLocale)} et le coucher du soleil a {formatTime(sun.sunset, city.timezone, frenchLocale)}.
+            Cette page affiche aussi la duree du jour, l heure doree, la phase lunaire et un acces rapide aux horaires de priere.
+          </p>
+
+          <div class="city-chip-row">
+            <span class="city-chip city-country-badge">{cityLocationLabel}</span>
+            <span class="city-chip">{city.timezone}</span>
+            <span class="city-chip">{sun.daylightFormatted} de lumiere</span>
+          </div>
+
+          <div class="city-action-row">
+            <a href="/fr/cities/" class="btn-primary">
+              <i data-lucide="search" class="icon-xs"></i>
+              Chercher une autre ville
+            </a>
+            <a href="#golden" class="btn-secondary">
+              <i data-lucide="camera" class="icon-xs"></i>
+              Voir l heure doree
+            </a>
+            <a href={`/fr/prayer-times/${city.slug}/`} class="btn-secondary">
+              <i data-lucide="clock" class="icon-xs"></i>
+              Horaires de priere
+            </a>
+          </div>
+        </div>
+
+        <div class="city-snapshot-panel">
+          <div class="city-next-event glass-card">
+            <span class="city-next-label">{nextSunEvent.label}</span>
+            <strong>{nextSunEvent.countdown}</strong>
+            <span class="city-next-time">{nextSunEvent.time} heure locale</span>
+            <p>{nextSunEvent.support}</p>
+          </div>
+
+          <div class="city-light-track glass-card">
+            <div class="city-track-head">
+              <span>Aube {formatTime(sun.dawn, city.timezone, frenchLocale)}</span>
+              <strong>{lightStatus}</strong>
+              <span>Crepuscule {formatTime(sun.dusk, city.timezone, frenchLocale)}</span>
+            </div>
+            <div class="city-track-bar">
+              <span class="city-track-fill" style={`width:${lightProgress}%`}></span>
+              <span class="city-track-marker" style={`left:${lightProgress}%`}></span>
+            </div>
+            <div class="city-track-points">
+              <span>Lever du soleil {formatTime(sun.sunrise, city.timezone, frenchLocale)}</span>
+              <span>Midi solaire {formatTime(sun.solarNoon, city.timezone, frenchLocale)}</span>
+              <span>Coucher du soleil {formatTime(sun.sunset, city.timezone, frenchLocale)}</span>
+            </div>
+          </div>
+
+          <div class="city-snapshot-metrics">
+            <div class="city-metric-card glass-card accent-sunrise">
+              <span class="city-metric-visual" aria-hidden="true"></span>
+              <span class="city-metric-label">Lever du soleil</span>
+              <strong class="city-metric-value">{formatTime(sun.sunrise, city.timezone, frenchLocale)}</strong>
+              <small class="city-metric-note">{formatMinuteShift(sunriseDelta)}</small>
+            </div>
+            <div class="city-metric-card glass-card accent-sunset">
+              <span class="city-metric-visual" aria-hidden="true"></span>
+              <span class="city-metric-label">Coucher du soleil</span>
+              <strong class="city-metric-value">{formatTime(sun.sunset, city.timezone, frenchLocale)}</strong>
+              <small class="city-metric-note">{formatMinuteShift(sunsetDelta)}</small>
+            </div>
+            <div class="city-metric-card glass-card accent-daylight">
+              <span class="city-metric-visual" aria-hidden="true"></span>
+              <span class="city-metric-label">Lumiere du jour</span>
+              <strong class="city-metric-value">{sun.daylightFormatted}</strong>
+              <small class="city-metric-note">{daylightTrendCopy}</small>
+            </div>
+            <div class="city-metric-card glass-card accent-moon">
+              <span class="city-metric-visual" aria-hidden="true"></span>
+              <span class="city-metric-label">Lune</span>
+              <strong class="city-metric-value">{getFrenchMoonPhase(moon.phaseName)}</strong>
+              <small class="city-metric-note">{moon.illumination}% d illumination ce soir</small>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="city-highlight-grid" aria-label="Acces rapides">
+        <a href="#golden" class="city-highlight-card glass-card">
+          <span class="city-highlight-label">Heure doree</span>
+          <strong>{formatTime(golden.morning.start, city.timezone, frenchLocale)} - {formatTime(golden.morning.end, city.timezone, frenchLocale)}</strong>
+          <p>La plage du soir commence a {formatTime(golden.evening.start, city.timezone, frenchLocale)}.</p>
+        </a>
+        <a href="#moon" class="city-highlight-card glass-card">
+          <span class="city-highlight-label">Lune</span>
+          <strong>{getFrenchMoonPhase(moon.phaseName)}</strong>
+          <p>{moon.illumination}% d illumination. Prochaine {nextMoonEventLabel} dans {daysUntilMoonEvent} jour{daysUntilMoonEvent !== 1 ? 's' : ''}.</p>
+        </a>
+        <a href={`/fr/prayer-times/${city.slug}/`} class="city-highlight-card glass-card">
+          <span class="city-highlight-label">Priere</span>
+          <strong>{getFrenchPrayerName(nextPrayer.name)} a {formatTime(nextPrayer.time, city.timezone, frenchLocale)}</strong>
+          <p>Ouvrez l horaire complet de priere pour {cityName}.</p>
+        </a>
+      </section>
+
+      <section class="detail-section" id="golden" aria-label="Heure doree">
+        <div class="detail-section-head">
+          <h2><i data-lucide="camera" class="icon-md"></i> Heure doree et crepuscules a {cityName}</h2>
+          <p>Si vous preparez une sortie photo, ce sont les plages qui changent vraiment votre plan: heure doree, crepuscules et tendance de la lumiere cette semaine.</p>
+        </div>
+
+        <div class="detail-grid">
+          <div class="detail-card glass-card">
+            <h3>Heure doree du matin</h3>
+            <div class="detail-time">
+              <span class="detail-time-value">{formatTime(golden.morning.start, city.timezone, frenchLocale)}</span>
+              <i data-lucide="arrow-right" class="icon-sm"></i>
+              <span class="detail-time-value">{formatTime(golden.morning.end, city.timezone, frenchLocale)}</span>
+            </div>
+            <span class="detail-duration">{golden.morning.durationMin} minutes</span>
+          </div>
+          <div class="detail-card glass-card">
+            <h3>Heure doree du soir</h3>
+            <div class="detail-time">
+              <span class="detail-time-value">{formatTime(golden.evening.start, city.timezone, frenchLocale)}</span>
+              <i data-lucide="arrow-right" class="icon-sm"></i>
+              <span class="detail-time-value">{formatTime(golden.evening.end, city.timezone, frenchLocale)}</span>
+            </div>
+            <span class="detail-duration">{golden.evening.durationMin} minutes</span>
+          </div>
+        </div>
+
+        <div class="city-secondary-grid">
+          <div class="twilight-table glass-card">
+            <table>
+              <thead>
+                <tr><th>Phase</th><th>Matin</th><th>Soir</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Crepuscule civil</td>
+                  <td>{formatTime(sun.dawn, city.timezone, frenchLocale)}</td>
+                  <td>{formatTime(sun.dusk, city.timezone, frenchLocale)}</td>
+                </tr>
+                <tr>
+                  <td>Crepuscule nautique</td>
+                  <td>{formatTime(sun.nauticalDawn, city.timezone, frenchLocale)}</td>
+                  <td>{formatTime(sun.nauticalDusk, city.timezone, frenchLocale)}</td>
+                </tr>
+                <tr>
+                  <td>Crepuscule astronomique</td>
+                  <td>{formatTime(sun.nightEnd, city.timezone, frenchLocale)}</td>
+                  <td>{formatTime(sun.night, city.timezone, frenchLocale)}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="daylight-chart glass-card">
+            <div class="demo-chart-title">Tendance de la lumiere du jour - vue sur 7 jours</div>
+            <div class="chart-bars-static">
+              {series.map((entry, index) => {
+                const pct = Math.round((entry.hours / 16) * 100);
+                const dayName = entry.date.toLocaleDateString(frenchLocale, { weekday: 'short', timeZone: city.timezone });
+                return (
+                  <div class={`chart-col ${index === 0 ? 'active' : ''}`}>
+                    <span class="chart-val">{entry.hours.toFixed(1)}h</span>
+                    <div class="chart-fill" style={`height:${pct}%`}></div>
+                    <span class="chart-day">{dayName}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="detail-section" id="moon" aria-label="Donnees lunaires">
+        <div class="detail-section-head">
+          <h2><i data-lucide="moon" class="icon-md"></i> Phase lunaire et horaires de lune a {cityName}</h2>
+          <p>Utile lorsque votre plan depasse le coucher du soleil ou quand vous voulez savoir si la lune aide ou perturbe la scene.</p>
+        </div>
+
+        <div class="detail-grid">
+          <div class="detail-card glass-card">
+            <h3>Phase lunaire</h3>
+            <span class="detail-time-value">{getFrenchMoonPhase(moon.phaseName)}</span>
+            <span class="detail-duration">{moon.illumination}% d illumination</span>
+          </div>
+          <div class="detail-card glass-card">
+            <h3>Lever et coucher de lune</h3>
+            <div class="detail-time">
+              <div>
+                <span class="data-label">Lever</span>
+                <span class="detail-time-value">{moon.rise ? formatTime(moon.rise, city.timezone, frenchLocale) : '—'}</span>
+              </div>
+              <div>
+                <span class="data-label">Coucher</span>
+                <span class="detail-time-value">{moon.set ? formatTime(moon.set, city.timezone, frenchLocale) : '—'}</span>
+              </div>
+            </div>
+            <span class="detail-duration">La prochaine {nextMoonEventLabel} arrive dans {daysUntilMoonEvent} jour{daysUntilMoonEvent !== 1 ? 's' : ''}.</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="detail-section seo-content" aria-label="Explication SEO">
+        <h2><i data-lucide="info" class="icon-md"></i> Lever du soleil et coucher du soleil aujourd hui a {cityName}</h2>
+        <div class="seo-text glass-card">
+          <p>
+            Aujourd hui a {cityName}, le soleil se leve a {formatTime(sun.sunrise, city.timezone, frenchLocale)} et se couche a {formatTime(sun.sunset, city.timezone, frenchLocale)}. Au total, la ville profite de {sun.daylightFormatted} de lumiere du jour. Le midi solaire tombe a {formatTime(sun.solarNoon, city.timezone, frenchLocale)} et le crepuscule civil etend la lumiere utile de {formatTime(sun.dawn, city.timezone, frenchLocale)} a {formatTime(sun.dusk, city.timezone, frenchLocale)}.
+          </p>
+
+          <h3>Comment ces heures sont calculees</h3>
+          <p>
+            SunriseTime calcule le lever et le coucher du soleil avec un modele solaire aligne sur NOAA, en utilisant les coordonnees de {cityName} (latitude {city.lat.toFixed(4)} et longitude {city.lng.toFixed(4)}) et le fuseau horaire local {city.timezone}. Par rapport a hier, le lever du soleil a lieu {formatMinuteShiftSentence(sunriseDelta)} et le coucher du soleil {formatMinuteShiftSentence(sunsetDelta)}.
+          </p>
+
+          <h3>Heure doree, lune et priere sur la meme page</h3>
+          <p>
+            L heure doree du matin va de {formatTime(golden.morning.start, city.timezone, frenchLocale)} a {formatTime(golden.morning.end, city.timezone, frenchLocale)}, tandis que celle du soir va de {formatTime(golden.evening.start, city.timezone, frenchLocale)} a {formatTime(golden.evening.end, city.timezone, frenchLocale)}. Vous pouvez aussi verifier la phase lunaire actuelle et ouvrir la page complete des horaires de priere de {cityName}.
+          </p>
+        </div>
+      </section>
+
+      <section class="detail-section" id="nearby" aria-label="Villes voisines">
+        <div class="detail-section-head">
+          <h2><i data-lucide="map-pin" class="icon-md"></i> Lever du soleil dans les villes voisines</h2>
+          <p>Apres avoir verifie l heure a {cityName}, l action suivante la plus utile est souvent de comparer avec une autre ville proche ou une destination voisine.</p>
+        </div>
+
+        <div class="nearby-grid">
+          {nearbyCities.map((entry) => (
+            <a href={`/fr/sunrise/${entry.slug}/`} class="nearby-card glass-card">
+              <span class="nearby-name">{getFrenchCityName(entry)}</span>
+              <span class="nearby-country">{getFrenchCityLocationLabel(entry, { includeAdmin1: Boolean(entry.admin1) })}</span>
+            </a>
+          ))}
+        </div>
+
+        {otherCities.length > 0 && (
+          <>
+            <h3 class="other-cities-title">Autres villes populaires</h3>
+            <div class="nearby-grid">
+              {otherCities.map((entry) => (
+                <a href={`/fr/sunrise/${entry.slug}/`} class="nearby-card glass-card">
+                  <span class="nearby-name">{getFrenchCityName(entry)}</span>
+                  <span class="nearby-country">{getFrenchCityLocationLabel(entry, { includeAdmin1: Boolean(entry.admin1) })}</span>
+                </a>
+              ))}
+            </div>
+          </>
+        )}
+
+        <div class="cities-cta" style="margin-top:2rem;">
+          <a href="/fr/cities/" class="btn-secondary">
+            <i data-lucide="globe" class="icon-xs"></i>
+            Voir toutes les villes
+          </a>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <FrenchFooter />
+</Base>

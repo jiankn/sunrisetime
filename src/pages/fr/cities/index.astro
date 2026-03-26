@@ -1,0 +1,118 @@
+---
+import Base from '@layouts/Base.astro';
+import FrenchHeader from '@components/FrenchHeader.astro';
+import FrenchFooter from '@components/FrenchFooter.astro';
+import { getCitySearchText, regionHubs, totalCities } from '@data/site';
+import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
+import {
+  getFrenchCityDisplayName,
+  getFrenchCityLocationLabel,
+  getFrenchCityName,
+  getFrenchRegionName,
+} from '@i18n/french';
+import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
+
+const pagePath = '/cities/';
+const alternates = buildAlternateLinks([
+  { hrefLang: 'en', path: pagePath },
+  { hrefLang: 'fr', path: localizePath('fr', pagePath) },
+  { hrefLang: 'x-default', path: pagePath },
+]);
+const languageLinks = buildLanguageSwitcherLinks(pagePath);
+const pageUrl = 'https://sunrisetime.co/fr/cities/';
+
+const jsonLd = [
+  {
+    "@type": "CollectionPage",
+    "@id": `${pageUrl}#webpage`,
+    "name": "Index des villes de SunriseTime",
+    "description": `Explorez les pages de lever du soleil et coucher du soleil de ${totalCities} villes indexees en francais.`,
+    "url": pageUrl,
+    "inLanguage": "fr",
+    "isPartOf": {
+      "@id": "https://sunrisetime.co/fr/#website"
+    }
+  },
+  buildBreadcrumbJsonLd([
+    { name: 'Accueil', path: '/fr/' },
+    { name: 'Villes', path: '/fr/cities/' },
+  ]),
+];
+---
+
+<Base
+  title={`Index des levers et couchers du soleil pour ${totalCities} villes - SunriseTime`}
+  description={`Consultez le lever du soleil, le coucher du soleil et la duree du jour de ${totalCities} villes. Index en francais avec liens explorables vers chaque ville.`}
+  canonical={pageUrl}
+  keywords="index des villes, lever du soleil par ville, coucher du soleil par ville"
+  jsonLd={jsonLd}
+  lang="fr"
+  alternates={alternates}
+>
+  <FrenchHeader languageLinks={languageLinks} currentLanguage="fr" />
+
+  <main class="cities-hub">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/fr/">Accueil</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <span>Villes</span>
+      </nav>
+
+      <header class="cities-hub-header">
+        <h1>Index de <span class="gradient-text">{totalCities} villes</span> pour le lever et le coucher du soleil</h1>
+        <p>Recherchez une ville ou parcourez par region. Toutes les URLs renvoient vers des pages en francais avec canonical dedie et contenu principal localise.</p>
+        <div class="hub-search">
+          <i data-lucide="search" class="icon-sm" style="color:var(--text-tertiary);flex-shrink:0;"></i>
+          <input type="text" id="hubCitySearch" placeholder="Rechercher une ville..." autocomplete="off" />
+        </div>
+      </header>
+
+      {regionHubs.map((region) => (
+        <section class="continent-section" data-continent={region.slug}>
+          <h2>
+            <i data-lucide="globe" class="icon-md"></i>
+            {getFrenchRegionName(region.slug, region.name)}
+          </h2>
+          <div class="hub-city-grid">
+            {region.cities.map((city) => (
+              <a
+                href={`/fr/sunrise/${city.slug}/`}
+                class="hub-city-card glass-card"
+                data-city-search={`${getFrenchCityDisplayName(city, { includeAdmin1: Boolean(city.admin1) })} ${getCitySearchText(city)}`.toLowerCase()}
+              >
+                <span class="hub-city-name">{getFrenchCityName(city)}</span>
+                <span class="hub-city-country">{getFrenchCityLocationLabel(city, { includeAdmin1: Boolean(city.admin1) })}</span>
+              </a>
+            ))}
+          </div>
+        </section>
+      ))}
+    </div>
+  </main>
+
+  <FrenchFooter />
+</Base>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const input = document.getElementById('hubCitySearch');
+    if (!input) return;
+
+    input.addEventListener('input', (event) => {
+      const query = (event.target as HTMLInputElement).value.toLowerCase().trim();
+      const cards = document.querySelectorAll<HTMLElement>('.hub-city-card');
+      const sections = document.querySelectorAll<HTMLElement>('.continent-section');
+
+      cards.forEach((card) => {
+        const name = card.dataset.citySearch || '';
+        card.style.display = name.includes(query) ? '' : 'none';
+      });
+
+      sections.forEach((section) => {
+        const visible = section.querySelectorAll<HTMLElement>('.hub-city-card:not([style*="display: none"])');
+        section.style.display = visible.length > 0 ? '' : 'none';
+      });
+    });
+  });
+</script>

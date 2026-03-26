@@ -1,0 +1,363 @@
+---
+import Base from '@layouts/Base.astro';
+import FrenchHeader from '@components/FrenchHeader.astro';
+import FrenchFooter from '@components/FrenchFooter.astro';
+import cities from '@data/cities.json';
+import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
+import {
+  getFrenchCityLocationLabel,
+  getFrenchCityName,
+  getFrenchPrayerName,
+  frenchLocale,
+} from '@i18n/french';
+import { getSunTimes, formatTime } from '@utils/sun';
+import { getNextPrayer, getPrayerTimes } from '@utils/prayer-times';
+import type { AsrJuristic, CalculationMethod } from '@utils/prayer-times';
+import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
+
+export function getStaticPaths() {
+  return cities.cities.map((city) => ({
+    params: { city: city.slug },
+    props: { city },
+  }));
+}
+
+type City = typeof cities.cities[0];
+const { city } = Astro.props as { city: City };
+
+const today = new Date();
+const cityName = getFrenchCityName(city);
+const cityLocationLabel = getFrenchCityLocationLabel(city, { includeAdmin1: Boolean(city.admin1) });
+const sun = getSunTimes(today, city.lat, city.lng);
+const prayers = getPrayerTimes(today, city.lat, city.lng, 'MWL', 'Standard');
+const nextPrayer = getNextPrayer(today, city.lat, city.lng, 'MWL', 'Standard');
+
+function formatCountdown(ms: number) {
+  const totalMinutes = Math.max(1, Math.round(ms / 60000));
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  if (hours && minutes) return `${hours} h ${minutes} min`;
+  if (hours) return `${hours} h`;
+  return `${minutes} min`;
+}
+
+const nextPrayerCountdown = nextPrayer.time > today
+  ? formatCountdown(nextPrayer.time.getTime() - today.getTime())
+  : '';
+
+const localDateLabel = today.toLocaleDateString(frenchLocale, {
+  weekday: 'long',
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+  timeZone: city.timezone,
+});
+const localTimeLabel = today.toLocaleTimeString(frenchLocale, {
+  hour: 'numeric',
+  minute: '2-digit',
+  timeZone: city.timezone,
+});
+
+const nearbyCities = cities.cities
+  .filter((entry) => entry.continent === city.continent && entry.slug !== city.slug)
+  .slice(0, 6);
+
+const otherCities = cities.cities
+  .filter((entry) => entry.continent !== city.continent)
+  .slice(0, 4);
+
+const pagePath = `/prayer-times/${city.slug}/`;
+const frenchPath = localizePath('fr', pagePath);
+const pageUrl = `https://sunrisetime.co${frenchPath}`;
+const alternates = buildAlternateLinks([
+  { hrefLang: 'en', path: pagePath },
+  { hrefLang: 'fr', path: frenchPath },
+  { hrefLang: 'x-default', path: pagePath },
+]);
+const languageLinks = buildLanguageSwitcherLinks(pagePath);
+
+const calculationMethods: { value: CalculationMethod; label: string; detail: string }[] = [
+  { value: 'MWL', label: 'Muslim World League', detail: 'Fajr 18° · Isha 17°' },
+  { value: 'ISNA', label: 'ISNA', detail: 'Fajr 15° · Isha 15°' },
+  { value: 'Egypt', label: 'Autorite egyptienne', detail: 'Fajr 19.5° · Isha 17.5°' },
+  { value: 'Makkah', label: 'Umm al-Qura', detail: 'Fajr 18.5° · Isha 90 min' },
+  { value: 'Karachi', label: 'Karachi', detail: 'Fajr 18° · Isha 18°' },
+];
+
+const juristicMethods: { value: AsrJuristic; label: string; detail: string }[] = [
+  { value: 'Standard', label: 'Standard (Shafi i)', detail: 'Ombre = hauteur + ombre du midi' },
+  { value: 'Hanafi', label: 'Hanafi', detail: 'Ombre = 2x la hauteur + ombre du midi' },
+];
+
+const prayerList = [
+  { name: 'Fajr', time: prayers.fajr, desc: 'Priere avant l aube', icon: 'cloud-moon' },
+  { name: 'Sunrise', time: prayers.sunrise, desc: 'Le soleil se leve', icon: 'sunrise' },
+  { name: 'Dhuhr', time: prayers.dhuhr, desc: 'Priere de midi', icon: 'sun' },
+  { name: 'Asr', time: prayers.asr, desc: 'Priere de l apres-midi', icon: 'cloud-sun' },
+  { name: 'Maghrib', time: prayers.maghrib, desc: 'Priere apres le coucher du soleil', icon: 'sunset' },
+  { name: 'Isha', time: prayers.isha, desc: 'Priere de nuit', icon: 'moon' },
+];
+
+const pageTitle = `Horaires de priere a ${cityName} aujourd hui - SunriseTime`;
+const pageDesc = `Horaires de priere du jour a ${cityName}: Fajr ${formatTime(prayers.fajr, city.timezone, frenchLocale)}, Dhuhr ${formatTime(prayers.dhuhr, city.timezone, frenchLocale)}, Asr ${formatTime(prayers.asr, city.timezone, frenchLocale)}, Maghrib ${formatTime(prayers.maghrib, city.timezone, frenchLocale)} et Isha ${formatTime(prayers.isha, city.timezone, frenchLocale)}.`;
+
+const jsonLd = [
+  {
+    "@type": "WebPage",
+    "@id": `${pageUrl}#webpage`,
+    "name": pageTitle,
+    "description": pageDesc,
+    "url": pageUrl,
+    "inLanguage": "fr",
+    "isPartOf": {
+      "@id": "https://sunrisetime.co/fr/#website"
+    }
+  },
+  buildBreadcrumbJsonLd([
+    { name: 'Accueil', path: '/fr/' },
+    { name: 'Horaires de priere', path: '/fr/guides/prayer-times/' },
+    { name: cityName, path: frenchPath },
+  ]),
+  {
+    "@type": "FAQPage",
+    "@id": `${pageUrl}#faq`,
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": `Quels sont les horaires de priere aujourd hui a ${cityName} ?`,
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": `Aujourd hui a ${cityName}: Fajr ${formatTime(prayers.fajr, city.timezone, frenchLocale)}, Dhuhr ${formatTime(prayers.dhuhr, city.timezone, frenchLocale)}, Asr ${formatTime(prayers.asr, city.timezone, frenchLocale)}, Maghrib ${formatTime(prayers.maghrib, city.timezone, frenchLocale)} et Isha ${formatTime(prayers.isha, city.timezone, frenchLocale)}.`
+        }
+      },
+      {
+        "@type": "Question",
+        "name": `Quelle methode de calcul est utilisee pour ${cityName} ?`,
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": `Cette page utilise par defaut Muslim World League (MWL), avec Fajr a 18 degres, Isha a 17 degres sous l horizon et le calcul standard pour Asr.`
+        }
+      }
+    ]
+  }
+];
+---
+
+<Base
+  title={pageTitle}
+  description={pageDesc}
+  canonical={pageUrl}
+  keywords={`horaires de priere ${cityName}, fajr ${cityName}, maghrib ${cityName}, lever du soleil ${cityName}`}
+  jsonLd={jsonLd}
+  lang="fr"
+  alternates={alternates}
+>
+  <FrenchHeader languageLinks={languageLinks} currentLanguage="fr" />
+
+  <main class="city-page prayer-page">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/fr/">Accueil</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <a href="/fr/guides/prayer-times/">Horaires de priere</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <span>{cityName}</span>
+      </nav>
+
+      <section class="prayer-hero glass-card-lg">
+        <div class="prayer-hero-copy">
+          <span class="city-kicker">{localDateLabel}</span>
+          <h1>Horaires de priere a <span class="gradient-text">{cityName}</span></h1>
+          <p class="city-lead">
+            L heure locale est {localTimeLabel}. La prochaine priere est <strong>{getFrenchPrayerName(nextPrayer.name)}</strong> a {formatTime(nextPrayer.time, city.timezone, frenchLocale)}{nextPrayerCountdown ? `, dans ${nextPrayerCountdown}` : ''}.
+            Cette URL regroupe l horaire complet, la methode de calcul et le lien entre la priere et le cycle solaire local.
+          </p>
+
+          <div class="city-chip-row">
+            <span class="city-chip city-country-badge">{cityLocationLabel}</span>
+            <span class="city-chip">{city.timezone}</span>
+            <span class="city-chip">MWL · Standard</span>
+          </div>
+
+          <div class="city-action-row">
+            <a href={`/fr/sunrise/${city.slug}/`} class="btn-secondary">
+              <i data-lucide="sun" class="icon-xs"></i>
+              Lever du soleil et coucher du soleil
+            </a>
+            <a href="#methods" class="btn-secondary">
+              <i data-lucide="settings" class="icon-xs"></i>
+              Voir la methode
+            </a>
+          </div>
+        </div>
+
+        <div class="prayer-hero-panel">
+          <div class="prayer-next-hero glass-card">
+            <span class="prayer-next-label">Prochaine priere</span>
+            <strong class="prayer-next-name">{getFrenchPrayerName(nextPrayer.name)}</strong>
+            <span class="prayer-next-time">{formatTime(nextPrayer.time, city.timezone, frenchLocale)}</span>
+            {nextPrayerCountdown && (
+              <span class="prayer-next-countdown">Encore {nextPrayerCountdown}</span>
+            )}
+          </div>
+        </div>
+      </section>
+
+      <section class="detail-section" id="schedule" aria-label="Horaires de priere du jour">
+        <div class="detail-section-head">
+          <h2><i data-lucide="clock" class="icon-md"></i> Horaires de priere du jour</h2>
+          <p>Les horaires de {cityName} sont affiches pour {localDateLabel} dans le fuseau horaire {city.timezone}.</p>
+        </div>
+
+        <div class="prayer-grid">
+          {prayerList.map((entry) => (
+            <div class={`prayer-card glass-card ${nextPrayer.name === entry.name ? 'prayer-card-active' : ''}`}>
+              <i data-lucide={entry.icon} class="icon-md"></i>
+              <span class="prayer-name">{getFrenchPrayerName(entry.name)}</span>
+              <span class="prayer-time">{formatTime(entry.time, city.timezone, frenchLocale)}</span>
+              <span class="prayer-desc">{entry.desc}</span>
+            </div>
+          ))}
+        </div>
+        <p class="prayer-note">
+          Par defaut: Muslim World League (MWL) avec calcul standard pour Asr.
+          <a href="#methods"> Voir les methodes disponibles.</a>
+        </p>
+      </section>
+
+      <section class="detail-section" aria-label="Donnees solaires">
+        <div class="detail-section-head">
+          <h2><i data-lucide="sun" class="icon-md"></i> Lever du soleil et coucher du soleil lies a la priere</h2>
+          <p>Fajr commence avant le lever du soleil et Maghrib arrive juste apres le coucher du soleil. Il est donc utile de lire ensemble calendrier solaire et horaires de priere.</p>
+        </div>
+
+        <div class="detail-grid">
+          <div class="detail-card glass-card">
+            <h3>Lever du soleil et coucher du soleil</h3>
+            <div class="detail-time">
+              <div>
+                <span class="data-label">Lever du soleil</span>
+                <span class="detail-time-value">{formatTime(sun.sunrise, city.timezone, frenchLocale)}</span>
+              </div>
+              <div>
+                <span class="data-label">Coucher du soleil</span>
+                <span class="detail-time-value">{formatTime(sun.sunset, city.timezone, frenchLocale)}</span>
+              </div>
+            </div>
+            <span class="detail-duration">{sun.daylightFormatted} de lumiere du jour aujourd hui</span>
+          </div>
+
+          <div class="detail-card glass-card">
+            <h3>Reperes solaires</h3>
+            <div class="detail-time">
+              <div>
+                <span class="data-label">Aube civile</span>
+                <span class="detail-time-value">{formatTime(sun.dawn, city.timezone, frenchLocale)}</span>
+              </div>
+              <div>
+                <span class="data-label">Crepuscule</span>
+                <span class="detail-time-value">{formatTime(sun.dusk, city.timezone, frenchLocale)}</span>
+              </div>
+            </div>
+            <span class="detail-duration">Midi solaire a {formatTime(sun.solarNoon, city.timezone, frenchLocale)}</span>
+          </div>
+        </div>
+
+        <div class="prayer-sun-cta">
+          <a href={`/fr/sunrise/${city.slug}/`} class="btn-primary">
+            <i data-lucide="arrow-right" class="icon-xs"></i>
+            Voir la page complete de lever du soleil et coucher du soleil
+          </a>
+        </div>
+      </section>
+
+      <section class="detail-section" id="methods" aria-label="Methodes de calcul">
+        <div class="detail-section-head">
+          <h2><i data-lucide="settings" class="icon-md"></i> Methodes de calcul</h2>
+          <p>Les horaires de priere sont derives de la position du soleil. Selon les regions, les conventions changent pour Fajr, Isha et Asr.</p>
+        </div>
+
+        <div class="method-grid">
+          {calculationMethods.map((method) => (
+            <div class={`method-card glass-card ${method.value === 'MWL' ? 'method-card-active' : ''}`}>
+              <strong>{method.label}</strong>
+              <span class="method-detail">{method.detail}</span>
+              {method.value === 'MWL' && <span class="method-badge">Actuel</span>}
+            </div>
+          ))}
+        </div>
+
+        <div class="method-subsection">
+          <h3>Ecole juridique pour Asr</h3>
+          <div class="method-grid method-grid-narrow">
+            {juristicMethods.map((method) => (
+              <div class={`method-card glass-card ${method.value === 'Standard' ? 'method-card-active' : ''}`}>
+                <strong>{method.label}</strong>
+                <span class="method-detail">{method.detail}</span>
+                {method.value === 'Standard' && <span class="method-badge">Actuel</span>}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section class="detail-section seo-content" aria-label="Explication des horaires de priere">
+        <h2><i data-lucide="info" class="icon-md"></i> Comment les horaires de priere sont calcules a {cityName}</h2>
+        <div class="seo-text glass-card">
+          <p>
+            Les horaires de priere a {cityName} sont calcules a partir de la position du soleil par rapport a l horizon. Aujourd hui, {localDateLabel}, Fajr est a {formatTime(prayers.fajr, city.timezone, frenchLocale)}, Dhuhr a {formatTime(prayers.dhuhr, city.timezone, frenchLocale)}, Asr a {formatTime(prayers.asr, city.timezone, frenchLocale)}, Maghrib a {formatTime(prayers.maghrib, city.timezone, frenchLocale)} et Isha a {formatTime(prayers.isha, city.timezone, frenchLocale)}.
+          </p>
+
+          <h3>Base technique de la page</h3>
+          <p>
+            Cette page utilise les coordonnees de {cityName} (latitude {city.lat.toFixed(4)} et longitude {city.lng.toFixed(4)}) et un calcul solaire aligne sur NOAA. Par defaut, SunriseTime applique la methode Muslim World League avec Fajr a 18 degres et Isha a 17 degres sous l horizon.
+          </p>
+
+          <h3>Lien entre priere, lever du soleil et coucher du soleil</h3>
+          <p>
+            Fajr se termine avant le lever du soleil de {formatTime(prayers.sunrise, city.timezone, frenchLocale)} et Maghrib commence juste apres le coucher du soleil de {formatTime(sun.sunset, city.timezone, frenchLocale)}. Si vous avez aussi besoin d heure doree, de duree du jour et de donnees lunaires, ouvrez la <a href={`/fr/sunrise/${city.slug}/`}>page de lever du soleil et coucher du soleil de {cityName}</a>.
+          </p>
+        </div>
+      </section>
+
+      <section class="detail-section" id="nearby" aria-label="Villes voisines">
+        <div class="detail-section-head">
+          <h2><i data-lucide="map-pin" class="icon-md"></i> Horaires de priere dans les villes voisines</h2>
+          <p>Comparez l horaire de {cityName} avec d autres villes de la meme region.</p>
+        </div>
+
+        <div class="nearby-grid">
+          {nearbyCities.map((entry) => (
+            <a href={`/fr/prayer-times/${entry.slug}/`} class="nearby-card glass-card">
+              <span class="nearby-name">{getFrenchCityName(entry)}</span>
+              <span class="nearby-country">{getFrenchCityLocationLabel(entry, { includeAdmin1: Boolean(entry.admin1) })}</span>
+            </a>
+          ))}
+        </div>
+
+        {otherCities.length > 0 && (
+          <>
+            <h3 class="other-cities-title">Autres villes populaires</h3>
+            <div class="nearby-grid">
+              {otherCities.map((entry) => (
+                <a href={`/fr/prayer-times/${entry.slug}/`} class="nearby-card glass-card">
+                  <span class="nearby-name">{getFrenchCityName(entry)}</span>
+                  <span class="nearby-country">{getFrenchCityLocationLabel(entry, { includeAdmin1: Boolean(entry.admin1) })}</span>
+                </a>
+              ))}
+            </div>
+          </>
+        )}
+
+        <div class="cities-cta" style="margin-top:2rem;">
+          <a href="/fr/cities/" class="btn-secondary">
+            <i data-lucide="globe" class="icon-xs"></i>
+            Voir toutes les villes
+          </a>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <FrenchFooter />
+</Base>

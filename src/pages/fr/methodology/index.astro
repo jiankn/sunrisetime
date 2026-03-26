@@ -1,0 +1,149 @@
+---
+import Base from '@layouts/Base.astro';
+import FrenchHeader from '@components/FrenchHeader.astro';
+import FrenchFooter from '@components/FrenchFooter.astro';
+import { cityIndexLabel, legalLastUpdated, totalCities } from '@data/site';
+import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
+import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
+
+const pagePath = '/methodology/';
+const frenchPath = localizePath('fr', pagePath);
+const pageUrl = `https://sunrisetime.co${frenchPath}`;
+const alternates = buildAlternateLinks([
+  { hrefLang: 'en', path: pagePath },
+  { hrefLang: 'fr', path: frenchPath },
+  { hrefLang: 'x-default', path: pagePath },
+]);
+const languageLinks = buildLanguageSwitcherLinks(pagePath);
+
+const jsonLd = [
+  {
+    "@type": "TechArticle",
+    "@id": `${pageUrl}#article`,
+    "headline": "Methodologie de SunriseTime",
+    "description": "Explication publique de la facon dont SunriseTime calcule le lever du soleil, le coucher du soleil, la lune et les horaires de priere dans la version francaise.",
+    "url": pageUrl,
+    "inLanguage": "fr",
+    "isPartOf": {
+      "@id": "https://sunrisetime.co/fr/#website"
+    }
+  },
+  buildBreadcrumbJsonLd([
+    { name: 'Accueil', path: '/fr/' },
+    { name: 'Methodologie', path: frenchPath },
+  ]),
+];
+---
+
+<Base
+  title="Methodologie - Comment SunriseTime calcule le soleil, la lune et les horaires de priere"
+  description="Consultez la methodologie de SunriseTime pour les calculs solaires, la phase lunaire, les horaires de priere et la structure du repertoire de villes."
+  canonical={pageUrl}
+  keywords="methodologie lever du soleil, calcul coucher du soleil, methodologie horaires de priere"
+  jsonLd={jsonLd}
+  lang="fr"
+  alternates={alternates}
+>
+  <FrenchHeader languageLinks={languageLinks} currentLanguage="fr" />
+
+  <main class="resource-page">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/fr/">Accueil</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <span>Methodologie</span>
+      </nav>
+
+      <header class="resource-header">
+        <span class="section-badge">
+          <i data-lucide="flask-conical" class="icon-xs"></i>
+          Methodologie
+        </span>
+        <h1>SunriseTime n est utile que si l origine des donnees reste claire.</h1>
+        <p class="resource-subtitle">Cette page resume la methodologie publique actuelle pour le lever du soleil, le coucher du soleil, l heure doree, la phase lunaire, les horaires de priere et l organisation de l index des villes en francais.</p>
+        <div class="resource-meta">
+          <span class="resource-meta-chip">Actualise le {legalLastUpdated}</span>
+          <span class="resource-meta-chip">{cityIndexLabel}</span>
+        </div>
+      </header>
+
+      <section class="resource-grid">
+        <article class="resource-card glass-card">
+          <h2>Calcul solaire</h2>
+          <p class="resource-text">SunriseTime utilise des calculs solaires alignes sur NOAA pour deriver le lever du soleil, le coucher du soleil, le midi solaire, les crepuscules et l heure doree a partir de la latitude, de la longitude et de la date.</p>
+          <ul class="resource-list">
+            <li>Les heures sont calculees pour les coordonnees de chaque ville.</li>
+            <li>L heure doree et les crepuscules proviennent du meme modele solaire quotidien.</li>
+            <li>Les resultats sont toujours affiches dans le fuseau horaire local de la ville.</li>
+          </ul>
+        </article>
+
+        <article class="resource-card glass-card">
+          <h2>Donnees lunaires</h2>
+          <p class="resource-text">La phase lunaire, l illumination et les estimations de lever ou de coucher de lune sont produites par la meme couche astronomique que celle utilisee dans les pages de ville.</p>
+          <ul class="resource-list">
+            <li>Les noms de phase sont attribues selon la fraction lunaire du moment.</li>
+            <li>L illumination est arrondie pour faciliter la lecture.</li>
+            <li>Cette couche lunaire sert a la planification, pas a l observation professionnelle.</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="resource-grid">
+        <article class="resource-card glass-card">
+          <h2>Horaires de priere</h2>
+          <p class="resource-text">L experience publique actuelle utilise par defaut la methode Muslim World League (MWL) pour Fajr et Isha, avec le calcul standard pour Asr.</p>
+          <ul class="resource-list">
+            <li>Fajr est calcule a 18 degres sous l horizon.</li>
+            <li>Isha est calcule a 17 degres sous l horizon.</li>
+            <li>Asr utilise la convention standard de l ombre dans l interface publique actuelle.</li>
+          </ul>
+        </article>
+
+        <article class="resource-card glass-card">
+          <h2>Index des villes</h2>
+          <p class="resource-text">L index public couvre actuellement {totalCities} villes importantes. La base part de GeoNames puis est ajustee pour privilegier les villes a forte utilite de recherche, de navigation et de maillage interne.</p>
+          <ul class="resource-list">
+            <li>Chaque ville conserve un slug canonique, des metadonnees de pays, un fuseau horaire, des coordonnees et des alias de recherche.</li>
+            <li>Quand une ambiguite doit etre levee, la region administrative est egalement utilisee.</li>
+            <li>Les hubs regionaux augmentent la profondeur interne sans forcer une nouvelle recherche.</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="resource-grid">
+        <article class="resource-card glass-card">
+          <h2>Comment le site est actualise</h2>
+          <ul class="resource-list">
+            <li>Les pages sont recalculees a chaque build avec la couche utilitaire courante.</li>
+            <li>Quand la couverture, le copywriting ou les calculs changent, le site doit etre reconstruit puis redeploye.</li>
+            <li>Les pages de methodologie et de politique doivent etre mises a jour quand le produit change en production.</li>
+          </ul>
+        </article>
+
+        <article class="resource-card glass-card">
+          <h2>Limites connues</h2>
+          <ul class="resource-list">
+            <li>Les resultats aident a planifier; ils ne remplacent pas une autorite legale, religieuse ou de navigation.</li>
+            <li>Le climat, le relief, les batiments et les conditions locales d observation ne modifient pas la sortie calculee.</li>
+            <li>Les preferences regionales de calcul de priere ne sont pas encore configurables dans l interface publique.</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="resource-callout glass-card-lg">
+        <div>
+          <span class="resource-callout-label">Etape suivante</span>
+          <h2>La methodologie compte surtout quand elle mene vers des pages utiles.</h2>
+          <p>Apres cette lecture, le parcours normal consiste a ouvrir une ville, un guide ou un hub regional pour voir les calculs en contexte.</p>
+        </div>
+        <div class="resource-link-row">
+          <a href="/fr/cities/" class="btn-primary-sm">Villes</a>
+          <a href="/fr/guides/" class="btn-secondary-sm">Guides</a>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <FrenchFooter />
+</Base>

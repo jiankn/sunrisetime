@@ -1,0 +1,53 @@
+---
+import LanguageSwitcher from '@components/LanguageSwitcher.astro';
+import { frenchNavigation } from '@i18n/french';
+
+interface Props {
+  languageLinks?: { code: string; label: string; href: string }[];
+  currentLanguage?: string;
+}
+
+const { languageLinks = [], currentLanguage = 'fr' } = Astro.props;
+---
+
+<nav class="navbar" id="navbar">
+  <div class="nav-inner">
+    <a href="/fr/" class="nav-logo" aria-label="SunriseTime Accueil">
+      <span class="logo-icon">
+        <img src="/logo.svg" alt="SunriseTime Logo" width="28" height="28">
+      </span>
+      <span class="logo-text">Sunrise<span class="logo-accent">Time</span></span>
+    </a>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="/fr/#search" data-search-city-trigger>{frenchNavigation.search}</a></li>
+      <li><a href="/fr/cities/">{frenchNavigation.cities}</a></li>
+      <li><a href="/fr/guides/">{frenchNavigation.guides}</a></li>
+      <li><a href="/fr/contact/">{frenchNavigation.contact}</a></li>
+    </ul>
+    <div class="nav-actions">
+      <LanguageSwitcher links={languageLinks} currentLanguage={currentLanguage} ariaLabel="Selecteur de langue" />
+      <a href="/fr/#search" class="btn-secondary-sm" data-search-city-trigger>{frenchNavigation.searchCity}</a>
+      <a href="/fr/cities/" class="btn-primary-sm">{frenchNavigation.browseCities}</a>
+    </div>
+    <button class="hamburger" id="hamburger" aria-label="Ouvrir le menu" type="button">
+      <i data-lucide="menu" class="icon-sm"></i>
+    </button>
+  </div>
+</nav>
+
+<div class="mobile-menu" id="mobileMenu">
+  <ul>
+    <li><a href="/fr/#search" data-search-city-trigger>{frenchNavigation.search}</a></li>
+    <li><a href="/fr/cities/">{frenchNavigation.cities}</a></li>
+    <li><a href="/fr/guides/">{frenchNavigation.guides}</a></li>
+    <li><a href="/fr/contact/">{frenchNavigation.contact}</a></li>
+    {languageLinks.length > 1 && (
+      <li>
+        <LanguageSwitcher links={languageLinks} currentLanguage={currentLanguage} ariaLabel="Selecteur de langue" />
+      </li>
+    )}
+    <li><a href="/fr/#search" class="btn-primary-sm" style="display:inline-block;margin-top:1rem;" data-search-city-trigger>{frenchNavigation.searchYourCity}</a></li>
+  </ul>
+</div>
+
+

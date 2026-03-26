@@ -1,7 +1,7 @@
 export const defaultLanguage = 'en';
 
 export const supportedLanguages = ['en', 'es', 'ar', 'zh-cn', 'fr', 'tr', 'id', 'pt', 'ms'] as const;
-export const enabledLanguages = ['en', 'es', 'ar', 'zh-cn'] as const;
+export const enabledLanguages = ['en', 'es', 'ar', 'zh-cn', 'fr'] as const;
 
 export type LanguageCode = (typeof supportedLanguages)[number];
 export type EnabledLanguageCode = (typeof enabledLanguages)[number];

@@ -1,0 +1,94 @@
+---
+import Base from '@layouts/Base.astro';
+import FrenchHeader from '@components/FrenchHeader.astro';
+import FrenchFooter from '@components/FrenchFooter.astro';
+import { cityIndexLabel, totalCities } from '@data/site';
+import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
+import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
+
+const pagePath = '/about/';
+const frenchPath = localizePath('fr', pagePath);
+const pageUrl = `https://sunrisetime.co${frenchPath}`;
+const alternates = buildAlternateLinks([
+  { hrefLang: 'en', path: pagePath },
+  { hrefLang: 'fr', path: frenchPath },
+  { hrefLang: 'x-default', path: pagePath },
+]);
+const languageLinks = buildLanguageSwitcherLinks(pagePath);
+
+const jsonLd = [
+  {
+    "@type": "AboutPage",
+    "@id": `${pageUrl}#webpage`,
+    "name": "A propos de SunriseTime",
+    "description": "Ce que SunriseTime resout, comment le site organise ses pages par ville et pourquoi la version francaise existe comme actif SEO autonome.",
+    "url": pageUrl,
+    "inLanguage": "fr",
+    "isPartOf": {
+      "@id": "https://sunrisetime.co/fr/#website"
+    }
+  },
+  buildBreadcrumbJsonLd([
+    { name: 'Accueil', path: '/fr/' },
+    { name: 'A propos de SunriseTime', path: frenchPath },
+  ]),
+];
+---
+
+<Base
+  title="A propos de SunriseTime - Lever du soleil, coucher du soleil et priere par ville"
+  description="Decouvrez comment SunriseTime organise ses pages de lever du soleil, coucher du soleil, heure doree et priere par ville, et pourquoi la version francaise est publiee comme couche SEO distincte."
+  canonical={pageUrl}
+  keywords="a propos SunriseTime, lever du soleil par ville, SEO multilingue"
+  jsonLd={jsonLd}
+  lang="fr"
+  alternates={alternates}
+>
+  <FrenchHeader languageLinks={languageLinks} currentLanguage="fr" />
+
+  <main class="resource-page">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/fr/">Accueil</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <span>A propos de SunriseTime</span>
+      </nav>
+
+      <header class="resource-header">
+        <span class="section-badge">
+          <i data-lucide="sun-medium" class="icon-xs"></i>
+          A propos de SunriseTime
+        </span>
+        <h1>SunriseTime est concu pour repondre vite a une question tres concrete: a quelle heure le soleil se leve, se couche ou quelle est la prochaine priere dans une ville ?</h1>
+        <p class="resource-subtitle">La version francaise n est pas une traduction cosmetique. Elle est publiee avec ses propres URLs, son propre canonical, un hreflang reel et un contenu principal localise pour que Google la traite comme un actif SEO autonome.</p>
+        <div class="resource-meta">
+          <span class="resource-meta-chip">{cityIndexLabel}</span>
+          <span class="resource-meta-chip">{totalCities} villes</span>
+          <span class="resource-meta-chip">Sans inscription</span>
+        </div>
+      </header>
+
+      <section class="resource-grid">
+        <article class="resource-card glass-card">
+          <h2>Ce que fait SunriseTime</h2>
+          <ul class="resource-list">
+            <li>Publie des pages par ville avec lever du soleil, coucher du soleil, lumiere du jour, heure doree, phase lunaire et priere.</li>
+            <li>Priorise la reponse rapide avant le contenu gonfle ou generique.</li>
+            <li>Relie pages de ville, pages de confiance et sitemaps pour rester utile a la fois pour les personnes et pour les moteurs.</li>
+          </ul>
+        </article>
+
+        <article class="resource-card glass-card">
+          <h2>Pour qui le produit est utile</h2>
+          <ul class="resource-list">
+            <li>Les personnes qui veulent l heure exacte du lever ou du coucher du soleil avant de sortir.</li>
+            <li>Les photographes, voyageurs et createurs qui planifient avec l heure doree et les changements de lumiere.</li>
+            <li>Les utilisateurs qui veulent voir la priere et les donnees solaires dans le meme flux.</li>
+          </ul>
+        </article>
+      </section>
+    </div>
+  </main>
+
+  <FrenchFooter />
+</Base>

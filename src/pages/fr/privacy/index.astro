@@ -1,0 +1,110 @@
+---
+import Base from '@layouts/Base.astro';
+import FrenchHeader from '@components/FrenchHeader.astro';
+import FrenchFooter from '@components/FrenchFooter.astro';
+import { legalLastUpdated, supportEmail, supportEmailHref } from '@data/site';
+import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
+import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
+
+const pagePath = '/privacy/';
+const frenchPath = localizePath('fr', pagePath);
+const pageUrl = `https://sunrisetime.co${frenchPath}`;
+const alternates = buildAlternateLinks([
+  { hrefLang: 'en', path: pagePath },
+  { hrefLang: 'fr', path: frenchPath },
+  { hrefLang: 'x-default', path: pagePath },
+]);
+const languageLinks = buildLanguageSwitcherLinks(pagePath);
+
+const jsonLd = [
+  {
+    "@type": "WebPage",
+    "@id": `${pageUrl}#webpage`,
+    "name": "Confidentialite",
+    "description": "Comment SunriseTime traite les donnees techniques, les cookies et les demandes liees a la confidentialite sur la version publique du site.",
+    "url": pageUrl,
+    "inLanguage": "fr",
+    "isPartOf": {
+      "@id": "https://sunrisetime.co/fr/#website"
+    }
+  },
+  buildBreadcrumbJsonLd([
+    { name: 'Accueil', path: '/fr/' },
+    { name: 'Confidentialite', path: frenchPath },
+  ]),
+];
+---
+
+<Base
+  title="Confidentialite - SunriseTime"
+  description="Lisez comment SunriseTime traite les donnees techniques, les cookies, la localisation optionnelle du navigateur et les demandes de confidentialite sur sa version publique."
+  canonical={pageUrl}
+  keywords="confidentialite SunriseTime, cookies, localisation navigateur"
+  jsonLd={jsonLd}
+  lang="fr"
+  alternates={alternates}
+>
+  <FrenchHeader languageLinks={languageLinks} currentLanguage="fr" />
+
+  <main class="resource-page">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/fr/">Accueil</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <span>Confidentialite</span>
+      </nav>
+
+      <header class="resource-header">
+        <span class="section-badge">
+          <i data-lucide="shield" class="icon-xs"></i>
+          Confidentialite
+        </span>
+        <h1>SunriseTime essaie de garder un modele de confidentialite simple et proportionne au type de produit propose.</h1>
+        <p class="resource-subtitle">Le site est un service public sans compte utilisateur. Cette page explique quelles donnees techniques peuvent etre traitees, comment fonctionne la localisation optionnelle du navigateur et ce qui change si des outils publicitaires sont actives.</p>
+        <div class="resource-meta">
+          <span class="resource-meta-chip">Actualise: {legalLastUpdated}</span>
+          <span class="resource-meta-chip">Site public</span>
+        </div>
+      </header>
+
+      <section class="resource-grid">
+        <article class="resource-card glass-card">
+          <h2>Quelles donnees peuvent etre traitees</h2>
+          <ul class="resource-list">
+            <li>Des donnees techniques de base comme le navigateur, l appareil, une zone reseau approximate et les requetes de page.</li>
+            <li>Les recherches de ville et les pages que vous ouvrez pendant l utilisation de SunriseTime.</li>
+            <li>La localisation du navigateur uniquement si vous choisissez la fonction "Utiliser ma position".</li>
+          </ul>
+        </article>
+
+        <article class="resource-card glass-card">
+          <h2>A quoi elles servent</h2>
+          <ul class="resource-list">
+            <li>A afficher la bonne ville, calculer les donnees solaires et ameliorer les performances.</li>
+            <li>A detecter les pages utiles et corriger les erreurs de structure ou de maillage.</li>
+            <li>A exploiter le service, prevenir les abus et garder une base technique stable.</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="resource-grid">
+        <article class="resource-card glass-card">
+          <h2>Cookies et services tiers</h2>
+          <ul class="resource-list">
+            <li>Le site peut utiliser des cookies ou des technologies similaires pour les fonctions de base et le support publicitaire.</li>
+            <li>Si un fournisseur publicitaire est active, ce tiers peut appliquer sa propre politique.</li>
+            <li>Les services externes traitent leurs donnees selon leurs propres conditions lorsqu ils sont actifs.</li>
+          </ul>
+        </article>
+
+        <article class="resource-card glass-card">
+          <h2>Contact confidentialite</h2>
+          <p class="resource-text">Pour toute question ou demande liee a la confidentialite, ecrivez a <a href={supportEmailHref}>{supportEmail}</a>.</p>
+          <p class="resource-text">Si l infrastructure du site change de facon significative, cette page doit etre mise a jour pour rester alignee avec le produit reel.</p>
+        </article>
+      </section>
+    </div>
+  </main>
+
+  <FrenchFooter />
+</Base>

@@ -1,0 +1,60 @@
+---
+import { featuredFooterCities } from '@data/site';
+import { frenchFooter } from '@i18n/french';
+import { getFrenchCityName } from '@i18n/french';
+---
+
+<footer class="footer">
+  <div class="container footer-grid">
+    <div class="footer-brand">
+      <div class="nav-logo">
+        <span class="logo-icon"><img src="/logo.svg" alt="SunriseTime" width="28" height="28"></span>
+        <span class="logo-text">Sunrise<span class="logo-accent">Time</span></span>
+      </div>
+      <p>{frenchFooter.summary}</p>
+      <div class="footer-chip-list" style="margin-top:1rem;">
+        {featuredFooterCities.map((city) => (
+          <a href={`/fr/sunrise/${city.slug}/`} class="footer-chip">
+            {getFrenchCityName(city)}
+          </a>
+        ))}
+      </div>
+    </div>
+
+    <div class="footer-links">
+      <h4>Continuer</h4>
+      <ul>
+        {frenchFooter.coreLinks.map((link) => (
+          <li><a href={link.path}>{link.name}</a></li>
+        ))}
+      </ul>
+    </div>
+
+    <div class="footer-links">
+      <h4>Confiance</h4>
+      <ul>
+        {frenchFooter.trustLinks.map((link) => (
+          <li><a href={link.path}>{link.name}</a></li>
+        ))}
+      </ul>
+    </div>
+  </div>
+
+  <div class="container footer-bottom">
+    <div class="footer-bottom-copy">
+      <p>&copy; {new Date().getFullYear()} SunriseTime. Version pilote en francais avec URLs indexables, hreflang reel et contenu principal localise.</p>
+    </div>
+
+    <div class="footer-bottom-links">
+      <a href="/fr/about/">A propos</a>
+      <a href="/fr/methodology/">Methodologie</a>
+      <a href="/fr/privacy/">Confidentialite</a>
+      <a href="/fr/terms/">Conditions</a>
+      <a href="/fr/contact/">Contact</a>
+      <a href="/fr/guides/">Guides</a>
+      <a href="/fr/sitemap/">Plan du site</a>
+    </div>
+  </div>
+</footer>
+
+

@@ -389,28 +389,135 @@ summary:focus-visible {
 }
 
 .lang-switch {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px;
-  border: 1px solid var(--border-subtle);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.72);
+  position: relative;
 }
 
-.lang-switch a {
-  padding: 6px 10px;
+.lang-switch-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 84px;
+  padding: 8px 12px;
+  border: 1px solid var(--border-subtle);
   border-radius: 999px;
-  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.78);
+  color: var(--text-primary);
   font-size: 0.8rem;
   font-weight: 600;
   line-height: 1;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+  transition: border-color var(--duration) var(--ease), box-shadow var(--duration) var(--ease), transform var(--duration) var(--ease);
 }
 
-.lang-switch a.active,
-.lang-switch a:hover {
+.lang-switch-toggle:hover {
+  border-color: rgba(236, 131, 48, 0.3);
+  transform: translateY(-1px);
+}
+
+.lang-switch-toggle-copy {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.lang-switch-toggle-copy .icon-xs {
+  color: var(--text-secondary);
+}
+
+.lang-switch-toggle-label {
+  letter-spacing: 0.04em;
+}
+
+.lang-switch-toggle-chevron {
+  color: var(--text-tertiary);
+  transition: transform var(--duration) var(--ease);
+}
+
+.lang-switch.active .lang-switch-toggle {
+  border-color: rgba(236, 131, 48, 0.34);
+  box-shadow: 0 16px 38px rgba(236, 131, 48, 0.12);
+}
+
+.lang-switch.active .lang-switch-toggle-chevron {
+  transform: rotate(180deg);
+}
+
+.lang-switch-menu {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  display: grid;
+  gap: 6px;
+  min-width: 220px;
+  padding: 12px;
+  border: 1px solid rgba(236, 131, 48, 0.16);
+  border-radius: 20px;
+  background: rgba(255, 252, 247, 0.96);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 18px 48px rgba(15, 23, 42, 0.12);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-6px);
+  transition: opacity var(--duration) var(--ease), transform var(--duration) var(--ease);
+  z-index: 30;
+}
+
+.lang-switch.active .lang-switch-menu {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.lang-switch-menu-title {
+  display: block;
+  margin-bottom: 4px;
+  padding: 0 4px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+.lang-switch-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  color: var(--text-secondary);
+  transition: background var(--duration) var(--ease), color var(--duration) var(--ease), transform var(--duration) var(--ease);
+}
+
+.lang-switch-item:hover {
+  background: rgba(24, 49, 77, 0.05);
   color: var(--text-primary);
+  transform: translateX(1px);
+}
+
+.lang-switch-item.active {
   background: rgba(255, 166, 43, 0.14);
+  color: var(--text-primary);
+}
+
+.lang-switch-item-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.lang-switch-item-code {
+  color: var(--text-tertiary);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.lang-switch-item.active .lang-switch-item-code {
+  color: var(--text-accent);
 }
 
 .hamburger {
@@ -460,8 +567,20 @@ summary:focus-visible {
   .nav-links, .nav-actions { display: none; }
   .hamburger { display: flex; }
   .lang-switch {
-    justify-content: flex-start;
-    width: fit-content;
+    width: 100%;
+  }
+  .lang-switch-toggle {
+    width: 100%;
+  }
+  .mobile-menu .lang-switch-menu {
+    position: static;
+    min-width: 0;
+    margin-top: 12px;
+    border-radius: 18px;
+    box-shadow: none;
+  }
+  .mobile-menu .lang-switch-item {
+    font-size: 0.95rem;
   }
 }
 
@@ -2463,6 +2582,7 @@ summary:focus-visible {
    SUNRISE SNAPSHOT HERO
    ============================================================ */
 .snapshot-hero {
+  scroll-margin-top: calc(var(--nav-height) + 28px);
   position: relative;
   padding-top: calc(var(--nav-height) + 72px);
   padding-bottom: var(--space-4xl);
@@ -2547,6 +2667,11 @@ summary:focus-visible {
   min-width: 0;
 }
 
+.hero-search-panel.is-guided {
+  border-color: rgba(236, 131, 48, 0.34);
+  box-shadow: 0 0 0 5px rgba(255, 178, 91, 0.12), 0 24px 56px rgba(236, 131, 48, 0.16);
+}
+
 .hero-search-head {
   display: grid;
   gap: 6px;
@@ -2601,6 +2726,13 @@ summary:focus-visible {
   box-shadow: 0 0 0 4px rgba(255, 178, 91, 0.12);
 }
 
+.hero-search-shell.is-guided {
+  border-color: rgba(236, 131, 48, 0.4);
+  background: rgba(255, 251, 245, 0.96);
+  box-shadow: 0 0 0 6px rgba(255, 178, 91, 0.12);
+  animation: heroSearchSpotlight 1.7s ease;
+}
+
 .hero-search-shell input {
   flex: 1;
   min-width: 0;
@@ -2617,6 +2749,13 @@ summary:focus-visible {
 
 .hero-search-shell-lg input {
   font-size: 1.08rem;
+}
+
+.hero-search-helper {
+  margin: -4px 2px 0;
+  font-size: 0.84rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
 }
 
 .hero-location-btn {
@@ -2709,6 +2848,21 @@ summary:focus-visible {
 .hero-search-option span:last-child {
   font-size: 0.82rem;
   color: var(--text-tertiary);
+}
+
+@keyframes heroSearchSpotlight {
+  0% {
+    transform: translateY(0);
+    box-shadow: 0 0 0 0 rgba(255, 178, 91, 0.1);
+  }
+  35% {
+    transform: translateY(-1px);
+    box-shadow: 0 0 0 8px rgba(255, 178, 91, 0.14);
+  }
+  100% {
+    transform: translateY(0);
+    box-shadow: 0 0 0 6px rgba(255, 178, 91, 0.12);
+  }
 }
 
 .hero-quick-row {
@@ -3857,6 +4011,11 @@ summary:focus-visible {
 
   .hero-search-shell-lg input {
     font-size: 1rem;
+  }
+
+  .hero-search-helper {
+    font-size: 0.8rem;
+    line-height: 1.45;
   }
 
   .hero-location-btn-inline {

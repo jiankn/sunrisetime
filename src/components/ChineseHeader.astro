@@ -19,14 +19,14 @@ const { languageLinks = [], currentLanguage = 'zh-cn' } = Astro.props;
       <span class="logo-text">Sunrise<span class="logo-accent">Time</span></span>
     </a>
     <ul class="nav-links" id="navLinks">
-      <li><a href="/zh-cn/#search">{chineseNavigation.search}</a></li>
+      <li><a href="/zh-cn/#search" data-search-city-trigger>{chineseNavigation.search}</a></li>
       <li><a href="/zh-cn/cities/">{chineseNavigation.cities}</a></li>
       <li><a href="/zh-cn/guides/">{chineseNavigation.guides}</a></li>
       <li><a href="/zh-cn/contact/">{chineseNavigation.contact}</a></li>
     </ul>
     <div class="nav-actions">
       <LanguageSwitcher links={languageLinks} currentLanguage={currentLanguage} ariaLabel="语言切换" />
-      <a href="/zh-cn/#search" class="btn-secondary-sm">{chineseNavigation.searchCity}</a>
+      <a href="/zh-cn/#search" class="btn-secondary-sm" data-search-city-trigger>{chineseNavigation.searchCity}</a>
       <a href="/zh-cn/cities/" class="btn-primary-sm">{chineseNavigation.browseCities}</a>
     </div>
     <button class="hamburger" id="hamburger" aria-label="打开菜单" type="button">
@@ -37,7 +37,7 @@ const { languageLinks = [], currentLanguage = 'zh-cn' } = Astro.props;
 
 <div class="mobile-menu" id="mobileMenu">
   <ul>
-    <li><a href="/zh-cn/#search">{chineseNavigation.search}</a></li>
+    <li><a href="/zh-cn/#search" data-search-city-trigger>{chineseNavigation.search}</a></li>
     <li><a href="/zh-cn/cities/">{chineseNavigation.cities}</a></li>
     <li><a href="/zh-cn/guides/">{chineseNavigation.guides}</a></li>
     <li><a href="/zh-cn/contact/">{chineseNavigation.contact}</a></li>
@@ -46,6 +46,6 @@ const { languageLinks = [], currentLanguage = 'zh-cn' } = Astro.props;
         <LanguageSwitcher links={languageLinks} currentLanguage={currentLanguage} ariaLabel="语言切换" />
       </li>
     )}
-    <li><a href="/zh-cn/#search" class="btn-primary-sm" style="display:inline-block;margin-top:1rem;">{chineseNavigation.searchYourCity}</a></li>
+    <li><a href="/zh-cn/#search" class="btn-primary-sm" style="display:inline-block;margin-top:1rem;" data-search-city-trigger>{chineseNavigation.searchYourCity}</a></li>
   </ul>
 </div>

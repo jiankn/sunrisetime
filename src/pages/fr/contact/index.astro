@@ -1,0 +1,105 @@
+---
+import Base from '@layouts/Base.astro';
+import FrenchHeader from '@components/FrenchHeader.astro';
+import FrenchFooter from '@components/FrenchFooter.astro';
+import { supportEmail, supportEmailHref } from '@data/site';
+import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
+import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
+
+const pagePath = '/contact/';
+const frenchPath = localizePath('fr', pagePath);
+const pageUrl = `https://sunrisetime.co${frenchPath}`;
+const alternates = buildAlternateLinks([
+  { hrefLang: 'en', path: pagePath },
+  { hrefLang: 'fr', path: frenchPath },
+  { hrefLang: 'x-default', path: pagePath },
+]);
+const languageLinks = buildLanguageSwitcherLinks(pagePath);
+
+const jsonLd = [
+  {
+    "@type": "ContactPage",
+    "@id": `${pageUrl}#webpage`,
+    "name": "Contact SunriseTime",
+    "description": "Contact pour corrections de ville, questions de confidentialite, demandes commerciales ou retour produit.",
+    "url": pageUrl,
+    "inLanguage": "fr",
+    "isPartOf": {
+      "@id": "https://sunrisetime.co/fr/#website"
+    }
+  },
+  buildBreadcrumbJsonLd([
+    { name: 'Accueil', path: '/fr/' },
+    { name: 'Contact', path: frenchPath },
+  ]),
+];
+---
+
+<Base
+  title="Contact - SunriseTime"
+  description="Contactez SunriseTime pour des corrections de ville, des demandes de confidentialite, des questions sur la publicite ou un retour produit."
+  canonical={pageUrl}
+  keywords="contact SunriseTime, correction de ville, support"
+  jsonLd={jsonLd}
+  lang="fr"
+  alternates={alternates}
+>
+  <FrenchHeader languageLinks={languageLinks} currentLanguage="fr" />
+
+  <main class="resource-page">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/fr/">Accueil</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <span>Contact</span>
+      </nav>
+
+      <header class="resource-header">
+        <span class="section-badge">
+          <i data-lucide="mail" class="icon-xs"></i>
+          Contact
+        </span>
+        <h1>Une seule boite mail pour les corrections, la confidentialite, le business et le feedback.</h1>
+        <p class="resource-subtitle">Si vous voyez une ville incorrecte, un fuseau horaire mal attribue ou une incoherence entre les pages anglaises et francaises, envoyez l URL exacte avec une courte description du probleme.</p>
+        <div class="resource-meta">
+          <span class="resource-meta-chip">Email principal: {supportEmail}</span>
+        </div>
+      </header>
+
+      <section class="resource-grid">
+        <article class="resource-card glass-card">
+          <h2>Quand nous ecrire</h2>
+          <ul class="resource-list">
+            <li>Corrections de ville, de coordonnees ou de fuseau horaire.</li>
+            <li>Demandes de priorisation de villes ou de langues.</li>
+            <li>Questions sur la confidentialite, les conditions ou la politique editoriale.</li>
+            <li>Demandes commerciales, publicitaires ou de partenariat.</li>
+          </ul>
+        </article>
+
+        <article class="resource-card glass-card">
+          <h2>Ce qui accelere la reponse</h2>
+          <ul class="resource-list">
+            <li>L URL exacte de la page concernee.</li>
+            <li>La ville ou la langue a laquelle votre message fait reference.</li>
+            <li>La date et le contexte si le probleme porte sur une heure affichee.</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="resource-callout glass-card-lg">
+        <div>
+          <span class="resource-callout-label">Canal principal</span>
+          <h2>Ecrivez directement a SunriseTime.</h2>
+          <p>{supportEmail}</p>
+        </div>
+        <div class="resource-link-row">
+          <a href={supportEmailHref} class="btn-primary-sm">Envoyer un email</a>
+          <a href="/fr/sitemap/" class="btn-secondary-sm">Plan du site</a>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <FrenchFooter />
+</Base>

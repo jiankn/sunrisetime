@@ -1,0 +1,105 @@
+---
+import Base from '@layouts/Base.astro';
+import FrenchHeader from '@components/FrenchHeader.astro';
+import FrenchFooter from '@components/FrenchFooter.astro';
+import { legalLastUpdated, supportEmail, supportEmailHref } from '@data/site';
+import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
+import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
+
+const pagePath = '/terms/';
+const frenchPath = localizePath('fr', pagePath);
+const pageUrl = `https://sunrisetime.co${frenchPath}`;
+const alternates = buildAlternateLinks([
+  { hrefLang: 'en', path: pagePath },
+  { hrefLang: 'fr', path: frenchPath },
+  { hrefLang: 'x-default', path: pagePath },
+]);
+const languageLinks = buildLanguageSwitcherLinks(pagePath);
+
+const jsonLd = [
+  {
+    "@type": "WebPage",
+    "@id": `${pageUrl}#webpage`,
+    "name": "Conditions d utilisation",
+    "description": "Regles de base pour utiliser SunriseTime comme outil d information public.",
+    "url": pageUrl,
+    "inLanguage": "fr",
+    "isPartOf": {
+      "@id": "https://sunrisetime.co/fr/#website"
+    }
+  },
+  buildBreadcrumbJsonLd([
+    { name: 'Accueil', path: '/fr/' },
+    { name: 'Conditions', path: frenchPath },
+  ]),
+];
+---
+
+<Base
+  title="Conditions d utilisation - SunriseTime"
+  description="Lisez les conditions de base pour utiliser SunriseTime comme outil d information sur le lever du soleil, le coucher du soleil et la priere."
+  canonical={pageUrl}
+  keywords="conditions SunriseTime, usage du site, avertissement informatif"
+  jsonLd={jsonLd}
+  lang="fr"
+  alternates={alternates}
+>
+  <FrenchHeader languageLinks={languageLinks} currentLanguage="fr" />
+
+  <main class="resource-page">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/fr/">Accueil</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <span>Conditions</span>
+      </nav>
+
+      <header class="resource-header">
+        <span class="section-badge">
+          <i data-lucide="file-text" class="icon-xs"></i>
+          Conditions
+        </span>
+        <h1>Utilisez SunriseTime comme un outil d information et de planification, pas comme substitut a une decision professionnelle critique.</h1>
+        <p class="resource-subtitle">Ces conditions resument l usage autorise, les limites de responsabilite et la relation avec les annonces ou services externes sur la version publique du site.</p>
+        <div class="resource-meta">
+          <span class="resource-meta-chip">Actualise: {legalLastUpdated}</span>
+          <span class="resource-meta-chip">Service public</span>
+        </div>
+      </header>
+
+      <section class="resource-grid">
+        <article class="resource-card glass-card">
+          <h2>Usage autorise</h2>
+          <ul class="resource-list">
+            <li>Vous pouvez consulter, lier et utiliser SunriseTime pour une planification personnelle ou professionnelle.</li>
+            <li>Vous ne pouvez pas utiliser le site pour interrompre le service, abuser de l infrastructure ou le scraper de facon disproportionnee.</li>
+            <li>Le contenu et le design restent la propriete de SunriseTime sauf mention contraire.</li>
+          </ul>
+        </article>
+
+        <article class="resource-card glass-card">
+          <h2>Limites et avertissements</h2>
+          <ul class="resource-list">
+            <li>Les donnees publiees sont des references utiles, pas des garanties absolues pour la securite, la conformite legale ou la pratique religieuse.</li>
+            <li>La disponibilite du site peut changer et un fonctionnement ininterrompu sans erreur n est pas garanti.</li>
+            <li>Les annonces ou liens externes ne doivent pas etre interpretes comme une recommandation sauf indication explicite.</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="resource-callout glass-card-lg">
+        <div>
+          <span class="resource-callout-label">Contact legal</span>
+          <h2>Des questions sur ces conditions ?</h2>
+          <p>Ecrivez a {supportEmail} pour toute question liee a l usage, aux politiques ou aux reclamations.</p>
+        </div>
+        <div class="resource-link-row">
+          <a href={supportEmailHref} class="btn-primary-sm">Envoyer un email</a>
+          <a href="/fr/privacy/" class="btn-secondary-sm">Voir la confidentialite</a>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <FrenchFooter />
+</Base>

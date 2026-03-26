@@ -19,14 +19,14 @@ const { languageLinks = [], currentLanguage = 'ar' } = Astro.props;
       <span class="logo-text">Sunrise<span class="logo-accent">Time</span></span>
     </a>
     <ul class="nav-links" id="navLinks">
-      <li><a href="/ar/#search">{arabicNavigation.search}</a></li>
+      <li><a href="/ar/#search" data-search-city-trigger>{arabicNavigation.search}</a></li>
       <li><a href="/ar/cities/">{arabicNavigation.cities}</a></li>
       <li><a href="/ar/guides/">{arabicNavigation.guides}</a></li>
       <li><a href="/ar/#faq">{arabicNavigation.faq}</a></li>
     </ul>
     <div class="nav-actions">
       <LanguageSwitcher links={languageLinks} currentLanguage={currentLanguage} />
-      <a href="/ar/#search" class="btn-secondary-sm">{arabicNavigation.searchCity}</a>
+      <a href="/ar/#search" class="btn-secondary-sm" data-search-city-trigger>{arabicNavigation.searchCity}</a>
       <a href="/ar/cities/" class="btn-primary-sm">{arabicNavigation.browseCities}</a>
     </div>
     <button class="hamburger" id="hamburger" aria-label="فتح القائمة" type="button">
@@ -37,7 +37,7 @@ const { languageLinks = [], currentLanguage = 'ar' } = Astro.props;
 
 <div class="mobile-menu" id="mobileMenu">
   <ul>
-    <li><a href="/ar/#search">{arabicNavigation.search}</a></li>
+    <li><a href="/ar/#search" data-search-city-trigger>{arabicNavigation.search}</a></li>
     <li><a href="/ar/cities/">{arabicNavigation.cities}</a></li>
     <li><a href="/ar/guides/">{arabicNavigation.guides}</a></li>
     <li><a href="/ar/#faq">{arabicNavigation.faq}</a></li>
@@ -46,6 +46,6 @@ const { languageLinks = [], currentLanguage = 'ar' } = Astro.props;
         <LanguageSwitcher links={languageLinks} currentLanguage={currentLanguage} />
       </li>
     )}
-    <li><a href="/ar/#search" class="btn-primary-sm" style="display:inline-block;margin-top:1rem;">{arabicNavigation.searchCity}</a></li>
+    <li><a href="/ar/#search" class="btn-primary-sm" style="display:inline-block;margin-top:1rem;" data-search-city-trigger>{arabicNavigation.searchCity}</a></li>
   </ul>
 </div>

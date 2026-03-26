@@ -10,23 +10,62 @@ const { links = [], currentLanguage = 'en', ariaLabel } = Astro.props;
 const languageSwitcherLabelMap: Record<string, string> = {
   'ar': 'مبدل اللغة',
   'es': 'Selector de idioma',
+  'fr': 'Sélecteur de langue',
   'zh-cn': '语言切换',
 };
 
+const compactLanguageLabelMap: Record<string, string> = {
+  'en': 'EN',
+  'es': 'ES',
+  'ar': 'AR',
+  'fr': 'FR',
+  'tr': 'TR',
+  'id': 'ID',
+  'pt': 'PT',
+  'ms': 'MS',
+  'zh-cn': '中文',
+};
+
 const resolvedAriaLabel = ariaLabel ?? languageSwitcherLabelMap[currentLanguage] ?? 'Language switcher';
+const currentLink = links.find((link) => link.code === currentLanguage) ?? links[0];
+const orderedLinks = currentLink
+  ? [currentLink, ...links.filter((link) => link.code !== currentLink.code)]
+  : links;
+const currentCompactLabel = compactLanguageLabelMap[currentLanguage] ?? currentLink?.code.toUpperCase() ?? 'EN';
 ---
 
 {links.length > 1 && (
-  <div class="lang-switch" aria-label={resolvedAriaLabel}>
-    {links.map((link) => (
-      <a
-        href={link.href}
-        class={link.code === currentLanguage ? 'active' : undefined}
-        hreflang={link.code}
-        lang={link.code}
-      >
-        {link.label}
-      </a>
-    ))}
+  <div class="lang-switch" data-lang-switcher>
+    <button
+      type="button"
+      class="lang-switch-toggle"
+      aria-label={resolvedAriaLabel}
+      aria-expanded="false"
+      aria-haspopup="true"
+      data-lang-switcher-toggle
+    >
+      <span class="lang-switch-toggle-copy">
+        <i data-lucide="languages" class="icon-xs"></i>
+        <span class="lang-switch-toggle-label">{currentCompactLabel}</span>
+      </span>
+      <i data-lucide="chevron-down" class="icon-xs lang-switch-toggle-chevron"></i>
+    </button>
+
+    <div class="lang-switch-menu" data-lang-switcher-menu>
+      <span class="lang-switch-menu-title">{resolvedAriaLabel}</span>
+
+      {orderedLinks.map((link) => (
+        <a
+          href={link.href}
+          class:list={['lang-switch-item', { active: link.code === currentLanguage }]}
+          hreflang={link.code}
+          lang={link.code}
+          aria-current={link.code === currentLanguage ? 'page' : undefined}
+        >
+          <span class="lang-switch-item-label">{link.label}</span>
+          <span class="lang-switch-item-code">{compactLanguageLabelMap[link.code] ?? link.code.toUpperCase()}</span>
+        </a>
+      ))}
+    </div>
   </div>
 )}

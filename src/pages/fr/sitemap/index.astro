@@ -1,0 +1,141 @@
+---
+import Base from '@layouts/Base.astro';
+import FrenchHeader from '@components/FrenchHeader.astro';
+import FrenchFooter from '@components/FrenchFooter.astro';
+import { regionHubs, useCaseHubs } from '@data/site';
+import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
+import {
+  getFrenchCityLocationLabel,
+  getFrenchCityName,
+  getFrenchGuideContent,
+  getFrenchRegionName,
+} from '@i18n/french';
+import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
+
+const pagePath = '/sitemap/';
+const frenchPath = localizePath('fr', pagePath);
+const pageUrl = `https://sunrisetime.co${frenchPath}`;
+const alternates = buildAlternateLinks([
+  { hrefLang: 'en', path: pagePath },
+  { hrefLang: 'fr', path: frenchPath },
+  { hrefLang: 'x-default', path: pagePath },
+]);
+const languageLinks = buildLanguageSwitcherLinks(pagePath);
+
+const jsonLd = [
+  {
+    "@type": "WebPage",
+    "@id": `${pageUrl}#webpage`,
+    "name": "Plan du site HTML",
+    "description": "Liste HTML des pages principales, pages de confiance et villes indexees dans la version francaise de SunriseTime.",
+    "url": pageUrl,
+    "inLanguage": "fr",
+    "isPartOf": {
+      "@id": "https://sunrisetime.co/fr/#website"
+    }
+  },
+  buildBreadcrumbJsonLd([
+    { name: 'Accueil', path: '/fr/' },
+    { name: 'Plan du site', path: frenchPath },
+  ]),
+];
+---
+
+<Base
+  title="Plan du site HTML - SunriseTime Francais"
+  description="Explorez les pages principales et les villes indexees de la version francaise de SunriseTime."
+  canonical={pageUrl}
+  keywords="plan du site HTML, SunriseTime francais"
+  jsonLd={jsonLd}
+  lang="fr"
+  alternates={alternates}
+>
+  <FrenchHeader languageLinks={languageLinks} currentLanguage="fr" />
+
+  <main class="resource-page">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/fr/">Accueil</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <span>Plan du site</span>
+      </nav>
+
+      <header class="resource-header">
+        <span class="section-badge">
+          <i data-lucide="map" class="icon-xs"></i>
+          Plan du site
+        </span>
+        <h1>Parcourez la version francaise depuis une seule page.</h1>
+        <p class="resource-subtitle">Ce sitemap HTML sert aux personnes comme aux moteurs de recherche. Il met en avant les pages utiles, les pages de confiance et l acces aux URLs de ville.</p>
+      </header>
+
+      <section class="sitemap-grid">
+        <article class="sitemap-section glass-card">
+          <h2>Pages principales</h2>
+          <ul class="sitemap-links">
+            <li><a href="/fr/">Accueil</a></li>
+            <li><a href="/fr/cities/">Villes</a></li>
+            <li><a href="/fr/guides/">Guides</a></li>
+            <li><a href="/fr/methodology/">Methodologie</a></li>
+            <li><a href="/fr/about/">A propos de SunriseTime</a></li>
+            <li><a href="/fr/contact/">Contact</a></li>
+          </ul>
+        </article>
+
+        <article class="sitemap-section glass-card">
+          <h2>Confiance</h2>
+          <ul class="sitemap-links">
+            <li><a href="/fr/privacy/">Confidentialite</a></li>
+            <li><a href="/fr/terms/">Conditions</a></li>
+            <li><a href="/fr/sitemap/">Plan du site HTML</a></li>
+            <li><a href="/fr/sitemap.xml">Plan du site XML</a></li>
+          </ul>
+        </article>
+
+        <article class="sitemap-section glass-card">
+          <h2>Guides</h2>
+          <ul class="sitemap-links">
+            {useCaseHubs.map((hub) => {
+              const content = getFrenchGuideContent(hub);
+              return <li><a href={`/fr/guides/${hub.slug}/`}>{content.name}</a></li>;
+            })}
+          </ul>
+        </article>
+      </section>
+
+      <section class="resource-section">
+        <div class="detail-section-head">
+          <h2>Hubs regionaux</h2>
+          <p>La couche francaise inclut deja des pages regionales, des guides et des pages de ville reliees par hreflang.</p>
+        </div>
+        <div class="resource-link-grid">
+          {regionHubs.map((region) => (
+            <a href={`/fr/cities/${region.slug}/`} class="resource-link-card glass-card">
+              <strong>{getFrenchRegionName(region.slug, region.name)}</strong>
+              <span>{region.cityCount} villes indexees</span>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      {regionHubs.map((region) => (
+        <section class="resource-section">
+          <div class="detail-section-head">
+            <h2>{getFrenchRegionName(region.slug, region.name)}</h2>
+            <p><a href={`/fr/cities/${region.slug}/`}>Ouvrir le hub regional</a></p>
+          </div>
+          <div class="hub-city-grid">
+            {region.cities.map((city) => (
+              <a href={`/fr/sunrise/${city.slug}/`} class="hub-city-card glass-card">
+                <span class="hub-city-name">{getFrenchCityName(city)}</span>
+                <span class="hub-city-country">{getFrenchCityLocationLabel(city, { includeAdmin1: Boolean(city.admin1) })}</span>
+              </a>
+            ))}
+          </div>
+        </section>
+      ))}
+    </div>
+  </main>
+
+  <FrenchFooter />
+</Base>
