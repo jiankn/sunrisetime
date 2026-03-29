@@ -75,7 +75,7 @@ const sampleResponse = `{\n  "meta": {\n    "version": "v1",\n    "endpoint": "/
         <p class="resource-subtitle">SunriseTime API now works more like a product surface: discover supported city slugs, fetch sun and prayer data with structured JSON responses, and integrate from a single docs page. The current catalog covers {totalCities} indexed cities.</p>
       </header>
 
-      <section class="resource-grid">
+      <section class="resource-grid resource-grid-3">
         <article class="resource-card glass-card">
           <h2>Access model</h2>
           <ul class="resource-list">
@@ -115,12 +115,12 @@ const sampleResponse = `{\n  "meta": {\n    "version": "v1",\n    "endpoint": "/
         <div class="resource-grid">
           <article class="resource-card glass-card">
             <h3>1. Resolve a city slug</h3>
-            <pre><code>{cityLookupCurl}</code></pre>
+            <pre class="docs-code-block"><code>{cityLookupCurl}</code></pre>
           </article>
 
           <article class="resource-card glass-card">
             <h3>2. Fetch timing data</h3>
-            <pre><code>{timingCurl}</code></pre>
+            <pre class="docs-code-block"><code>{timingCurl}</code></pre>
           </article>
         </div>
       </section>
@@ -156,52 +156,56 @@ const sampleResponse = `{\n  "meta": {\n    "version": "v1",\n    "endpoint": "/
         <div class="resource-grid">
           <article class="resource-card glass-card">
             <h3><code>/api/v1/cities</code></h3>
-            <table>
-              <thead>
-                <tr>
-                  <th>Parameter</th>
-                  <th>Required</th>
-                  <th>Notes</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td><code>query</code></td>
-                  <td>No</td>
-                  <td>City, slug, country, or admin region. Empty query returns popular cities.</td>
-                </tr>
-                <tr>
-                  <td><code>limit</code></td>
-                  <td>No</td>
-                  <td>Default 10, max 25.</td>
-                </tr>
-              </tbody>
-            </table>
+            <div class="docs-table-wrap">
+              <table class="docs-table">
+                <thead>
+                  <tr>
+                    <th>Parameter</th>
+                    <th>Required</th>
+                    <th>Notes</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><code>query</code></td>
+                    <td>No</td>
+                    <td>City, slug, country, or admin region. Empty query returns popular cities.</td>
+                  </tr>
+                  <tr>
+                    <td><code>limit</code></td>
+                    <td>No</td>
+                    <td>Default 10, max 25.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </article>
 
           <article class="resource-card glass-card">
             <h3><code>/api/v1/times</code></h3>
-            <table>
-              <thead>
-                <tr>
-                  <th>Parameter</th>
-                  <th>Required</th>
-                  <th>Notes</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td><code>city</code></td>
-                  <td>Yes</td>
-                  <td>Stable city slug such as <code>new-york</code>, <code>istanbul</code>, or <code>london</code>.</td>
-                </tr>
-                <tr>
-                  <td><code>date</code></td>
-                  <td>No</td>
-                  <td>Optional local date in <code>YYYY-MM-DD</code> format.</td>
-                </tr>
-              </tbody>
-            </table>
+            <div class="docs-table-wrap">
+              <table class="docs-table">
+                <thead>
+                  <tr>
+                    <th>Parameter</th>
+                    <th>Required</th>
+                    <th>Notes</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><code>city</code></td>
+                    <td>Yes</td>
+                    <td>Stable city slug such as <code>new-york</code>, <code>istanbul</code>, or <code>london</code>.</td>
+                  </tr>
+                  <tr>
+                    <td><code>date</code></td>
+                    <td>No</td>
+                    <td>Optional local date in <code>YYYY-MM-DD</code> format.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </article>
         </div>
       </section>
@@ -225,7 +229,7 @@ const sampleResponse = `{\n  "meta": {\n    "version": "v1",\n    "endpoint": "/
 
           <article class="resource-card glass-card">
             <h3>Compact sample</h3>
-            <pre><code>{sampleResponse}</code></pre>
+            <pre class="docs-code-block"><code>{sampleResponse}</code></pre>
           </article>
         </div>
       </section>
@@ -239,12 +243,12 @@ const sampleResponse = `{\n  "meta": {\n    "version": "v1",\n    "endpoint": "/
         <div class="resource-grid">
           <article class="resource-card glass-card">
             <h3>cURL</h3>
-            <pre><code>{timingCurl}</code></pre>
+            <pre class="docs-code-block"><code>{timingCurl}</code></pre>
           </article>
 
           <article class="resource-card glass-card">
             <h3>JavaScript</h3>
-            <pre><code>{jsExample}</code></pre>
+            <pre class="docs-code-block"><code>{jsExample}</code></pre>
           </article>
         </div>
       </section>
@@ -256,37 +260,39 @@ const sampleResponse = `{\n  "meta": {\n    "version": "v1",\n    "endpoint": "/
         </div>
 
         <div class="glass-card">
-          <table>
-            <thead>
-              <tr>
-                <th>Code</th>
-                <th>Status</th>
-                <th>Meaning</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td><code>missing_city</code></td>
-                <td>400</td>
-                <td>The <code>city</code> query parameter was not sent to <code>/api/v1/times</code>.</td>
-              </tr>
-              <tr>
-                <td><code>invalid_date</code></td>
-                <td>400</td>
-                <td>The <code>date</code> value was not in <code>YYYY-MM-DD</code> format.</td>
-              </tr>
-              <tr>
-                <td><code>unknown_city</code></td>
-                <td>404</td>
-                <td>The provided city slug does not exist in the current index.</td>
-              </tr>
-              <tr>
-                <td><code>invalid_limit</code></td>
-                <td>400</td>
-                <td>The <code>limit</code> value sent to <code>/api/v1/cities</code> was invalid.</td>
-              </tr>
-            </tbody>
-          </table>
+          <div class="docs-table-wrap">
+            <table class="docs-table">
+              <thead>
+                <tr>
+                  <th>Code</th>
+                  <th>Status</th>
+                  <th>Meaning</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>missing_city</code></td>
+                  <td>400</td>
+                  <td>The <code>city</code> query parameter was not sent to <code>/api/v1/times</code>.</td>
+                </tr>
+                <tr>
+                  <td><code>invalid_date</code></td>
+                  <td>400</td>
+                  <td>The <code>date</code> value was not in <code>YYYY-MM-DD</code> format.</td>
+                </tr>
+                <tr>
+                  <td><code>unknown_city</code></td>
+                  <td>404</td>
+                  <td>The provided city slug does not exist in the current index.</td>
+                </tr>
+                <tr>
+                  <td><code>invalid_limit</code></td>
+                  <td>400</td>
+                  <td>The <code>limit</code> value sent to <code>/api/v1/cities</code> was invalid.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </section>
 
