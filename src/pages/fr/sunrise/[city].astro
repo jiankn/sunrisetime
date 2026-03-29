@@ -2,7 +2,7 @@
 import Base from '@layouts/Base.astro';
 import FrenchHeader from '@components/FrenchHeader.astro';
 import FrenchFooter from '@components/FrenchFooter.astro';
-import cities from '@data/cities.json';
+import { getCityBySlug, getComparisonCities, getNearbyCities } from '@data/site';
 import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
 import {
   getFrenchCityLocationLabel,
@@ -11,20 +11,19 @@ import {
   getFrenchPrayerName,
   frenchLocale,
 } from '@i18n/french';
-import { getDaylightSeries, getGoldenHour, getSunTimes, formatTime, getSunriseDelta, getSunsetDelta } from '@utils/sun';
+import { getAnnualSunExtremes, getDaylightSeries, getGoldenHour, getSeasonalSunCheckpoints, getSunTimes, formatTime, getSunriseDelta, getSunsetDelta, getDaylightChangeDays, getSunEventShiftDays } from '@utils/sun';
 import { getMoonData, getNextMoonEvent } from '@utils/moon';
 import { getNextPrayer, getPrayerTimes } from '@utils/prayer-times';
 import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
 
-export function getStaticPaths() {
-  return cities.cities.map((city) => ({
-    params: { city: city.slug },
-    props: { city },
-  }));
-}
+export const prerender = false;
+Astro.response.headers.set('Cache-Control', 'public, max-age=300, s-maxage=3600');
 
-type City = typeof cities.cities[0];
-const { city } = Astro.props as { city: City };
+const city = getCityBySlug(Astro.params.city ?? '');
+
+if (!city) {
+  return new Response(null, { status: 404, statusText: 'Not found' });
+}
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
@@ -55,6 +54,24 @@ function formatDaylightTrend(minutes: number) {
   return `${Math.abs(minutes)} min ${minutes > 0 ? 'de plus' : 'de moins'} sur 7 jours`;
 }
 
+function formatRelativeClockShift(delta: number, baseline: string) {
+  if (delta === 0) return `Meme heure locale qu ${baseline}`;
+  return `${Math.abs(delta)} min ${delta > 0 ? 'plus tard' : 'plus tot'} qu ${baseline}`;
+}
+
+function formatRelativeDaylight(delta: number, baseline: string) {
+  if (delta === 0) return `Meme duree du jour qu ${baseline}`;
+  return `${Math.abs(delta)} min ${delta > 0 ? 'de plus' : 'de moins'} qu ${baseline}`;
+}
+
+function formatCalendarDate(date: Date) {
+  return date.toLocaleDateString(frenchLocale, {
+    month: 'short',
+    day: 'numeric',
+    timeZone: city.timezone,
+  });
+}
+
 const today = new Date();
 const cityName = getFrenchCityName(city);
 const cityLocationLabel = getFrenchCityLocationLabel(city, { includeAdmin1: Boolean(city.admin1) });
@@ -74,6 +91,12 @@ const lightProgress = clamp(
 );
 const daylightTrendMinutes = Math.round((series[series.length - 1].hours - series[0].hours) * 60);
 const daylightTrendCopy = formatDaylightTrend(daylightTrendMinutes);
+const daylightVs30DaysAgo = -getDaylightChangeDays(today, -30, city.lat, city.lng);
+const sunriseVs30DaysAgo = -getSunEventShiftDays(today, -30, city.lat, city.lng, city.timezone, 'sunrise');
+const sunsetVs30DaysAgo = -getSunEventShiftDays(today, -30, city.lat, city.lng, city.timezone, 'sunset');
+const daylightIn30Days = getDaylightChangeDays(today, 30, city.lat, city.lng);
+const sunriseIn30Days = getSunEventShiftDays(today, 30, city.lat, city.lng, city.timezone, 'sunrise');
+const sunsetIn30Days = getSunEventShiftDays(today, 30, city.lat, city.lng, city.timezone, 'sunset');
 const nextMoonEventLabel = nextMoonEvent.type === 'Full Moon' ? 'pleine lune' : 'nouvelle lune';
 const daysUntilMoonEvent = Math.max(1, Math.ceil((nextMoonEvent.date.getTime() - today.getTime()) / 86400000));
 
@@ -121,6 +144,10 @@ const localTimeLabel = today.toLocaleTimeString(frenchLocale, {
   minute: '2-digit',
   timeZone: city.timezone,
 });
+const currentYear = Number(new Intl.DateTimeFormat(frenchLocale, {
+  year: 'numeric',
+  timeZone: city.timezone,
+}).format(today));
 const lightStatus = today < sun.dawn
   ? 'La nuit domine encore.'
   : today < sun.sunrise
@@ -130,14 +157,19 @@ const lightStatus = today < sun.dawn
       : today < sun.dusk
         ? 'Le crepuscule civil s estompe.'
         : 'La nuit est de retour.';
+const annualExtremes = getAnnualSunExtremes(currentYear, city.lat, city.lng, city.timezone);
+const seasonalCheckpoints = getSeasonalSunCheckpoints(currentYear, city.lat, city.lng).map((checkpoint) => ({
+  ...checkpoint,
+  label: ({
+    'March Equinox': 'Equinoxe de mars',
+    'June Solstice': 'Solstice de juin',
+    'September Equinox': 'Equinoxe de septembre',
+    'December Solstice': 'Solstice de decembre',
+  }[checkpoint.label] ?? checkpoint.label),
+}));
 
-const nearbyCities = cities.cities
-  .filter((entry) => entry.continent === city.continent && entry.slug !== city.slug)
-  .slice(0, 6);
-
-const otherCities = cities.cities
-  .filter((entry) => entry.continent !== city.continent)
-  .slice(0, 4);
+const nearbyCities = getNearbyCities(city, 6);
+const otherCities = getComparisonCities(city, 4);
 
 const pagePath = `/sunrise/${city.slug}/`;
 const frenchPath = localizePath('fr', pagePath);
@@ -443,6 +475,148 @@ const jsonLd = [
           <p>
             L heure doree du matin va de {formatTime(golden.morning.start, city.timezone, frenchLocale)} a {formatTime(golden.morning.end, city.timezone, frenchLocale)}, tandis que celle du soir va de {formatTime(golden.evening.start, city.timezone, frenchLocale)} a {formatTime(golden.evening.end, city.timezone, frenchLocale)}. Vous pouvez aussi verifier la phase lunaire actuelle et ouvrir la page complete des horaires de priere de {cityName}.
           </p>
+        </div>
+      </section>
+
+      <section class="detail-section" aria-label="Perspective lumiere sur 30 jours">
+        <div class="detail-section-head">
+          <h2><i data-lucide="calendar-range" class="icon-md"></i> Perspective lumiere sur 30 jours</h2>
+          <p>Cette page devient plus utile lorsqu elle montre aussi le rythme des changements sur un mois complet.</p>
+        </div>
+
+        <div class="detail-grid">
+          <div class="detail-card glass-card">
+            <h3>Par rapport a il y a 30 jours</h3>
+            <div class="detail-time">
+              <div>
+                <span class="data-label">Duree du jour</span>
+                <span class="detail-time-value">{formatRelativeDaylight(daylightVs30DaysAgo, 'il y a 30 jours')}</span>
+              </div>
+              <div>
+                <span class="data-label">Lever / Coucher</span>
+                <span class="detail-time-value">{formatRelativeClockShift(sunriseVs30DaysAgo, 'il y a 30 jours')} · {formatRelativeClockShift(sunsetVs30DaysAgo, 'il y a 30 jours')}</span>
+              </div>
+            </div>
+            <span class="detail-duration">Un raccourci pour voir si les matins avancent ou se decalent en ce moment.</span>
+          </div>
+
+          <div class="detail-card glass-card">
+            <h3>Dans 30 jours</h3>
+            <div class="detail-time">
+              <div>
+                <span class="data-label">Duree du jour</span>
+                <span class="detail-time-value">{formatRelativeDaylight(daylightIn30Days, 'aujourd hui')}</span>
+              </div>
+              <div>
+                <span class="data-label">Lever / Coucher</span>
+                <span class="detail-time-value">{formatRelativeClockShift(sunriseIn30Days, 'aujourd hui')} · {formatRelativeClockShift(sunsetIn30Days, 'aujourd hui')}</span>
+              </div>
+            </div>
+            <span class="detail-duration">Pratique pour estimer combien le rythme local va bouger d ici le mois prochain.</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="detail-section" aria-label="Extremes annuels de lumiere">
+        <div class="detail-section-head">
+          <h2><i data-lucide="trophy" class="icon-md"></i> Extremes de lumiere en {currentYear}</h2>
+          <p>Apres l heure du jour, la question utile suivante est de connaitre les vraies bornes de l annee locale.</p>
+        </div>
+
+        <div class="detail-grid">
+          <div class="detail-card glass-card">
+            <h3>Extremes du lever du soleil</h3>
+            <div class="detail-time">
+              <div>
+                <span class="data-label">Lever le plus tot</span>
+                <span class="detail-time-value">{formatTime(annualExtremes.earliestSunrise.time, city.timezone, frenchLocale)}</span>
+              </div>
+              <div>
+                <span class="data-label">Lever le plus tard</span>
+                <span class="detail-time-value">{formatTime(annualExtremes.latestSunrise.time, city.timezone, frenchLocale)}</span>
+              </div>
+            </div>
+            <span class="detail-duration">{formatCalendarDate(annualExtremes.earliestSunrise.date)} · {formatCalendarDate(annualExtremes.latestSunrise.date)}</span>
+          </div>
+
+          <div class="detail-card glass-card">
+            <h3>Extremes du coucher du soleil</h3>
+            <div class="detail-time">
+              <div>
+                <span class="data-label">Coucher le plus tot</span>
+                <span class="detail-time-value">{formatTime(annualExtremes.earliestSunset.time, city.timezone, frenchLocale)}</span>
+              </div>
+              <div>
+                <span class="data-label">Coucher le plus tard</span>
+                <span class="detail-time-value">{formatTime(annualExtremes.latestSunset.time, city.timezone, frenchLocale)}</span>
+              </div>
+            </div>
+            <span class="detail-duration">{formatCalendarDate(annualExtremes.earliestSunset.date)} · {formatCalendarDate(annualExtremes.latestSunset.date)}</span>
+          </div>
+        </div>
+
+        <div class="detail-grid">
+          <div class="detail-card glass-card">
+            <h3>Jour le plus long</h3>
+            <div class="detail-time">
+              <div>
+                <span class="data-label">Lumiere du jour</span>
+                <span class="detail-time-value">{annualExtremes.longestDay.daylightFormatted}</span>
+              </div>
+              <div>
+                <span class="data-label">Date</span>
+                <span class="detail-time-value">{formatCalendarDate(annualExtremes.longestDay.date)}</span>
+              </div>
+            </div>
+            <span class="detail-duration">La fenetre de lumiere naturelle la plus large de l annee a {cityName}.</span>
+          </div>
+
+          <div class="detail-card glass-card">
+            <h3>Jour le plus court</h3>
+            <div class="detail-time">
+              <div>
+                <span class="data-label">Lumiere du jour</span>
+                <span class="detail-time-value">{annualExtremes.shortestDay.daylightFormatted}</span>
+              </div>
+              <div>
+                <span class="data-label">Date</span>
+                <span class="detail-time-value">{formatCalendarDate(annualExtremes.shortestDay.date)}</span>
+              </div>
+            </div>
+            <span class="detail-duration">La fenetre de lumiere naturelle la plus courte de l annee a {cityName}.</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="detail-section" aria-label="Reperes saisonniers de lumiere">
+        <div class="detail-section-head">
+          <h2><i data-lucide="trees" class="icon-md"></i> Reperes saisonniers de lumiere</h2>
+          <p>Quatre jalons suffisent pour lire l annee sans parcourir un tableau complet de 365 jours.</p>
+        </div>
+
+        <div class="glass-card">
+          <table>
+            <thead>
+              <tr>
+                <th>Repere</th>
+                <th>Date</th>
+                <th>Lever</th>
+                <th>Coucher</th>
+                <th>Lumiere du jour</th>
+              </tr>
+            </thead>
+            <tbody>
+              {seasonalCheckpoints.map((checkpoint) => (
+                <tr>
+                  <td>{checkpoint.label}</td>
+                  <td>{formatCalendarDate(checkpoint.date)}</td>
+                  <td>{formatTime(checkpoint.sunrise, city.timezone, frenchLocale)}</td>
+                  <td>{formatTime(checkpoint.sunset, city.timezone, frenchLocale)}</td>
+                  <td>{checkpoint.daylightFormatted}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </section>
 

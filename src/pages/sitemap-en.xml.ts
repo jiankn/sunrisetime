@@ -17,6 +17,7 @@ export const GET: APIRoute = () => {
     '/methodology/',
     '/cities/',
     '/guides/',
+    '/guides/api/',
     '/sitemap/',
   ];
 

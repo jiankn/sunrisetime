@@ -20,6 +20,44 @@ function sortByPopulation(list: City[]) {
   return [...list].sort((a, b) => b.population - a.population);
 }
 
+function uniqueCities(list: City[]) {
+  const seen = new Set<string>();
+
+  return list.filter((city) => {
+    if (seen.has(city.slug)) {
+      return false;
+    }
+
+    seen.add(city.slug);
+    return true;
+  });
+}
+
+function haversineDistanceKm(origin: Pick<City, 'lat' | 'lng'>, target: Pick<City, 'lat' | 'lng'>) {
+  const toRadians = (value: number) => value * (Math.PI / 180);
+  const earthRadiusKm = 6371;
+  const dLat = toRadians(target.lat - origin.lat);
+  const dLng = toRadians(target.lng - origin.lng);
+  const a = Math.sin(dLat / 2) ** 2
+    + Math.cos(toRadians(origin.lat)) * Math.cos(toRadians(target.lat)) * Math.sin(dLng / 2) ** 2;
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  return earthRadiusKm * c;
+}
+
+function sortByDistance(origin: City, list: City[]) {
+  return [...list].sort((left, right) => {
+    const leftDistance = haversineDistanceKm(origin, left);
+    const rightDistance = haversineDistanceKm(origin, right);
+
+    if (leftDistance !== rightDistance) {
+      return leftDistance - rightDistance;
+    }
+
+    return right.population - left.population;
+  });
+}
+
 function normalizeLabel(value: string) {
   return value.trim().toLowerCase();
 }
@@ -35,6 +73,50 @@ function normalizeAdmin1(admin1?: string) {
 
 export function getCityBySlug(slug: string) {
   return cityMap.get(slug);
+}
+
+export function getNearbyCities(city: City, limit = 6) {
+  return sortByDistance(
+    city,
+    allCities.filter((entry) => entry.slug !== city.slug),
+  ).slice(0, limit);
+}
+
+export function getComparisonCities(city: City, limit = 4) {
+  const nearbyCitySlugs = new Set(getNearbyCities(city, limit + 6).map((entry) => entry.slug));
+  const cityAdmin = getCityAdminLabel(city);
+
+  const sameAdmin = cityAdmin
+    ? sortByDistance(
+      city,
+      allCities.filter((entry) => (
+        entry.slug !== city.slug
+        && entry.country === city.country
+        && getCityAdminLabel(entry) === cityAdmin
+      )),
+    )
+    : [];
+
+  const sameCountry = sortByDistance(
+    city,
+    allCities.filter((entry) => entry.slug !== city.slug && entry.country === city.country),
+  );
+
+  const sameContinent = sortByDistance(
+    city,
+    allCities.filter((entry) => entry.slug !== city.slug && entry.continent === city.continent),
+  );
+
+  const worldwide = sortByPopulation(allCities.filter((entry) => entry.slug !== city.slug));
+
+  return uniqueCities([
+    ...sameAdmin,
+    ...sameCountry,
+    ...sameContinent,
+    ...worldwide,
+  ])
+    .filter((entry) => !nearbyCitySlugs.has(entry.slug))
+    .slice(0, limit);
 }
 
 export function getCitiesBySlugs(slugs: string[]) {

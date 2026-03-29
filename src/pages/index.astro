@@ -18,6 +18,9 @@ import { totalCities } from '@data/site';
 import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
 import { buildAlternateLinks } from '@utils/seo';
 
+export const prerender = false;
+Astro.response.headers.set('Cache-Control', 'public, max-age=300, s-maxage=3600');
+
 const pagePath = '/';
 const alternates = buildAlternateLinks([
   { hrefLang: 'en', path: pagePath },

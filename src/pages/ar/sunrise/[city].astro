@@ -2,7 +2,7 @@
 import Base from '@layouts/Base.astro';
 import ArabicHeader from '@components/ArabicHeader.astro';
 import ArabicFooter from '@components/ArabicFooter.astro';
-import cities from '@data/cities.json';
+import { getCityBySlug, getComparisonCities, getNearbyCities } from '@data/site';
 import {
   arabicLocale,
   getArabicCityDisplayName,
@@ -12,20 +12,19 @@ import {
   getArabicPrayerName,
 } from '@i18n/arabic';
 import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
-import { getDaylightSeries, getGoldenHour, getSunTimes, formatTime, getSunriseDelta, getSunsetDelta } from '@utils/sun';
+import { getAnnualSunExtremes, getDaylightSeries, getGoldenHour, getSeasonalSunCheckpoints, getSunTimes, formatTime, getSunriseDelta, getSunsetDelta, getDaylightChangeDays, getSunEventShiftDays } from '@utils/sun';
 import { getMoonData } from '@utils/moon';
 import { getNextPrayer } from '@utils/prayer-times';
 import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
 
-export function getStaticPaths() {
-  return cities.cities.map((city) => ({
-    params: { city: city.slug },
-    props: { city },
-  }));
-}
+export const prerender = false;
+Astro.response.headers.set('Cache-Control', 'public, max-age=300, s-maxage=3600');
 
-type City = typeof cities.cities[0];
-const { city } = Astro.props as { city: City };
+const city = getCityBySlug(Astro.params.city ?? '');
+
+if (!city) {
+  return new Response(null, { status: 404, statusText: 'Not found' });
+}
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
@@ -45,6 +44,24 @@ function formatMinuteShift(delta: number) {
   return `${Math.abs(delta)} دقيقة ${delta > 0 ? 'أبعد' : 'أبكر'} من الأمس`;
 }
 
+function formatRelativeClockShift(delta: number, baseline: string) {
+  if (delta === 0) return `بنفس التوقيت المحلي مقارنة بـ ${baseline}`;
+  return `${delta > 0 ? 'أبعد' : 'أبكر'} بـ ${Math.abs(delta)} دقيقة مقارنة بـ ${baseline}`;
+}
+
+function formatRelativeDaylight(delta: number, baseline: string) {
+  if (delta === 0) return `بنفس مدة النهار مقارنة بـ ${baseline}`;
+  return `${delta > 0 ? 'أطول' : 'أقصر'} بـ ${Math.abs(delta)} دقيقة مقارنة بـ ${baseline}`;
+}
+
+function formatCalendarDate(date: Date) {
+  return date.toLocaleDateString(arabicLocale, {
+    month: 'long',
+    day: 'numeric',
+    timeZone: city.timezone,
+  });
+}
+
 const today = new Date();
 const cityName = getArabicCityName(city);
 const cityDisplayName = getArabicCityDisplayName(city, { includeAdmin1: Boolean(city.admin1) });
@@ -56,6 +73,12 @@ const nextPrayer = getNextPrayer(today, city.lat, city.lng, 'MWL', 'Standard');
 const sunriseDelta = getSunriseDelta(today, city.lat, city.lng, city.timezone);
 const sunsetDelta = getSunsetDelta(today, city.lat, city.lng, city.timezone);
 const series = getDaylightSeries(today, 7, city.lat, city.lng);
+const daylightVs30DaysAgo = -getDaylightChangeDays(today, -30, city.lat, city.lng);
+const sunriseVs30DaysAgo = -getSunEventShiftDays(today, -30, city.lat, city.lng, city.timezone, 'sunrise');
+const sunsetVs30DaysAgo = -getSunEventShiftDays(today, -30, city.lat, city.lng, city.timezone, 'sunset');
+const daylightIn30Days = getDaylightChangeDays(today, 30, city.lat, city.lng);
+const sunriseIn30Days = getSunEventShiftDays(today, 30, city.lat, city.lng, city.timezone, 'sunrise');
+const sunsetIn30Days = getSunEventShiftDays(today, 30, city.lat, city.lng, city.timezone, 'sunset');
 const lightProgress = clamp(
   ((today.getTime() - sun.dawn.getTime()) / (sun.dusk.getTime() - sun.dawn.getTime())) * 100,
   0,
@@ -86,10 +109,23 @@ const localTimeLabel = today.toLocaleTimeString(arabicLocale, {
   minute: '2-digit',
   timeZone: city.timezone,
 });
+const currentYear = Number(new Intl.DateTimeFormat('en-US', {
+  year: 'numeric',
+  timeZone: city.timezone,
+}).format(today));
+const annualExtremes = getAnnualSunExtremes(currentYear, city.lat, city.lng, city.timezone);
+const seasonalCheckpoints = getSeasonalSunCheckpoints(currentYear, city.lat, city.lng).map((checkpoint) => ({
+  ...checkpoint,
+  label: ({
+    'March Equinox': 'الاعتدال الربيعي',
+    'June Solstice': 'الانقلاب الصيفي',
+    'September Equinox': 'الاعتدال الخريفي',
+    'December Solstice': 'الانقلاب الشتوي',
+  }[checkpoint.label] ?? checkpoint.label),
+}));
 
-const nearbyCities = cities.cities
-  .filter((entry) => entry.continent === city.continent && entry.slug !== city.slug)
-  .slice(0, 6);
+const nearbyCities = getNearbyCities(city, 6);
+const otherCities = getComparisonCities(city, 4);
 
 const pagePath = `/sunrise/${city.slug}/`;
 const arPath = localizePath('ar', pagePath);
@@ -267,6 +303,148 @@ const jsonLd = [
         </div>
       </section>
 
+      <section class="detail-section" aria-label="تغير الضوء خلال 30 يومًا">
+        <div class="detail-section-head">
+          <h2><i data-lucide="calendar-range" class="icon-md"></i> تغير الضوء خلال 30 يومًا</h2>
+          <p>هذا القسم يجعل الصفحة مفيدة للتخطيط، لا فقط للإجابة السريعة عن وقت الشروق اليوم.</p>
+        </div>
+
+        <div class="detail-grid">
+          <div class="detail-card glass-card">
+            <h3>مقارنة بما قبل 30 يومًا</h3>
+            <div class="detail-time">
+              <div>
+                <span class="data-label">مدة النهار</span>
+                <span class="detail-time-value">{formatRelativeDaylight(daylightVs30DaysAgo, 'قبل 30 يومًا')}</span>
+              </div>
+              <div>
+                <span class="data-label">الشروق / الغروب</span>
+                <span class="detail-time-value">{formatRelativeClockShift(sunriseVs30DaysAgo, 'قبل 30 يومًا')} · {formatRelativeClockShift(sunsetVs30DaysAgo, 'قبل 30 يومًا')}</span>
+              </div>
+            </div>
+            <span class="detail-duration">مفيد لمعرفة هل نافذة الصباح تتقدم أم تتأخر الآن.</span>
+          </div>
+
+          <div class="detail-card glass-card">
+            <h3>خلال 30 يومًا القادمة</h3>
+            <div class="detail-time">
+              <div>
+                <span class="data-label">مدة النهار</span>
+                <span class="detail-time-value">{formatRelativeDaylight(daylightIn30Days, 'اليوم')}</span>
+              </div>
+              <div>
+                <span class="data-label">الشروق / الغروب</span>
+                <span class="detail-time-value">{formatRelativeClockShift(sunriseIn30Days, 'اليوم')} · {formatRelativeClockShift(sunsetIn30Days, 'اليوم')}</span>
+              </div>
+            </div>
+            <span class="detail-duration">طريقة سريعة لمعرفة مقدار تغير جدول الضوء المحلي خلال الشهر القادم.</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="detail-section" aria-label="الحدود السنوية للضوء">
+        <div class="detail-section-head">
+          <h2><i data-lucide="trophy" class="icon-md"></i> الحدود السنوية للضوء في {currentYear}</h2>
+          <p>بعد معرفة وقت اليوم، تأتي فائدة معرفة أبكر وأبعد نقاط الضوء خلال السنة كلها.</p>
+        </div>
+
+        <div class="detail-grid">
+          <div class="detail-card glass-card">
+            <h3>حدود الشروق</h3>
+            <div class="detail-time">
+              <div>
+                <span class="data-label">أبكر شروق</span>
+                <span class="detail-time-value">{formatTime(annualExtremes.earliestSunrise.time, city.timezone, arabicLocale)}</span>
+              </div>
+              <div>
+                <span class="data-label">أبعد شروق</span>
+                <span class="detail-time-value">{formatTime(annualExtremes.latestSunrise.time, city.timezone, arabicLocale)}</span>
+              </div>
+            </div>
+            <span class="detail-duration">{formatCalendarDate(annualExtremes.earliestSunrise.date)} · {formatCalendarDate(annualExtremes.latestSunrise.date)}</span>
+          </div>
+
+          <div class="detail-card glass-card">
+            <h3>حدود الغروب</h3>
+            <div class="detail-time">
+              <div>
+                <span class="data-label">أبكر غروب</span>
+                <span class="detail-time-value">{formatTime(annualExtremes.earliestSunset.time, city.timezone, arabicLocale)}</span>
+              </div>
+              <div>
+                <span class="data-label">أبعد غروب</span>
+                <span class="detail-time-value">{formatTime(annualExtremes.latestSunset.time, city.timezone, arabicLocale)}</span>
+              </div>
+            </div>
+            <span class="detail-duration">{formatCalendarDate(annualExtremes.earliestSunset.date)} · {formatCalendarDate(annualExtremes.latestSunset.date)}</span>
+          </div>
+        </div>
+
+        <div class="detail-grid">
+          <div class="detail-card glass-card">
+            <h3>أطول نهار</h3>
+            <div class="detail-time">
+              <div>
+                <span class="data-label">مدة الضوء</span>
+                <span class="detail-time-value">{annualExtremes.longestDay.daylightFormatted}</span>
+              </div>
+              <div>
+                <span class="data-label">التاريخ</span>
+                <span class="detail-time-value">{formatCalendarDate(annualExtremes.longestDay.date)}</span>
+              </div>
+            </div>
+            <span class="detail-duration">أوسع نافذة ضوء طبيعي في السنة داخل {cityName}.</span>
+          </div>
+
+          <div class="detail-card glass-card">
+            <h3>أقصر نهار</h3>
+            <div class="detail-time">
+              <div>
+                <span class="data-label">مدة الضوء</span>
+                <span class="detail-time-value">{annualExtremes.shortestDay.daylightFormatted}</span>
+              </div>
+              <div>
+                <span class="data-label">التاريخ</span>
+                <span class="detail-time-value">{formatCalendarDate(annualExtremes.shortestDay.date)}</span>
+              </div>
+            </div>
+            <span class="detail-duration">أضيق نافذة ضوء طبيعي في السنة داخل {cityName}.</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="detail-section" aria-label="نقاط الضوء الموسمية">
+        <div class="detail-section-head">
+          <h2><i data-lucide="trees" class="icon-md"></i> نقاط الضوء الموسمية</h2>
+          <p>أربع محطات موسمية تجعل قراءة تغير السنة أسهل من متابعة 365 يومًا متتالية.</p>
+        </div>
+
+        <div class="glass-card">
+          <table>
+            <thead>
+              <tr>
+                <th>المحطة</th>
+                <th>التاريخ</th>
+                <th>الشروق</th>
+                <th>الغروب</th>
+                <th>مدة النهار</th>
+              </tr>
+            </thead>
+            <tbody>
+              {seasonalCheckpoints.map((checkpoint) => (
+                <tr>
+                  <td>{checkpoint.label}</td>
+                  <td>{formatCalendarDate(checkpoint.date)}</td>
+                  <td>{formatTime(checkpoint.sunrise, city.timezone, arabicLocale)}</td>
+                  <td>{formatTime(checkpoint.sunset, city.timezone, arabicLocale)}</td>
+                  <td>{checkpoint.daylightFormatted}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
       <section class="detail-section" id="nearby" aria-label="مدن أخرى">
         <div class="detail-section-head">
           <h2><i data-lucide="map-pin" class="icon-md"></i> مدن أخرى للمقارنة</h2>
@@ -279,6 +457,20 @@ const jsonLd = [
             </a>
           ))}
         </div>
+
+        {otherCities.length > 0 && (
+          <>
+            <h3 class="other-cities-title">مدن إضافية للمقارنة</h3>
+            <div class="nearby-grid">
+              {otherCities.map((entry) => (
+                <a href={`/ar/sunrise/${entry.slug}/`} class="nearby-card glass-card">
+                  <span class="nearby-name">{getArabicCityName(entry)}</span>
+                  <span class="nearby-country">{getArabicCityLocationLabel(entry, { includeAdmin1: Boolean(entry.admin1) })}</span>
+                </a>
+              ))}
+            </div>
+          </>
+        )}
       </section>
     </div>
   </main>

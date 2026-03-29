@@ -6,6 +6,9 @@ import AdUnit from '@components/AdUnit.astro';
 import { getCitiesBySlugs, getCityLocationLabel, getUseCaseHub, regionHubs, useCaseHubs } from '@data/site';
 import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
 import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
+import { getClockTimeDelta, getDaylightChangeDays, getGoldenHour, getSunTimes, formatTime } from '@utils/sun';
+import { getMoonData, getNextMoonEvent } from '@utils/moon';
+import { getPrayerTimes } from '@utils/prayer-times';
 
 export function getStaticPaths() {
   return useCaseHubs.map((hub) => ({
@@ -22,6 +25,9 @@ if (!hub) {
 const featuredCities = getCitiesBySlugs(hub.featuredCitySlugs);
 const relatedRegions = regionHubs.filter((region) => hub.relatedRegionSlugs.includes(region.slug));
 const siblingGuides = useCaseHubs.filter((entry) => entry.slug !== hub.slug);
+const today = new Date();
+const nextMoonEvent = getNextMoonEvent(today);
+const daysUntilMoonEvent = Math.max(1, Math.ceil((nextMoonEvent.date.getTime() - today.getTime()) / 86400000));
 const pagePath = hub.path;
 const pageUrl = `https://sunrisetime.co${pagePath}`;
 const alternates = buildAlternateLinks([
@@ -49,6 +55,157 @@ const jsonLd = [
   },
   buildBreadcrumbJsonLd(breadcrumbItems),
 ];
+
+function getLocalClockMinutes(date: Date, timezone: string) {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: timezone,
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).formatToParts(date);
+
+  const hour = Number(parts.find((part) => part.type === 'hour')?.value ?? '0');
+  const minute = Number(parts.find((part) => part.type === 'minute')?.value ?? '0');
+
+  return (hour * 60) + minute;
+}
+
+const featuredDaylightSnapshots = hub.slug === 'daylight-length'
+  ? featuredCities.map((city) => {
+    const sun = getSunTimes(today, city.lat, city.lng);
+
+    return {
+      city,
+      sunrise: formatTime(sun.sunrise, city.timezone),
+      sunset: formatTime(sun.sunset, city.timezone),
+      daylight: sun.daylightFormatted,
+      daylightMinutes: sun.daylightDuration,
+      sunriseMinutes: getLocalClockMinutes(sun.sunrise, city.timezone),
+      nextThirtyDays: getDaylightChangeDays(today, 30, city.lat, city.lng),
+    };
+  })
+  : [];
+
+const featuredPrayerSnapshots = hub.slug === 'prayer-times'
+  ? featuredCities.map((city) => {
+    const sun = getSunTimes(today, city.lat, city.lng);
+    const prayers = getPrayerTimes(today, city.lat, city.lng, 'MWL', 'Standard');
+    const futureDate = new Date(today);
+    futureDate.setDate(futureDate.getDate() + 30);
+    const futurePrayers = getPrayerTimes(futureDate, city.lat, city.lng, 'MWL', 'Standard');
+
+    return {
+      city,
+      fajr: formatTime(prayers.fajr, city.timezone),
+      sunrise: formatTime(prayers.sunrise, city.timezone),
+      maghrib: formatTime(prayers.maghrib, city.timezone),
+      daylight: sun.daylightFormatted,
+      fajrMinutes: getLocalClockMinutes(prayers.fajr, city.timezone),
+      maghribMinutes: getLocalClockMinutes(prayers.maghrib, city.timezone),
+      nextThirtyDaysFajr: getClockTimeDelta(prayers.fajr, futurePrayers.fajr, city.timezone),
+    };
+  })
+  : [];
+
+const featuredGoldenHourSnapshots = hub.slug === 'golden-hour'
+  ? featuredCities.map((city) => {
+    const golden = getGoldenHour(today, city.lat, city.lng);
+    const futureDate = new Date(today);
+    futureDate.setDate(futureDate.getDate() + 30);
+    const futureGolden = getGoldenHour(futureDate, city.lat, city.lng);
+
+    return {
+      city,
+      morningStart: formatTime(golden.morning.start, city.timezone),
+      morningEnd: formatTime(golden.morning.end, city.timezone),
+      eveningStart: formatTime(golden.evening.start, city.timezone),
+      eveningEnd: formatTime(golden.evening.end, city.timezone),
+      totalGoldenMinutes: golden.morning.durationMin + golden.evening.durationMin,
+      morningStartMinutes: getLocalClockMinutes(golden.morning.start, city.timezone),
+      morningShiftIn30Days: getClockTimeDelta(golden.morning.start, futureGolden.morning.start, city.timezone),
+    };
+  })
+  : [];
+
+const featuredMoonSnapshots = hub.slug === 'moon-phase'
+  ? featuredCities.map((city) => {
+    const sun = getSunTimes(today, city.lat, city.lng);
+    const moon = getMoonData(today, city.lat, city.lng);
+
+    return {
+      city,
+      phase: moon.phaseName,
+      illumination: moon.illumination,
+      moonrise: moon.rise ? formatTime(moon.rise, city.timezone) : 'No moonrise listed',
+      moonset: moon.set ? formatTime(moon.set, city.timezone) : 'No moonset listed',
+      moonriseMinutes: moon.rise ? getLocalClockMinutes(moon.rise, city.timezone) : Number.POSITIVE_INFINITY,
+      moonsetMinutes: moon.set ? getLocalClockMinutes(moon.set, city.timezone) : Number.NEGATIVE_INFINITY,
+      moonriseOffsetFromSunset: moon.rise ? getClockTimeDelta(sun.sunset, moon.rise, city.timezone) : null,
+    };
+  })
+  : [];
+
+const daylightGuideHighlights = hub.slug === 'daylight-length' && featuredDaylightSnapshots.length > 0
+  ? {
+    longestDaylight: [...featuredDaylightSnapshots].sort((left, right) => right.daylightMinutes - left.daylightMinutes)[0],
+    earliestSunrise: [...featuredDaylightSnapshots].sort((left, right) => left.sunriseMinutes - right.sunriseMinutes)[0],
+    biggestShift: [...featuredDaylightSnapshots].sort((left, right) => Math.abs(right.nextThirtyDays) - Math.abs(left.nextThirtyDays))[0],
+  }
+  : null;
+
+const prayerGuideHighlights = hub.slug === 'prayer-times' && featuredPrayerSnapshots.length > 0
+  ? {
+    earliestFajr: [...featuredPrayerSnapshots].sort((left, right) => left.fajrMinutes - right.fajrMinutes)[0],
+    latestMaghrib: [...featuredPrayerSnapshots].sort((left, right) => right.maghribMinutes - left.maghribMinutes)[0],
+    biggestFajrShift: [...featuredPrayerSnapshots].sort((left, right) => Math.abs(right.nextThirtyDaysFajr) - Math.abs(left.nextThirtyDaysFajr))[0],
+  }
+  : null;
+
+const goldenHourGuideHighlights = hub.slug === 'golden-hour' && featuredGoldenHourSnapshots.length > 0
+  ? {
+    earliestMorningWindow: [...featuredGoldenHourSnapshots].sort((left, right) => left.morningStartMinutes - right.morningStartMinutes)[0],
+    longestCombinedWindow: [...featuredGoldenHourSnapshots].sort((left, right) => right.totalGoldenMinutes - left.totalGoldenMinutes)[0],
+    biggestMorningShift: [...featuredGoldenHourSnapshots].sort((left, right) => Math.abs(right.morningShiftIn30Days) - Math.abs(left.morningShiftIn30Days))[0],
+  }
+  : null;
+
+const moonGuideHighlights = hub.slug === 'moon-phase' && featuredMoonSnapshots.length > 0
+  ? {
+    earliestMoonrise: [...featuredMoonSnapshots].sort((left, right) => left.moonriseMinutes - right.moonriseMinutes)[0],
+    latestMoonset: [...featuredMoonSnapshots].sort((left, right) => right.moonsetMinutes - left.moonsetMinutes)[0],
+    closestMoonriseToSunset: [...featuredMoonSnapshots]
+      .filter((snapshot) => snapshot.moonriseOffsetFromSunset !== null)
+      .sort((left, right) => Math.abs(left.moonriseOffsetFromSunset ?? 0) - Math.abs(right.moonriseOffsetFromSunset ?? 0))[0] ?? null,
+  }
+  : null;
+
+function formatDaylightShift(delta: number) {
+  if (delta === 0) {
+    return 'No material change over the next 30 days';
+  }
+
+  return `${Math.abs(delta)} min ${delta > 0 ? 'longer' : 'shorter'} over the next 30 days`;
+}
+
+function formatClockShift(delta: number) {
+  if (delta === 0) {
+    return 'No material shift over the next 30 days';
+  }
+
+  return `${Math.abs(delta)} min ${delta > 0 ? 'later' : 'earlier'} over the next 30 days`;
+}
+
+function formatMoonOffset(delta: number | null) {
+  if (delta === null) {
+    return 'No moonrise event listed today';
+  }
+
+  if (delta === 0) {
+    return 'Moonrise aligns with local sunset';
+  }
+
+  return `Moonrise ${Math.abs(delta)} min ${delta > 0 ? 'after' : 'before'} local sunset`;
+}
 ---
 
 <Base
@@ -118,6 +275,364 @@ const jsonLd = [
           })}
         </div>
       </section>
+
+      {hub.slug === 'daylight-length' && (
+        <>
+          <section class="resource-section">
+            <div class="detail-section-head">
+              <h2>Today&apos;s daylight comparison</h2>
+              <p>This is the first guide block designed to be cited on its own, not just used as a click-through bridge.</p>
+            </div>
+            <div class="glass-card">
+              <table>
+                <thead>
+                  <tr>
+                    <th>City</th>
+                    <th>Sunrise</th>
+                    <th>Sunset</th>
+                    <th>Daylight</th>
+                    <th>30-day shift</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {featuredDaylightSnapshots.map((snapshot) => (
+                    <tr>
+                      <td>
+                        <a href={`/sunrise/${snapshot.city.slug}/`}>{snapshot.city.name}</a>
+                        <div>{getCityLocationLabel(snapshot.city)}</div>
+                      </td>
+                      <td>{snapshot.sunrise}</td>
+                      <td>{snapshot.sunset}</td>
+                      <td>{snapshot.daylight}</td>
+                      <td>{formatDaylightShift(snapshot.nextThirtyDays)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          {daylightGuideHighlights && (
+            <section class="resource-section">
+              <div class="detail-section-head">
+                <h2>Fast takeaways</h2>
+                <p>Short conclusions make the guide easier to cite without forcing people to parse the whole table first.</p>
+              </div>
+              <div class="resource-grid">
+                <article class="resource-card glass-card">
+                  <h3>Longest daylight today</h3>
+                  <p>
+                    <strong>{daylightGuideHighlights.longestDaylight.city.name}</strong> leads this set with {daylightGuideHighlights.longestDaylight.daylight}.
+                  </p>
+                </article>
+                <article class="resource-card glass-card">
+                  <h3>Earliest local sunrise</h3>
+                  <p>
+                    <strong>{daylightGuideHighlights.earliestSunrise.city.name}</strong> starts earliest at {daylightGuideHighlights.earliestSunrise.sunrise}.
+                  </p>
+                </article>
+                <article class="resource-card glass-card">
+                  <h3>Biggest 30-day daylight move</h3>
+                  <p>
+                    <strong>{daylightGuideHighlights.biggestShift.city.name}</strong> shifts the most, with {formatDaylightShift(daylightGuideHighlights.biggestShift.nextThirtyDays)}.
+                  </p>
+                </article>
+              </div>
+            </section>
+          )}
+
+          <section class="resource-section">
+            <div class="detail-section-head">
+              <h2>Method and reuse</h2>
+              <p>This guide becomes more useful when people can validate the numbers and reuse them in their own workflow.</p>
+            </div>
+            <div class="resource-link-grid">
+              <a href="/methodology/" class="resource-link-card glass-card">
+                <strong>Methodology</strong>
+                <span>Review the solar assumptions behind the daylight table.</span>
+              </a>
+              <a href="/guides/api/" class="resource-link-card glass-card">
+                <strong>API docs</strong>
+                <span>Pull the same city timing data from the public endpoint.</span>
+              </a>
+              <a href="/api/v1/times?city=new-york" class="resource-link-card glass-card">
+                <strong>Sample response</strong>
+                <span>Inspect the live JSON payload for a city page.</span>
+              </a>
+            </div>
+          </section>
+        </>
+      )}
+
+      {hub.slug === 'golden-hour' && (
+        <>
+          <section class="resource-section">
+            <div class="detail-section-head">
+              <h2>Today&apos;s golden-hour comparison</h2>
+              <p>This gives the guide a standalone comparison surface instead of acting only as a routing page.</p>
+            </div>
+            <div class="glass-card">
+              <table>
+                <thead>
+                  <tr>
+                    <th>City</th>
+                    <th>Morning window</th>
+                    <th>Evening window</th>
+                    <th>Total golden-hour time</th>
+                    <th>30-day morning shift</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {featuredGoldenHourSnapshots.map((snapshot) => (
+                    <tr>
+                      <td>
+                        <a href={`/sunrise/${snapshot.city.slug}/`}>{snapshot.city.name}</a>
+                        <div>{getCityLocationLabel(snapshot.city)}</div>
+                      </td>
+                      <td>{snapshot.morningStart} to {snapshot.morningEnd}</td>
+                      <td>{snapshot.eveningStart} to {snapshot.eveningEnd}</td>
+                      <td>{snapshot.totalGoldenMinutes} min</td>
+                      <td>{formatClockShift(snapshot.morningShiftIn30Days)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          {goldenHourGuideHighlights && (
+            <section class="resource-section">
+              <div class="detail-section-head">
+                <h2>Fast takeaways</h2>
+                <p>Short summaries make the guide easier to quote, compare, and reuse outside the site.</p>
+              </div>
+              <div class="resource-grid">
+                <article class="resource-card glass-card">
+                  <h3>Earliest morning start</h3>
+                  <p>
+                    <strong>{goldenHourGuideHighlights.earliestMorningWindow.city.name}</strong> starts earliest at {goldenHourGuideHighlights.earliestMorningWindow.morningStart}.
+                  </p>
+                </article>
+                <article class="resource-card glass-card">
+                  <h3>Longest combined golden hour</h3>
+                  <p>
+                    <strong>{goldenHourGuideHighlights.longestCombinedWindow.city.name}</strong> offers {goldenHourGuideHighlights.longestCombinedWindow.totalGoldenMinutes} total minutes today.
+                  </p>
+                </article>
+                <article class="resource-card glass-card">
+                  <h3>Biggest morning shift</h3>
+                  <p>
+                    <strong>{goldenHourGuideHighlights.biggestMorningShift.city.name}</strong> changes fastest, with {formatClockShift(goldenHourGuideHighlights.biggestMorningShift.morningShiftIn30Days)}.
+                  </p>
+                </article>
+              </div>
+            </section>
+          )}
+
+          <section class="resource-section">
+            <div class="detail-section-head">
+              <h2>Method and reuse</h2>
+              <p>The guide is more defensible when the time windows can be validated and reused directly.</p>
+            </div>
+            <div class="resource-link-grid">
+              <a href="/methodology/" class="resource-link-card glass-card">
+                <strong>Methodology</strong>
+                <span>Review the solar assumptions behind the golden-hour windows.</span>
+              </a>
+              <a href="/guides/api/" class="resource-link-card glass-card">
+                <strong>API docs</strong>
+                <span>Pull city timing data from the public endpoint.</span>
+              </a>
+              <a href="/api/v1/times?city=san-francisco" class="resource-link-card glass-card">
+                <strong>Sample response</strong>
+                <span>Inspect the live city payload for a golden-hour location.</span>
+              </a>
+            </div>
+          </section>
+        </>
+      )}
+
+      {hub.slug === 'moon-phase' && (
+        <>
+          <section class="resource-section">
+            <div class="detail-section-head">
+              <h2>Today&apos;s moon comparison</h2>
+              <p>This turns the moon-phase hub into a data asset instead of leaving it as a pure routing surface. The next {nextMoonEvent.type === 'Full Moon' ? 'full moon' : 'new moon'} arrives in about {daysUntilMoonEvent} day{daysUntilMoonEvent === 1 ? '' : 's'}.</p>
+            </div>
+            <div class="glass-card">
+              <table>
+                <thead>
+                  <tr>
+                    <th>City</th>
+                    <th>Phase</th>
+                    <th>Illumination</th>
+                    <th>Moonrise</th>
+                    <th>Moonset</th>
+                    <th>Moonrise vs sunset</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {featuredMoonSnapshots.map((snapshot) => (
+                    <tr>
+                      <td>
+                        <a href={`/sunrise/${snapshot.city.slug}/`}>{snapshot.city.name}</a>
+                        <div>{getCityLocationLabel(snapshot.city)}</div>
+                      </td>
+                      <td>{snapshot.phase}</td>
+                      <td>{snapshot.illumination}%</td>
+                      <td>{snapshot.moonrise}</td>
+                      <td>{snapshot.moonset}</td>
+                      <td>{formatMoonOffset(snapshot.moonriseOffsetFromSunset)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          {moonGuideHighlights && (
+            <section class="resource-section">
+              <div class="detail-section-head">
+                <h2>Fast takeaways</h2>
+                <p>Short summaries make the guide easier to reference when someone only needs the main planning insight.</p>
+              </div>
+              <div class="resource-grid">
+                <article class="resource-card glass-card">
+                  <h3>Earliest moonrise today</h3>
+                  <p>
+                    <strong>{moonGuideHighlights.earliestMoonrise.city.name}</strong> has the earliest listed moonrise at {moonGuideHighlights.earliestMoonrise.moonrise}.
+                  </p>
+                </article>
+                <article class="resource-card glass-card">
+                  <h3>Latest moonset today</h3>
+                  <p>
+                    <strong>{moonGuideHighlights.latestMoonset.city.name}</strong> keeps the moon visible latest, with moonset at {moonGuideHighlights.latestMoonset.moonset}.
+                  </p>
+                </article>
+                {moonGuideHighlights.closestMoonriseToSunset && (
+                  <article class="resource-card glass-card">
+                    <h3>Moonrise closest to sunset</h3>
+                    <p>
+                      <strong>{moonGuideHighlights.closestMoonriseToSunset.city.name}</strong> is closest to sunset, with {formatMoonOffset(moonGuideHighlights.closestMoonriseToSunset.moonriseOffsetFromSunset)}.
+                    </p>
+                  </article>
+                )}
+              </div>
+            </section>
+          )}
+
+          <section class="resource-section">
+            <div class="detail-section-head">
+              <h2>Method and reuse</h2>
+              <p>The guide becomes more defensible when moon numbers can be validated and reused directly.</p>
+            </div>
+            <div class="resource-link-grid">
+              <a href="/methodology/" class="resource-link-card glass-card">
+                <strong>Methodology</strong>
+                <span>Review the solar and lunar assumptions behind the comparison table.</span>
+              </a>
+              <a href="/guides/api/" class="resource-link-card glass-card">
+                <strong>API docs</strong>
+                <span>Pull city moon, sun, and prayer data from the public endpoint.</span>
+              </a>
+              <a href="/api/v1/times?city=london" class="resource-link-card glass-card">
+                <strong>Sample response</strong>
+                <span>Inspect the live JSON payload with moon phase, illumination, and rise/set times.</span>
+              </a>
+            </div>
+          </section>
+        </>
+      )}
+
+      {hub.slug === 'prayer-times' && (
+        <>
+          <section class="resource-section">
+            <div class="detail-section-head">
+              <h2>Today&apos;s prayer comparison</h2>
+              <p>This turns the guide into a reusable comparison asset instead of a pure click-through bridge.</p>
+            </div>
+            <div class="glass-card">
+              <table>
+                <thead>
+                  <tr>
+                    <th>City</th>
+                    <th>Fajr</th>
+                    <th>Sunrise</th>
+                    <th>Maghrib</th>
+                    <th>Daylight</th>
+                    <th>30-day Fajr shift</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {featuredPrayerSnapshots.map((snapshot) => (
+                    <tr>
+                      <td>
+                        <a href={`/prayer-times/${snapshot.city.slug}/`}>{snapshot.city.name}</a>
+                        <div>{getCityLocationLabel(snapshot.city)}</div>
+                      </td>
+                      <td>{snapshot.fajr}</td>
+                      <td>{snapshot.sunrise}</td>
+                      <td>{snapshot.maghrib}</td>
+                      <td>{snapshot.daylight}</td>
+                      <td>{formatClockShift(snapshot.nextThirtyDaysFajr)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          {prayerGuideHighlights && (
+            <section class="resource-section">
+              <div class="detail-section-head">
+                <h2>Fast takeaways</h2>
+                <p>Short summaries make the prayer guide easier to cite without forcing readers through the whole grid first.</p>
+              </div>
+              <div class="resource-grid">
+                <article class="resource-card glass-card">
+                  <h3>Earliest Fajr today</h3>
+                  <p>
+                    <strong>{prayerGuideHighlights.earliestFajr.city.name}</strong> starts earliest at {prayerGuideHighlights.earliestFajr.fajr}.
+                  </p>
+                </article>
+                <article class="resource-card glass-card">
+                  <h3>Latest Maghrib today</h3>
+                  <p>
+                    <strong>{prayerGuideHighlights.latestMaghrib.city.name}</strong> ends later, with Maghrib at {prayerGuideHighlights.latestMaghrib.maghrib}.
+                  </p>
+                </article>
+                <article class="resource-card glass-card">
+                  <h3>Biggest upcoming Fajr shift</h3>
+                  <p>
+                    <strong>{prayerGuideHighlights.biggestFajrShift.city.name}</strong> changes fastest, with {formatClockShift(prayerGuideHighlights.biggestFajrShift.nextThirtyDaysFajr)}.
+                  </p>
+                </article>
+              </div>
+            </section>
+          )}
+
+          <section class="resource-section">
+            <div class="detail-section-head">
+              <h2>Method and reuse</h2>
+              <p>The guide becomes more defensible when the numbers can be validated and reused directly.</p>
+            </div>
+            <div class="resource-link-grid">
+              <a href="/methodology/" class="resource-link-card glass-card">
+                <strong>Methodology</strong>
+                <span>Review the solar and prayer assumptions behind the table.</span>
+              </a>
+              <a href="/guides/api/" class="resource-link-card glass-card">
+                <strong>API docs</strong>
+                <span>Pull city timing data from the public endpoint.</span>
+              </a>
+              <a href="/api/v1/times?city=istanbul" class="resource-link-card glass-card">
+                <strong>Sample response</strong>
+                <span>Inspect a live prayer-oriented city payload.</span>
+              </a>
+            </div>
+          </section>
+        </>
+      )}
 
       <AdUnit id={`ad-guide-${hub.slug}`} />
 

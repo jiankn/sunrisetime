@@ -3,18 +3,14 @@
  * Footer - Growth-oriented site footer
  */
 import {
-  allCities,
   cityIndexLabel,
   featuredFooterCities,
   footerCompanyLinks,
   footerCoreLinks,
-  getCitySearchRecord,
   regionHubs,
   totalCities,
   useCaseHubs,
 } from '@data/site';
-
-const footerSearchCities = allCities.map((city) => getCitySearchRecord(city));
 ---
 
 <footer class="footer">
@@ -124,6 +120,4 @@ const footerSearchCities = allCities.map((city) => getCitySearchRecord(city));
       <a href="/sitemap/">Sitemap</a>
     </div>
   </div>
-
-  <script type="application/json" id="footerSearchData" set:html={JSON.stringify(footerSearchCities)} />
 </footer>

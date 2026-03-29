@@ -2,7 +2,7 @@
 import Base from '@layouts/Base.astro';
 import TurkishHeader from '@components/TurkishHeader.astro';
 import TurkishFooter from '@components/TurkishFooter.astro';
-import cities from '@data/cities.json';
+import { getCityBySlug, getComparisonCities, getNearbyCities } from '@data/site';
 import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
 import {
   getTurkishCityLocationLabel,
@@ -10,20 +10,19 @@ import {
   getTurkishPrayerName,
   turkishLocale,
 } from '@i18n/turkish';
-import { getSunTimes, formatTime } from '@utils/sun';
-import { getNextPrayer, getPrayerTimes } from '@utils/prayer-times';
+import { getSunTimes, formatTime, getClockTimeDelta, getDaylightChangeDays } from '@utils/sun';
+import { getAnnualPrayerExtremes, getNextPrayer, getPrayerSeasonalCheckpoints, getPrayerTimes } from '@utils/prayer-times';
 import type { AsrJuristic, CalculationMethod } from '@utils/prayer-times';
 import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
 
-export function getStaticPaths() {
-  return cities.cities.map((city) => ({
-    params: { city: city.slug },
-    props: { city },
-  }));
-}
+export const prerender = false;
+Astro.response.headers.set('Cache-Control', 'public, max-age=300, s-maxage=3600');
 
-type City = typeof cities.cities[0];
-const { city } = Astro.props as { city: City };
+const city = getCityBySlug(Astro.params.city ?? '');
+
+if (!city) {
+  return new Response(null, { status: 404, statusText: 'Not found' });
+}
 
 const today = new Date();
 const cityName = getTurkishCityName(city);
@@ -41,9 +40,39 @@ function formatCountdown(ms: number) {
   return `${minutes} dk`;
 }
 
+function formatRelativeClockShift(delta: number, baseline: string) {
+  if (delta === 0) return `${baseline} ile aynı`;
+  return delta > 0 ? `${baseline} göre ${Math.abs(delta)} dk daha geç` : `${baseline} göre ${Math.abs(delta)} dk daha erken`;
+}
+
+function formatRelativeDaylight(delta: number, baseline: string) {
+  if (delta === 0) return `${baseline} ile aynı`;
+  return delta > 0 ? `${baseline} göre ${Math.abs(delta)} dk daha uzun` : `${baseline} göre ${Math.abs(delta)} dk daha kısa`;
+}
+
+function formatCalendarDate(date: Date) {
+  return date.toLocaleDateString(turkishLocale, {
+    month: 'short',
+    day: 'numeric',
+    timeZone: city.timezone,
+  });
+}
+
 const nextPrayerCountdown = nextPrayer.time > today
   ? formatCountdown(nextPrayer.time.getTime() - today.getTime())
   : '';
+const thirtyDaysAgo = new Date(today);
+thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+const thirtyDaysLater = new Date(today);
+thirtyDaysLater.setDate(thirtyDaysLater.getDate() + 30);
+const pastPrayers = getPrayerTimes(thirtyDaysAgo, city.lat, city.lng, 'MWL', 'Standard');
+const futurePrayers = getPrayerTimes(thirtyDaysLater, city.lat, city.lng, 'MWL', 'Standard');
+const daylightVs30DaysAgo = -getDaylightChangeDays(today, -30, city.lat, city.lng);
+const daylightIn30Days = getDaylightChangeDays(today, 30, city.lat, city.lng);
+const fajrVs30DaysAgo = getClockTimeDelta(pastPrayers.fajr, prayers.fajr, city.timezone);
+const maghribVs30DaysAgo = getClockTimeDelta(pastPrayers.maghrib, prayers.maghrib, city.timezone);
+const fajrIn30Days = getClockTimeDelta(prayers.fajr, futurePrayers.fajr, city.timezone);
+const maghribIn30Days = getClockTimeDelta(prayers.maghrib, futurePrayers.maghrib, city.timezone);
 
 const localDateLabel = today.toLocaleDateString(turkishLocale, {
   weekday: 'long',
@@ -57,14 +86,24 @@ const localTimeLabel = today.toLocaleTimeString(turkishLocale, {
   minute: '2-digit',
   timeZone: city.timezone,
 });
+const currentYear = Number(new Intl.DateTimeFormat(turkishLocale, {
+  year: 'numeric',
+  timeZone: city.timezone,
+}).format(today));
+const prayerYearExtremes = getAnnualPrayerExtremes(currentYear, city.lat, city.lng, city.timezone, 'MWL', 'Standard');
+const prayerSeasonalCheckpoints = getPrayerSeasonalCheckpoints(currentYear, city.lat, city.lng, 'MWL', 'Standard').map((checkpoint) => ({
+  ...checkpoint,
+  daylight: getSunTimes(checkpoint.date, city.lat, city.lng).daylightFormatted,
+  label: ({
+    'March Equinox': 'Mart ekinoksu',
+    'June Solstice': 'Haziran gündönümü',
+    'September Equinox': 'Eylül ekinoksu',
+    'December Solstice': 'Aralık gündönümü',
+  }[checkpoint.label] ?? checkpoint.label),
+}));
 
-const nearbyCities = cities.cities
-  .filter((entry) => entry.continent === city.continent && entry.slug !== city.slug)
-  .slice(0, 6);
-
-const otherCities = cities.cities
-  .filter((entry) => entry.continent !== city.continent)
-  .slice(0, 4);
+const nearbyCities = getNearbyCities(city, 6);
+const otherCities = getComparisonCities(city, 4);
 
 const pagePath = `/prayer-times/${city.slug}/`;
 const turkishPath = localizePath('tr', pagePath);
@@ -317,6 +356,120 @@ const jsonLd = [
           <p>
             İmsak {formatTime(prayers.sunrise, city.timezone, turkishLocale)} gün doğumundan önce biter; akşam vakti ise {formatTime(sun.sunset, city.timezone, turkishLocale)} gün batımından hemen sonra başlar. Altın saat, gündüz süresi ve ay verilerine de ihtiyacınız varsa <a href={`/tr/sunrise/${city.slug}/`}>{cityName} gün doğumu ve gün batımı sayfasını</a> açın.
           </p>
+        </div>
+      </section>
+
+      <section class="detail-section" aria-label="30 günlük namaz görünümü">
+        <div class="detail-section-head">
+          <h2><i data-lucide="calendar-range" class="icon-md"></i> 30 günlük namaz görünümü</h2>
+          <p>Bugünün çizelgesine ek olarak vakitlerin aylık ölçekte ne kadar kaydığını da görmek planlamayı kolaylaştırır.</p>
+        </div>
+
+        <div class="detail-grid">
+          <div class="detail-card glass-card">
+            <h3>30 gün önceye göre</h3>
+            <div class="detail-time">
+              <div>
+                <span class="data-label">İmsak</span>
+                <span class="detail-time-value">{formatRelativeClockShift(fajrVs30DaysAgo, '30 gün öncesine')}</span>
+              </div>
+              <div>
+                <span class="data-label">Akşam</span>
+                <span class="detail-time-value">{formatRelativeClockShift(maghribVs30DaysAgo, '30 gün öncesine')}</span>
+              </div>
+            </div>
+            <span class="detail-duration">{formatRelativeDaylight(daylightVs30DaysAgo, '30 gün öncesine')}</span>
+          </div>
+
+          <div class="detail-card glass-card">
+            <h3>Önümüzdeki 30 gün</h3>
+            <div class="detail-time">
+              <div>
+                <span class="data-label">İmsak</span>
+                <span class="detail-time-value">{formatRelativeClockShift(fajrIn30Days, 'bugüne')}</span>
+              </div>
+              <div>
+                <span class="data-label">Akşam</span>
+                <span class="detail-time-value">{formatRelativeClockShift(maghribIn30Days, 'bugüne')}</span>
+              </div>
+            </div>
+            <span class="detail-duration">{formatRelativeDaylight(daylightIn30Days, 'bugüne')}</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="detail-section" aria-label="Yıllık namaz uçları">
+        <div class="detail-section-head">
+          <h2><i data-lucide="trophy" class="icon-md"></i> {currentYear} yıllık namaz uçları</h2>
+          <p>Bu bölüm, imsak ve akşam vakitlerinin yıl içindeki gerçek sınırlarını tek ekranda toplar.</p>
+        </div>
+
+        <div class="detail-grid">
+          <div class="detail-card glass-card">
+            <h3>İmsak uçları</h3>
+            <div class="detail-time">
+              <div>
+                <span class="data-label">En erken imsak</span>
+                <span class="detail-time-value">{formatTime(prayerYearExtremes.earliestFajr.time, city.timezone, turkishLocale)}</span>
+              </div>
+              <div>
+                <span class="data-label">En geç imsak</span>
+                <span class="detail-time-value">{formatTime(prayerYearExtremes.latestFajr.time, city.timezone, turkishLocale)}</span>
+              </div>
+            </div>
+            <span class="detail-duration">{formatCalendarDate(prayerYearExtremes.earliestFajr.date)} · {formatCalendarDate(prayerYearExtremes.latestFajr.date)}</span>
+          </div>
+
+          <div class="detail-card glass-card">
+            <h3>Akşam uçları</h3>
+            <div class="detail-time">
+              <div>
+                <span class="data-label">En erken akşam</span>
+                <span class="detail-time-value">{formatTime(prayerYearExtremes.earliestMaghrib.time, city.timezone, turkishLocale)}</span>
+              </div>
+              <div>
+                <span class="data-label">En geç akşam</span>
+                <span class="detail-time-value">{formatTime(prayerYearExtremes.latestMaghrib.time, city.timezone, turkishLocale)}</span>
+              </div>
+            </div>
+            <span class="detail-duration">{formatCalendarDate(prayerYearExtremes.earliestMaghrib.date)} · {formatCalendarDate(prayerYearExtremes.latestMaghrib.date)}</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="detail-section" aria-label="Mevsimsel namaz kontrol noktaları">
+        <div class="detail-section-head">
+          <h2><i data-lucide="trees" class="icon-md"></i> Mevsimsel namaz kontrol noktaları</h2>
+          <p>Dört temel tarih, imsak ve akşam çizgisinin yıl boyunca nasıl hareket ettiğini hızlıca gösterir.</p>
+        </div>
+
+        <div class="glass-card">
+          <table>
+            <thead>
+              <tr>
+                <th>Nokta</th>
+                <th>Tarih</th>
+                <th>İmsak</th>
+                <th>Gün doğumu</th>
+                <th>Akşam</th>
+                <th>Yatsı</th>
+                <th>Gün ışığı</th>
+              </tr>
+            </thead>
+            <tbody>
+              {prayerSeasonalCheckpoints.map((checkpoint) => (
+                <tr>
+                  <td>{checkpoint.label}</td>
+                  <td>{formatCalendarDate(checkpoint.date)}</td>
+                  <td>{formatTime(checkpoint.fajr, city.timezone, turkishLocale)}</td>
+                  <td>{formatTime(checkpoint.sunrise, city.timezone, turkishLocale)}</td>
+                  <td>{formatTime(checkpoint.maghrib, city.timezone, turkishLocale)}</td>
+                  <td>{formatTime(checkpoint.isha, city.timezone, turkishLocale)}</td>
+                  <td>{checkpoint.daylight}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </section>
 

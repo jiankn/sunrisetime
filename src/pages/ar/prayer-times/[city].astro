@@ -2,7 +2,7 @@
 import Base from '@layouts/Base.astro';
 import ArabicHeader from '@components/ArabicHeader.astro';
 import ArabicFooter from '@components/ArabicFooter.astro';
-import cities from '@data/cities.json';
+import { getCityBySlug, getComparisonCities, getNearbyCities } from '@data/site';
 import {
   arabicLocale,
   getArabicCityDisplayName,
@@ -11,19 +11,18 @@ import {
   getArabicPrayerName,
 } from '@i18n/arabic';
 import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
-import { getSunTimes, formatTime } from '@utils/sun';
-import { getNextPrayer, getPrayerTimes } from '@utils/prayer-times';
+import { getSunTimes, formatTime, getClockTimeDelta, getDaylightChangeDays } from '@utils/sun';
+import { getAnnualPrayerExtremes, getNextPrayer, getPrayerSeasonalCheckpoints, getPrayerTimes } from '@utils/prayer-times';
 import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
 
-export function getStaticPaths() {
-  return cities.cities.map((city) => ({
-    params: { city: city.slug },
-    props: { city },
-  }));
-}
+export const prerender = false;
+Astro.response.headers.set('Cache-Control', 'public, max-age=300, s-maxage=3600');
 
-type City = typeof cities.cities[0];
-const { city } = Astro.props as { city: City };
+const city = getCityBySlug(Astro.params.city ?? '');
+
+if (!city) {
+  return new Response(null, { status: 404, statusText: 'Not found' });
+}
 
 function formatCountdown(ms: number) {
   const totalMinutes = Math.max(1, Math.round(ms / 60000));
@@ -34,6 +33,24 @@ function formatCountdown(ms: number) {
   return `${minutes} د`;
 }
 
+function formatRelativeClockShift(delta: number, baseline: string) {
+  if (delta === 0) return `بنفس التوقيت المحلي مقارنة بـ ${baseline}`;
+  return `${delta > 0 ? 'أبعد' : 'أبكر'} بـ ${Math.abs(delta)} دقيقة مقارنة بـ ${baseline}`;
+}
+
+function formatRelativeDaylight(delta: number, baseline: string) {
+  if (delta === 0) return `بنفس مدة النهار مقارنة بـ ${baseline}`;
+  return `${delta > 0 ? 'أطول' : 'أقصر'} بـ ${Math.abs(delta)} دقيقة مقارنة بـ ${baseline}`;
+}
+
+function formatCalendarDate(date: Date) {
+  return date.toLocaleDateString(arabicLocale, {
+    month: 'long',
+    day: 'numeric',
+    timeZone: city.timezone,
+  });
+}
+
 const today = new Date();
 const cityName = getArabicCityName(city);
 const cityDisplayName = getArabicCityDisplayName(city, { includeAdmin1: Boolean(city.admin1) });
@@ -41,9 +58,21 @@ const locationLabel = getArabicCityLocationLabel(city, { includeAdmin1: Boolean(
 const sun = getSunTimes(today, city.lat, city.lng);
 const prayers = getPrayerTimes(today, city.lat, city.lng, 'MWL', 'Standard');
 const nextPrayer = getNextPrayer(today, city.lat, city.lng, 'MWL', 'Standard');
+const thirtyDaysAgo = new Date(today);
+thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+const thirtyDaysLater = new Date(today);
+thirtyDaysLater.setDate(thirtyDaysLater.getDate() + 30);
+const pastPrayers = getPrayerTimes(thirtyDaysAgo, city.lat, city.lng, 'MWL', 'Standard');
+const futurePrayers = getPrayerTimes(thirtyDaysLater, city.lat, city.lng, 'MWL', 'Standard');
 const nextPrayerCountdown = nextPrayer.time > today
   ? formatCountdown(nextPrayer.time.getTime() - today.getTime())
   : '';
+const daylightVs30DaysAgo = -getDaylightChangeDays(today, -30, city.lat, city.lng);
+const daylightIn30Days = getDaylightChangeDays(today, 30, city.lat, city.lng);
+const fajrVs30DaysAgo = getClockTimeDelta(pastPrayers.fajr, prayers.fajr, city.timezone);
+const maghribVs30DaysAgo = getClockTimeDelta(pastPrayers.maghrib, prayers.maghrib, city.timezone);
+const fajrIn30Days = getClockTimeDelta(prayers.fajr, futurePrayers.fajr, city.timezone);
+const maghribIn30Days = getClockTimeDelta(prayers.maghrib, futurePrayers.maghrib, city.timezone);
 const localDateLabel = today.toLocaleDateString(arabicLocale, {
   weekday: 'long',
   year: 'numeric',
@@ -51,10 +80,24 @@ const localDateLabel = today.toLocaleDateString(arabicLocale, {
   day: 'numeric',
   timeZone: city.timezone,
 });
+const currentYear = Number(new Intl.DateTimeFormat('en-US', {
+  year: 'numeric',
+  timeZone: city.timezone,
+}).format(today));
+const prayerYearExtremes = getAnnualPrayerExtremes(currentYear, city.lat, city.lng, city.timezone, 'MWL', 'Standard');
+const prayerSeasonalCheckpoints = getPrayerSeasonalCheckpoints(currentYear, city.lat, city.lng, 'MWL', 'Standard').map((checkpoint) => ({
+  ...checkpoint,
+  daylight: getSunTimes(checkpoint.date, city.lat, city.lng).daylightFormatted,
+  label: ({
+    'March Equinox': 'الاعتدال الربيعي',
+    'June Solstice': 'الانقلاب الصيفي',
+    'September Equinox': 'الاعتدال الخريفي',
+    'December Solstice': 'الانقلاب الشتوي',
+  }[checkpoint.label] ?? checkpoint.label),
+}));
 
-const nearbyCities = cities.cities
-  .filter((entry) => entry.continent === city.continent && entry.slug !== city.slug)
-  .slice(0, 6);
+const nearbyCities = getNearbyCities(city, 6);
+const otherCities = getComparisonCities(city, 4);
 
 const pagePath = `/prayer-times/${city.slug}/`;
 const arPath = localizePath('ar', pagePath);
@@ -218,6 +261,120 @@ const jsonLd = [
         </div>
       </section>
 
+      <section class="detail-section" aria-label="تغير المواقيت خلال 30 يومًا">
+        <div class="detail-section-head">
+          <h2><i data-lucide="calendar-range" class="icon-md"></i> تغير المواقيت خلال 30 يومًا</h2>
+          <p>لا تكفي معرفة أوقات اليوم وحدها، بل من المفيد رؤية سرعة تغير الفجر والمغرب على مدى شهر كامل.</p>
+        </div>
+
+        <div class="detail-grid">
+          <div class="detail-card glass-card">
+            <h3>مقارنة بما قبل 30 يومًا</h3>
+            <div class="detail-time">
+              <div>
+                <span class="data-label">الفجر</span>
+                <span class="detail-time-value">{formatRelativeClockShift(fajrVs30DaysAgo, 'قبل 30 يومًا')}</span>
+              </div>
+              <div>
+                <span class="data-label">المغرب</span>
+                <span class="detail-time-value">{formatRelativeClockShift(maghribVs30DaysAgo, 'قبل 30 يومًا')}</span>
+              </div>
+            </div>
+            <span class="detail-duration">{formatRelativeDaylight(daylightVs30DaysAgo, 'قبل 30 يومًا')}</span>
+          </div>
+
+          <div class="detail-card glass-card">
+            <h3>خلال 30 يومًا القادمة</h3>
+            <div class="detail-time">
+              <div>
+                <span class="data-label">الفجر</span>
+                <span class="detail-time-value">{formatRelativeClockShift(fajrIn30Days, 'اليوم')}</span>
+              </div>
+              <div>
+                <span class="data-label">المغرب</span>
+                <span class="detail-time-value">{formatRelativeClockShift(maghribIn30Days, 'اليوم')}</span>
+              </div>
+            </div>
+            <span class="detail-duration">{formatRelativeDaylight(daylightIn30Days, 'اليوم')}</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="detail-section" aria-label="الحدود السنوية لمواقيت الصلاة">
+        <div class="detail-section-head">
+          <h2><i data-lucide="trophy" class="icon-md"></i> الحدود السنوية لمواقيت الصلاة في {currentYear}</h2>
+          <p>هذا القسم يختصر عليك التنقل بين الأشهر لمعرفة أبكر وأبعد الفجر والمغرب خلال السنة.</p>
+        </div>
+
+        <div class="detail-grid">
+          <div class="detail-card glass-card">
+            <h3>حدود الفجر</h3>
+            <div class="detail-time">
+              <div>
+                <span class="data-label">أبكر فجر</span>
+                <span class="detail-time-value">{formatTime(prayerYearExtremes.earliestFajr.time, city.timezone, arabicLocale)}</span>
+              </div>
+              <div>
+                <span class="data-label">أبعد فجر</span>
+                <span class="detail-time-value">{formatTime(prayerYearExtremes.latestFajr.time, city.timezone, arabicLocale)}</span>
+              </div>
+            </div>
+            <span class="detail-duration">{formatCalendarDate(prayerYearExtremes.earliestFajr.date)} · {formatCalendarDate(prayerYearExtremes.latestFajr.date)}</span>
+          </div>
+
+          <div class="detail-card glass-card">
+            <h3>حدود المغرب</h3>
+            <div class="detail-time">
+              <div>
+                <span class="data-label">أبكر مغرب</span>
+                <span class="detail-time-value">{formatTime(prayerYearExtremes.earliestMaghrib.time, city.timezone, arabicLocale)}</span>
+              </div>
+              <div>
+                <span class="data-label">أبعد مغرب</span>
+                <span class="detail-time-value">{formatTime(prayerYearExtremes.latestMaghrib.time, city.timezone, arabicLocale)}</span>
+              </div>
+            </div>
+            <span class="detail-duration">{formatCalendarDate(prayerYearExtremes.earliestMaghrib.date)} · {formatCalendarDate(prayerYearExtremes.latestMaghrib.date)}</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="detail-section" aria-label="نقاط الصلاة الموسمية">
+        <div class="detail-section-head">
+          <h2><i data-lucide="trees" class="icon-md"></i> نقاط الصلاة الموسمية</h2>
+          <p>أربع نقاط مرجعية موسمية تشرح تغير الفجر والشروق والمغرب والعشاء على مدار السنة.</p>
+        </div>
+
+        <div class="glass-card">
+          <table>
+            <thead>
+              <tr>
+                <th>المحطة</th>
+                <th>التاريخ</th>
+                <th>الفجر</th>
+                <th>الشروق</th>
+                <th>المغرب</th>
+                <th>العشاء</th>
+                <th>مدة النهار</th>
+              </tr>
+            </thead>
+            <tbody>
+              {prayerSeasonalCheckpoints.map((checkpoint) => (
+                <tr>
+                  <td>{checkpoint.label}</td>
+                  <td>{formatCalendarDate(checkpoint.date)}</td>
+                  <td>{formatTime(checkpoint.fajr, city.timezone, arabicLocale)}</td>
+                  <td>{formatTime(checkpoint.sunrise, city.timezone, arabicLocale)}</td>
+                  <td>{formatTime(checkpoint.maghrib, city.timezone, arabicLocale)}</td>
+                  <td>{formatTime(checkpoint.isha, city.timezone, arabicLocale)}</td>
+                  <td>{checkpoint.daylight}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
       <section class="detail-section" id="nearby" aria-label="مدن أخرى">
         <div class="detail-section-head">
           <h2><i data-lucide="map-pin" class="icon-md"></i> مدن أخرى للمقارنة</h2>
@@ -230,6 +387,20 @@ const jsonLd = [
             </a>
           ))}
         </div>
+
+        {otherCities.length > 0 && (
+          <>
+            <h3 class="other-cities-title">مدن إضافية للمقارنة</h3>
+            <div class="nearby-grid">
+              {otherCities.map((entry) => (
+                <a href={`/ar/prayer-times/${entry.slug}/`} class="nearby-card glass-card">
+                  <span class="nearby-name">{getArabicCityName(entry)}</span>
+                  <span class="nearby-country">{getArabicCityLocationLabel(entry, { includeAdmin1: Boolean(entry.admin1) })}</span>
+                </a>
+              ))}
+            </div>
+          </>
+        )}
       </section>
     </div>
   </main>

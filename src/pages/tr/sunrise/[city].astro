@@ -2,7 +2,7 @@
 import Base from '@layouts/Base.astro';
 import TurkishHeader from '@components/TurkishHeader.astro';
 import TurkishFooter from '@components/TurkishFooter.astro';
-import cities from '@data/cities.json';
+import { getCityBySlug, getComparisonCities, getNearbyCities } from '@data/site';
 import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
 import {
   getTurkishCityLocationLabel,
@@ -11,20 +11,19 @@ import {
   getTurkishPrayerName,
   turkishLocale,
 } from '@i18n/turkish';
-import { getDaylightSeries, getGoldenHour, getSunTimes, formatTime, getSunriseDelta, getSunsetDelta } from '@utils/sun';
+import { getAnnualSunExtremes, getDaylightSeries, getGoldenHour, getSeasonalSunCheckpoints, getSunTimes, formatTime, getSunriseDelta, getSunsetDelta, getDaylightChangeDays, getSunEventShiftDays } from '@utils/sun';
 import { getMoonData, getNextMoonEvent } from '@utils/moon';
 import { getNextPrayer } from '@utils/prayer-times';
 import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
 
-export function getStaticPaths() {
-  return cities.cities.map((city) => ({
-    params: { city: city.slug },
-    props: { city },
-  }));
-}
+export const prerender = false;
+Astro.response.headers.set('Cache-Control', 'public, max-age=300, s-maxage=3600');
 
-type City = typeof cities.cities[0];
-const { city } = Astro.props as { city: City };
+const city = getCityBySlug(Astro.params.city ?? '');
+
+if (!city) {
+  return new Response(null, { status: 404, statusText: 'Not found' });
+}
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
@@ -55,6 +54,24 @@ function formatDaylightTrend(minutes: number) {
   return `7 günde ${Math.abs(minutes)} dk ${minutes > 0 ? 'daha uzun' : 'daha kısa'}`;
 }
 
+function formatRelativeClockShift(delta: number, baseline: string) {
+  if (delta === 0) return `${baseline} ile aynı`;
+  return delta > 0 ? `${baseline} göre ${Math.abs(delta)} dk daha geç` : `${baseline} göre ${Math.abs(delta)} dk daha erken`;
+}
+
+function formatRelativeDaylight(delta: number, baseline: string) {
+  if (delta === 0) return `${baseline} ile aynı`;
+  return delta > 0 ? `${baseline} göre ${Math.abs(delta)} dk daha uzun` : `${baseline} göre ${Math.abs(delta)} dk daha kısa`;
+}
+
+function formatCalendarDate(date: Date) {
+  return date.toLocaleDateString(turkishLocale, {
+    month: 'short',
+    day: 'numeric',
+    timeZone: city.timezone,
+  });
+}
+
 const today = new Date();
 const cityName = getTurkishCityName(city);
 const cityLocationLabel = getTurkishCityLocationLabel(city, { includeAdmin1: Boolean(city.admin1) });
@@ -73,6 +90,12 @@ const lightProgress = clamp(
 );
 const daylightTrendMinutes = Math.round((series[series.length - 1].hours - series[0].hours) * 60);
 const daylightTrendCopy = formatDaylightTrend(daylightTrendMinutes);
+const daylightVs30DaysAgo = -getDaylightChangeDays(today, -30, city.lat, city.lng);
+const sunriseVs30DaysAgo = -getSunEventShiftDays(today, -30, city.lat, city.lng, city.timezone, 'sunrise');
+const sunsetVs30DaysAgo = -getSunEventShiftDays(today, -30, city.lat, city.lng, city.timezone, 'sunset');
+const daylightIn30Days = getDaylightChangeDays(today, 30, city.lat, city.lng);
+const sunriseIn30Days = getSunEventShiftDays(today, 30, city.lat, city.lng, city.timezone, 'sunrise');
+const sunsetIn30Days = getSunEventShiftDays(today, 30, city.lat, city.lng, city.timezone, 'sunset');
 const nextMoonEventLabel = nextMoonEvent.type === 'Full Moon' ? 'dolunay' : 'yeni ay';
 const daysUntilMoonEvent = Math.max(1, Math.ceil((nextMoonEvent.date.getTime() - today.getTime()) / 86400000));
 
@@ -120,6 +143,10 @@ const localTimeLabel = today.toLocaleTimeString(turkishLocale, {
   minute: '2-digit',
   timeZone: city.timezone,
 });
+const currentYear = Number(new Intl.DateTimeFormat(turkishLocale, {
+  year: 'numeric',
+  timeZone: city.timezone,
+}).format(today));
 const lightStatus = today < sun.dawn
   ? 'Gece hâlâ baskın.'
   : today < sun.sunrise
@@ -129,14 +156,19 @@ const lightStatus = today < sun.dawn
       : today < sun.dusk
         ? 'Sivil alacakaranlık sürüyor.'
         : 'Gece yeniden başladı.';
+const annualExtremes = getAnnualSunExtremes(currentYear, city.lat, city.lng, city.timezone);
+const seasonalCheckpoints = getSeasonalSunCheckpoints(currentYear, city.lat, city.lng).map((checkpoint) => ({
+  ...checkpoint,
+  label: ({
+    'March Equinox': 'Mart ekinoksu',
+    'June Solstice': 'Haziran gündönümü',
+    'September Equinox': 'Eylül ekinoksu',
+    'December Solstice': 'Aralık gündönümü',
+  }[checkpoint.label] ?? checkpoint.label),
+}));
 
-const nearbyCities = cities.cities
-  .filter((entry) => entry.continent === city.continent && entry.slug !== city.slug)
-  .slice(0, 6);
-
-const otherCities = cities.cities
-  .filter((entry) => entry.continent !== city.continent)
-  .slice(0, 4);
+const nearbyCities = getNearbyCities(city, 6);
+const otherCities = getComparisonCities(city, 4);
 
 const pagePath = `/sunrise/${city.slug}/`;
 const turkishPath = localizePath('tr', pagePath);
@@ -442,6 +474,148 @@ const jsonLd = [
           <p>
             Sabah altın saati {formatTime(golden.morning.start, city.timezone, turkishLocale)} ile {formatTime(golden.morning.end, city.timezone, turkishLocale)} arasında, akşam altın saati ise {formatTime(golden.evening.start, city.timezone, turkishLocale)} ile {formatTime(golden.evening.end, city.timezone, turkishLocale)} arasındadır. Aynı akış içinde ay evresini görebilir ve {cityName} namaz vakitleri sayfasına geçebilirsiniz.
           </p>
+        </div>
+      </section>
+
+      <section class="detail-section" aria-label="30 günlük ışık görünümü">
+        <div class="detail-section-head">
+          <h2><i data-lucide="calendar-range" class="icon-md"></i> 30 günlük ışık görünümü</h2>
+          <p>Bu bölüm sayfayı sadece bugünün cevabından çıkarıp gelecek aya uzanan bir planlama aracına çevirir.</p>
+        </div>
+
+        <div class="detail-grid">
+          <div class="detail-card glass-card">
+            <h3>30 gün önceye göre</h3>
+            <div class="detail-time">
+              <div>
+                <span class="data-label">Gündüz süresi</span>
+                <span class="detail-time-value">{formatRelativeDaylight(daylightVs30DaysAgo, '30 gün öncesine')}</span>
+              </div>
+              <div>
+                <span class="data-label">Gün doğumu / batımı</span>
+                <span class="detail-time-value">{formatRelativeClockShift(sunriseVs30DaysAgo, '30 gün öncesine')} · {formatRelativeClockShift(sunsetVs30DaysAgo, '30 gün öncesine')}</span>
+              </div>
+            </div>
+            <span class="detail-duration">Sabah planının hızla mı kaydığını yoksa yavaş mı değiştiğini tek bakışta gösterir.</span>
+          </div>
+
+          <div class="detail-card glass-card">
+            <h3>Önümüzdeki 30 gün</h3>
+            <div class="detail-time">
+              <div>
+                <span class="data-label">Gündüz süresi</span>
+                <span class="detail-time-value">{formatRelativeDaylight(daylightIn30Days, 'bugüne')}</span>
+              </div>
+              <div>
+                <span class="data-label">Gün doğumu / batımı</span>
+                <span class="detail-time-value">{formatRelativeClockShift(sunriseIn30Days, 'bugüne')} · {formatRelativeClockShift(sunsetIn30Days, 'bugüne')}</span>
+              </div>
+            </div>
+            <span class="detail-duration">Gelecek ay yerel ışık takviminin ne kadar kayacağını hızlıca görürsünüz.</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="detail-section" aria-label="Yıllık ışık uçları">
+        <div class="detail-section-head">
+          <h2><i data-lucide="trophy" class="icon-md"></i> {currentYear} yıllık ışık uçları</h2>
+          <p>Bugünün cevabından sonra en faydalı soru, yıl içindeki gerçek erken ve geç sınırların ne olduğudur.</p>
+        </div>
+
+        <div class="detail-grid">
+          <div class="detail-card glass-card">
+            <h3>Gün doğumu uçları</h3>
+            <div class="detail-time">
+              <div>
+                <span class="data-label">En erken gün doğumu</span>
+                <span class="detail-time-value">{formatTime(annualExtremes.earliestSunrise.time, city.timezone, turkishLocale)}</span>
+              </div>
+              <div>
+                <span class="data-label">En geç gün doğumu</span>
+                <span class="detail-time-value">{formatTime(annualExtremes.latestSunrise.time, city.timezone, turkishLocale)}</span>
+              </div>
+            </div>
+            <span class="detail-duration">{formatCalendarDate(annualExtremes.earliestSunrise.date)} · {formatCalendarDate(annualExtremes.latestSunrise.date)}</span>
+          </div>
+
+          <div class="detail-card glass-card">
+            <h3>Gün batımı uçları</h3>
+            <div class="detail-time">
+              <div>
+                <span class="data-label">En erken gün batımı</span>
+                <span class="detail-time-value">{formatTime(annualExtremes.earliestSunset.time, city.timezone, turkishLocale)}</span>
+              </div>
+              <div>
+                <span class="data-label">En geç gün batımı</span>
+                <span class="detail-time-value">{formatTime(annualExtremes.latestSunset.time, city.timezone, turkishLocale)}</span>
+              </div>
+            </div>
+            <span class="detail-duration">{formatCalendarDate(annualExtremes.earliestSunset.date)} · {formatCalendarDate(annualExtremes.latestSunset.date)}</span>
+          </div>
+        </div>
+
+        <div class="detail-grid">
+          <div class="detail-card glass-card">
+            <h3>Yılın en uzun günü</h3>
+            <div class="detail-time">
+              <div>
+                <span class="data-label">Gün ışığı</span>
+                <span class="detail-time-value">{annualExtremes.longestDay.daylightFormatted}</span>
+              </div>
+              <div>
+                <span class="data-label">Tarih</span>
+                <span class="detail-time-value">{formatCalendarDate(annualExtremes.longestDay.date)}</span>
+              </div>
+            </div>
+            <span class="detail-duration">{cityName} için yılın en geniş doğal ışık penceresi.</span>
+          </div>
+
+          <div class="detail-card glass-card">
+            <h3>Yılın en kısa günü</h3>
+            <div class="detail-time">
+              <div>
+                <span class="data-label">Gün ışığı</span>
+                <span class="detail-time-value">{annualExtremes.shortestDay.daylightFormatted}</span>
+              </div>
+              <div>
+                <span class="data-label">Tarih</span>
+                <span class="detail-time-value">{formatCalendarDate(annualExtremes.shortestDay.date)}</span>
+              </div>
+            </div>
+            <span class="detail-duration">{cityName} için yılın en dar doğal ışık penceresi.</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="detail-section" aria-label="Mevsimsel ışık kontrol noktaları">
+        <div class="detail-section-head">
+          <h2><i data-lucide="trees" class="icon-md"></i> Mevsimsel ışık kontrol noktaları</h2>
+          <p>Dört temel tarih, 365 günlük ham akış yerine yılın ritmini hızlıca okumayı sağlar.</p>
+        </div>
+
+        <div class="glass-card">
+          <table>
+            <thead>
+              <tr>
+                <th>Nokta</th>
+                <th>Tarih</th>
+                <th>Gün doğumu</th>
+                <th>Gün batımı</th>
+                <th>Gün ışığı</th>
+              </tr>
+            </thead>
+            <tbody>
+              {seasonalCheckpoints.map((checkpoint) => (
+                <tr>
+                  <td>{checkpoint.label}</td>
+                  <td>{formatCalendarDate(checkpoint.date)}</td>
+                  <td>{formatTime(checkpoint.sunrise, city.timezone, turkishLocale)}</td>
+                  <td>{formatTime(checkpoint.sunset, city.timezone, turkishLocale)}</td>
+                  <td>{checkpoint.daylightFormatted}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </section>
 

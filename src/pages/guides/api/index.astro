@@ -1,0 +1,123 @@
+---
+import Base from '@layouts/Base.astro';
+import Header from '@components/Header.astro';
+import Footer from '@components/Footer.astro';
+import { buildLanguageSwitcherLinks } from '@i18n/config';
+import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
+
+const pagePath = '/guides/api/';
+const pageUrl = `https://sunrisetime.co${pagePath}`;
+const languageLinks = buildLanguageSwitcherLinks(pagePath, ['en']);
+const alternates = buildAlternateLinks([
+  { hrefLang: 'en', path: pagePath },
+  { hrefLang: 'x-default', path: pagePath },
+]);
+
+const jsonLd = [
+  {
+    "@type": "TechArticle",
+    "@id": `${pageUrl}#article`,
+    "headline": "SunriseTime API",
+    "description": "Query sunrise, sunset, golden hour, moon, and prayer-time data by city slug.",
+    "url": pageUrl,
+    "author": {
+      "@type": "Organization",
+      "name": "SunriseTime",
+    },
+  },
+  buildBreadcrumbJsonLd([
+    { name: 'Home', path: '/' },
+    { name: 'Guides', path: '/guides/' },
+    { name: 'API', path: pagePath },
+  ]),
+];
+
+const sampleUrl = 'https://sunrisetime.co/api/v1/times?city=new-york';
+---
+
+<Base
+  title="SunriseTime API - Sunrise, Sunset, Prayer Times"
+  description="Use the SunriseTime API to query sunrise, sunset, golden hour, moon, and prayer-time data by city slug."
+  canonical={pageUrl}
+  keywords="sunrise api, sunset api, prayer times api, golden hour api"
+  jsonLd={jsonLd}
+  lang="en"
+  alternates={alternates}
+>
+  <Header languageLinks={languageLinks} currentLanguage="en" />
+
+  <main class="resource-page">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/">Home</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <a href="/guides/">Guides</a>
+        <i data-lucide="chevron-right" class="icon-xs"></i>
+        <span>API</span>
+      </nav>
+
+      <header class="resource-header">
+        <span class="section-badge">
+          <i data-lucide="code-2" class="icon-xs"></i>
+          API
+        </span>
+        <h1>Fetch sunrise, sunset, golden hour, moon, and prayer data by city slug.</h1>
+        <p class="resource-subtitle">This is the first external-facing asset for developers, directories, and technical writeups. The endpoint returns normalized city data plus today&apos;s timing block in one response.</p>
+      </header>
+
+      <section class="resource-grid">
+        <article class="resource-card glass-card">
+          <h2>Endpoint</h2>
+          <div class="seo-text">
+            <p><code>GET /api/v1/times?city=&lt;slug&gt;</code></p>
+            <p>Optional: <code>&date=YYYY-MM-DD</code></p>
+          </div>
+        </article>
+
+        <article class="resource-card glass-card">
+          <h2>Returned blocks</h2>
+          <ul class="resource-list">
+            <li>City metadata and timezone</li>
+            <li>Sunrise, sunset, dawn, dusk, solar noon, daylight length</li>
+            <li>Morning and evening golden hour windows</li>
+            <li>Moon phase, illumination, rise and set</li>
+            <li>Prayer times using MWL / Standard Asr</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="resource-section">
+        <div class="detail-section-head">
+          <h2>Sample request</h2>
+          <p>Use a city slug from the public city pages. The same slug works for sunrise and prayer URLs.</p>
+        </div>
+        <div class="glass-card seo-text">
+          <pre><code>{sampleUrl}</code></pre>
+        </div>
+      </section>
+
+      <section class="resource-section">
+        <div class="detail-section-head">
+          <h2>Notes</h2>
+          <p>The API is intentionally narrow for now: one city per request, with consistent output shape and lightweight caching.</p>
+        </div>
+        <div class="resource-link-grid">
+          <a href="/methodology/" class="resource-link-card glass-card">
+            <strong>Methodology</strong>
+            <span>Review the solar and prayer timing assumptions behind the response.</span>
+          </a>
+          <a href="/cities/" class="resource-link-card glass-card">
+            <strong>City index</strong>
+            <span>Find supported slugs in the public city directory.</span>
+          </a>
+          <a href={sampleUrl} class="resource-link-card glass-card">
+            <strong>Open live response</strong>
+            <span>Inspect the JSON payload for New York.</span>
+          </a>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <Footer />
+</Base>

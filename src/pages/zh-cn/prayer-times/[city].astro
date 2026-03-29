@@ -2,7 +2,7 @@
 import Base from '@layouts/Base.astro';
 import ChineseHeader from '@components/ChineseHeader.astro';
 import ChineseFooter from '@components/ChineseFooter.astro';
-import cities from '@data/cities.json';
+import { getCityBySlug, getComparisonCities, getNearbyCities } from '@data/site';
 import {
   chineseLocale,
   formatChineseDuration,
@@ -13,19 +13,18 @@ import {
   getChineseTimezoneLabel,
 } from '@i18n/chinese';
 import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
-import { getSunTimes, formatTime } from '@utils/sun';
-import { getNextPrayer, getPrayerTimes } from '@utils/prayer-times';
+import { getSunTimes, formatTime, getClockTimeDelta, getDaylightChangeDays } from '@utils/sun';
+import { getAnnualPrayerExtremes, getNextPrayer, getPrayerSeasonalCheckpoints, getPrayerTimes } from '@utils/prayer-times';
 import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
 
-export function getStaticPaths() {
-  return cities.cities.map((city) => ({
-    params: { city: city.slug },
-    props: { city },
-  }));
-}
+export const prerender = false;
+Astro.response.headers.set('Cache-Control', 'public, max-age=300, s-maxage=3600');
 
-type City = typeof cities.cities[0];
-const { city } = Astro.props as { city: City };
+const city = getCityBySlug(Astro.params.city ?? '');
+
+if (!city) {
+  return new Response(null, { status: 404, statusText: 'Not found' });
+}
 
 function formatCountdown(ms: number) {
   const totalMinutes = Math.max(1, Math.round(ms / 60000));
@@ -36,6 +35,24 @@ function formatCountdown(ms: number) {
   return `${minutes}分钟`;
 }
 
+function formatRelativeClockShift(delta: number, baseline: string) {
+  if (delta === 0) return `与${baseline}相同`;
+  return delta > 0 ? `比${baseline}晚 ${Math.abs(delta)} 分钟` : `比${baseline}早 ${Math.abs(delta)} 分钟`;
+}
+
+function formatRelativeDaylight(delta: number, baseline: string) {
+  if (delta === 0) return `与${baseline}相同`;
+  return delta > 0 ? `比${baseline}长 ${Math.abs(delta)} 分钟` : `比${baseline}短 ${Math.abs(delta)} 分钟`;
+}
+
+function formatCalendarDate(date: Date) {
+  return date.toLocaleDateString(chineseLocale, {
+    month: 'long',
+    day: 'numeric',
+    timeZone: city.timezone,
+  });
+}
+
 const today = new Date();
 const cityName = getChineseCityName(city);
 const cityDisplayName = getChineseCityDisplayName(city);
@@ -44,9 +61,21 @@ const timezoneLabel = getChineseTimezoneLabel(city.timezone, today);
 const sun = getSunTimes(today, city.lat, city.lng);
 const prayers = getPrayerTimes(today, city.lat, city.lng, 'MWL', 'Standard');
 const nextPrayer = getNextPrayer(today, city.lat, city.lng, 'MWL', 'Standard');
+const thirtyDaysAgo = new Date(today);
+thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+const thirtyDaysLater = new Date(today);
+thirtyDaysLater.setDate(thirtyDaysLater.getDate() + 30);
+const pastPrayers = getPrayerTimes(thirtyDaysAgo, city.lat, city.lng, 'MWL', 'Standard');
+const futurePrayers = getPrayerTimes(thirtyDaysLater, city.lat, city.lng, 'MWL', 'Standard');
 const nextPrayerCountdown = nextPrayer.time > today
   ? formatCountdown(nextPrayer.time.getTime() - today.getTime())
   : '';
+const daylightVs30DaysAgo = -getDaylightChangeDays(today, -30, city.lat, city.lng);
+const daylightIn30Days = getDaylightChangeDays(today, 30, city.lat, city.lng);
+const fajrVs30DaysAgo = getClockTimeDelta(pastPrayers.fajr, prayers.fajr, city.timezone);
+const maghribVs30DaysAgo = getClockTimeDelta(pastPrayers.maghrib, prayers.maghrib, city.timezone);
+const fajrIn30Days = getClockTimeDelta(prayers.fajr, futurePrayers.fajr, city.timezone);
+const maghribIn30Days = getClockTimeDelta(prayers.maghrib, futurePrayers.maghrib, city.timezone);
 const localDateLabel = today.toLocaleDateString(chineseLocale, {
   weekday: 'long',
   year: 'numeric',
@@ -54,10 +83,24 @@ const localDateLabel = today.toLocaleDateString(chineseLocale, {
   day: 'numeric',
   timeZone: city.timezone,
 });
+const currentYear = Number(new Intl.DateTimeFormat(chineseLocale, {
+  year: 'numeric',
+  timeZone: city.timezone,
+}).format(today));
+const prayerYearExtremes = getAnnualPrayerExtremes(currentYear, city.lat, city.lng, city.timezone, 'MWL', 'Standard');
+const prayerSeasonalCheckpoints = getPrayerSeasonalCheckpoints(currentYear, city.lat, city.lng, 'MWL', 'Standard').map((checkpoint) => ({
+  ...checkpoint,
+  daylight: getSunTimes(checkpoint.date, city.lat, city.lng).daylightFormatted,
+  label: ({
+    'March Equinox': '春分',
+    'June Solstice': '夏至',
+    'September Equinox': '秋分',
+    'December Solstice': '冬至',
+  }[checkpoint.label] ?? checkpoint.label),
+}));
 
-const nearbyCities = cities.cities
-  .filter((entry) => entry.continent === city.continent && entry.slug !== city.slug)
-  .slice(0, 6);
+const nearbyCities = getNearbyCities(city, 6);
+const otherCities = getComparisonCities(city, 4);
 
 const pagePath = `/prayer-times/${city.slug}/`;
 const zhPath = localizePath('zh-cn', pagePath);
@@ -222,6 +265,120 @@ const jsonLd = [
         </div>
       </section>
 
+      <section class="detail-section" aria-label="30天礼拜变化">
+        <div class="detail-section-head">
+          <h2><i data-lucide="calendar-range" class="icon-md"></i> 30 天礼拜变化</h2>
+          <p>除了今天的整点时间，也可以直接看出晨礼和昏礼在一个月尺度上的移动速度。</p>
+        </div>
+
+        <div class="detail-grid">
+          <div class="detail-card glass-card">
+            <h3>相比 30 天前</h3>
+            <div class="detail-time">
+              <div>
+                <span class="data-label">晨礼</span>
+                <span class="detail-time-value">{formatRelativeClockShift(fajrVs30DaysAgo, '30 天前')}</span>
+              </div>
+              <div>
+                <span class="data-label">昏礼</span>
+                <span class="detail-time-value">{formatRelativeClockShift(maghribVs30DaysAgo, '30 天前')}</span>
+              </div>
+            </div>
+            <span class="detail-duration">{formatRelativeDaylight(daylightVs30DaysAgo, '30 天前')}</span>
+          </div>
+
+          <div class="detail-card glass-card">
+            <h3>未来 30 天预估</h3>
+            <div class="detail-time">
+              <div>
+                <span class="data-label">晨礼</span>
+                <span class="detail-time-value">{formatRelativeClockShift(fajrIn30Days, '今天')}</span>
+              </div>
+              <div>
+                <span class="data-label">昏礼</span>
+                <span class="detail-time-value">{formatRelativeClockShift(maghribIn30Days, '今天')}</span>
+              </div>
+            </div>
+            <span class="detail-duration">{formatRelativeDaylight(daylightIn30Days, '今天')}</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="detail-section" aria-label="年度礼拜极值">
+        <div class="detail-section-head">
+          <h2><i data-lucide="trophy" class="icon-md"></i> {currentYear} 年度礼拜极值</h2>
+          <p>这组年尺度数据会告诉你本地全年最早和最晚的晨礼与昏礼，大幅减少来回切日期的成本。</p>
+        </div>
+
+        <div class="detail-grid">
+          <div class="detail-card glass-card">
+            <h3>晨礼极值</h3>
+            <div class="detail-time">
+              <div>
+                <span class="data-label">全年最早晨礼</span>
+                <span class="detail-time-value">{formatTime(prayerYearExtremes.earliestFajr.time, city.timezone, chineseLocale)}</span>
+              </div>
+              <div>
+                <span class="data-label">全年最晚晨礼</span>
+                <span class="detail-time-value">{formatTime(prayerYearExtremes.latestFajr.time, city.timezone, chineseLocale)}</span>
+              </div>
+            </div>
+            <span class="detail-duration">{formatCalendarDate(prayerYearExtremes.earliestFajr.date)} · {formatCalendarDate(prayerYearExtremes.latestFajr.date)}</span>
+          </div>
+
+          <div class="detail-card glass-card">
+            <h3>昏礼极值</h3>
+            <div class="detail-time">
+              <div>
+                <span class="data-label">全年最早昏礼</span>
+                <span class="detail-time-value">{formatTime(prayerYearExtremes.earliestMaghrib.time, city.timezone, chineseLocale)}</span>
+              </div>
+              <div>
+                <span class="data-label">全年最晚昏礼</span>
+                <span class="detail-time-value">{formatTime(prayerYearExtremes.latestMaghrib.time, city.timezone, chineseLocale)}</span>
+              </div>
+            </div>
+            <span class="detail-duration">{formatCalendarDate(prayerYearExtremes.earliestMaghrib.date)} · {formatCalendarDate(prayerYearExtremes.latestMaghrib.date)}</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="detail-section" aria-label="季节性礼拜节点">
+        <div class="detail-section-head">
+          <h2><i data-lucide="trees" class="icon-md"></i> 季节性礼拜节点</h2>
+          <p>以四个季节节点查看礼拜时间，比逐天翻历更快判断全年节奏。</p>
+        </div>
+
+        <div class="glass-card">
+          <table>
+            <thead>
+              <tr>
+                <th>节点</th>
+                <th>日期</th>
+                <th>晨礼</th>
+                <th>日出</th>
+                <th>昏礼</th>
+                <th>宵礼</th>
+                <th>日照时长</th>
+              </tr>
+            </thead>
+            <tbody>
+              {prayerSeasonalCheckpoints.map((checkpoint) => (
+                <tr>
+                  <td>{checkpoint.label}</td>
+                  <td>{formatCalendarDate(checkpoint.date)}</td>
+                  <td>{formatTime(checkpoint.fajr, city.timezone, chineseLocale)}</td>
+                  <td>{formatTime(checkpoint.sunrise, city.timezone, chineseLocale)}</td>
+                  <td>{formatTime(checkpoint.maghrib, city.timezone, chineseLocale)}</td>
+                  <td>{formatTime(checkpoint.isha, city.timezone, chineseLocale)}</td>
+                  <td>{checkpoint.daylight}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
       <section class="detail-section" id="nearby" aria-label="相近城市">
         <div class="detail-section-head">
           <h2><i data-lucide="map-pin" class="icon-md"></i> 同区域其他城市</h2>
@@ -234,6 +391,20 @@ const jsonLd = [
             </a>
           ))}
         </div>
+
+        {otherCities.length > 0 && (
+          <>
+            <h3 class="other-cities-title">更多可对比城市</h3>
+            <div class="nearby-grid">
+              {otherCities.map((entry) => (
+                <a href={`/zh-cn/prayer-times/${entry.slug}/`} class="nearby-card glass-card">
+                  <span class="nearby-name">{getChineseCityName(entry)}</span>
+                  <span class="nearby-country">{getChineseCityLocationLabel(entry)}</span>
+                </a>
+              ))}
+            </div>
+          </>
+        )}
       </section>
     </div>
   </main>

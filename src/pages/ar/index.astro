@@ -20,6 +20,9 @@ import { getMoonData } from '@utils/moon';
 import { getNextPrayer } from '@utils/prayer-times';
 import { buildAlternateLinks } from '@utils/seo';
 
+export const prerender = false;
+Astro.response.headers.set('Cache-Control', 'public, max-age=300, s-maxage=3600');
+
 const pagePath = '/';
 const arabicPath = localizePath('ar', pagePath);
 const pageUrl = `https://sunrisetime.co${arabicPath}`;

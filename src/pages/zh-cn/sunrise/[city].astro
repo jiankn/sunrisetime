@@ -2,7 +2,7 @@
 import Base from '@layouts/Base.astro';
 import ChineseHeader from '@components/ChineseHeader.astro';
 import ChineseFooter from '@components/ChineseFooter.astro';
-import cities from '@data/cities.json';
+import { getCityBySlug, getComparisonCities, getNearbyCities } from '@data/site';
 import {
   chineseLocale,
   formatChineseDuration,
@@ -14,20 +14,19 @@ import {
   getChineseTimezoneLabel,
 } from '@i18n/chinese';
 import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
-import { getDaylightSeries, getGoldenHour, getSunTimes, formatTime, getSunriseDelta, getSunsetDelta } from '@utils/sun';
+import { getAnnualSunExtremes, getDaylightSeries, getGoldenHour, getSeasonalSunCheckpoints, getSunTimes, formatTime, getSunriseDelta, getSunsetDelta, getDaylightChangeDays, getSunEventShiftDays } from '@utils/sun';
 import { getMoonData } from '@utils/moon';
 import { getNextPrayer } from '@utils/prayer-times';
 import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
 
-export function getStaticPaths() {
-  return cities.cities.map((city) => ({
-    params: { city: city.slug },
-    props: { city },
-  }));
-}
+export const prerender = false;
+Astro.response.headers.set('Cache-Control', 'public, max-age=300, s-maxage=3600');
 
-type City = typeof cities.cities[0];
-const { city } = Astro.props as { city: City };
+const city = getCityBySlug(Astro.params.city ?? '');
+
+if (!city) {
+  return new Response(null, { status: 404, statusText: 'Not found' });
+}
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
@@ -47,6 +46,24 @@ function formatMinuteShift(delta: number) {
   return delta > 0 ? `比昨天晚 ${Math.abs(delta)} 分钟` : `比昨天早 ${Math.abs(delta)} 分钟`;
 }
 
+function formatRelativeClockShift(delta: number, baseline: string) {
+  if (delta === 0) return `与${baseline}相同`;
+  return delta > 0 ? `比${baseline}晚 ${Math.abs(delta)} 分钟` : `比${baseline}早 ${Math.abs(delta)} 分钟`;
+}
+
+function formatRelativeDaylight(delta: number, baseline: string) {
+  if (delta === 0) return `与${baseline}相同`;
+  return delta > 0 ? `比${baseline}长 ${Math.abs(delta)} 分钟` : `比${baseline}短 ${Math.abs(delta)} 分钟`;
+}
+
+function formatCalendarDate(date: Date) {
+  return date.toLocaleDateString(chineseLocale, {
+    month: 'long',
+    day: 'numeric',
+    timeZone: city.timezone,
+  });
+}
+
 const today = new Date();
 const cityName = getChineseCityName(city);
 const cityDisplayName = getChineseCityDisplayName(city);
@@ -59,6 +76,12 @@ const nextPrayer = getNextPrayer(today, city.lat, city.lng, 'MWL', 'Standard');
 const sunriseDelta = getSunriseDelta(today, city.lat, city.lng, city.timezone);
 const sunsetDelta = getSunsetDelta(today, city.lat, city.lng, city.timezone);
 const series = getDaylightSeries(today, 7, city.lat, city.lng);
+const daylightVs30DaysAgo = -getDaylightChangeDays(today, -30, city.lat, city.lng);
+const sunriseVs30DaysAgo = -getSunEventShiftDays(today, -30, city.lat, city.lng, city.timezone, 'sunrise');
+const sunsetVs30DaysAgo = -getSunEventShiftDays(today, -30, city.lat, city.lng, city.timezone, 'sunset');
+const daylightIn30Days = getDaylightChangeDays(today, 30, city.lat, city.lng);
+const sunriseIn30Days = getSunEventShiftDays(today, 30, city.lat, city.lng, city.timezone, 'sunrise');
+const sunsetIn30Days = getSunEventShiftDays(today, 30, city.lat, city.lng, city.timezone, 'sunset');
 const lightProgress = clamp(
   ((today.getTime() - sun.dawn.getTime()) / (sun.dusk.getTime() - sun.dawn.getTime())) * 100,
   0,
@@ -97,10 +120,23 @@ const localTimeLabel = today.toLocaleTimeString(chineseLocale, {
   minute: '2-digit',
   timeZone: city.timezone,
 });
+const currentYear = Number(new Intl.DateTimeFormat(chineseLocale, {
+  year: 'numeric',
+  timeZone: city.timezone,
+}).format(today));
+const annualExtremes = getAnnualSunExtremes(currentYear, city.lat, city.lng, city.timezone);
+const seasonalCheckpoints = getSeasonalSunCheckpoints(currentYear, city.lat, city.lng).map((checkpoint) => ({
+  ...checkpoint,
+  label: ({
+    'March Equinox': '春分',
+    'June Solstice': '夏至',
+    'September Equinox': '秋分',
+    'December Solstice': '冬至',
+  }[checkpoint.label] ?? checkpoint.label),
+}));
 
-const nearbyCities = cities.cities
-  .filter((entry) => entry.continent === city.continent && entry.slug !== city.slug)
-  .slice(0, 6);
+const nearbyCities = getNearbyCities(city, 6);
+const otherCities = getComparisonCities(city, 4);
 
 const pagePath = `/sunrise/${city.slug}/`;
 const zhPath = localizePath('zh-cn', pagePath);
@@ -279,6 +315,148 @@ const jsonLd = [
         </div>
       </section>
 
+      <section class="detail-section" aria-label="30天光照变化">
+        <div class="detail-section-head">
+          <h2><i data-lucide="calendar-range" class="icon-md"></i> 30 天光照变化</h2>
+          <p>这组数据让页面不只回答“今天几点日出”，也能告诉你最近一个月和接下来一个月的变化幅度。</p>
+        </div>
+
+        <div class="detail-grid">
+          <div class="detail-card glass-card">
+            <h3>相比 30 天前</h3>
+            <div class="detail-time">
+              <div>
+                <span class="data-label">日照时长</span>
+                <span class="detail-time-value">{formatRelativeDaylight(daylightVs30DaysAgo, '30 天前')}</span>
+              </div>
+              <div>
+                <span class="data-label">日出 / 日落</span>
+                <span class="detail-time-value">{formatRelativeClockShift(sunriseVs30DaysAgo, '30 天前')} · {formatRelativeClockShift(sunsetVs30DaysAgo, '30 天前')}</span>
+              </div>
+            </div>
+            <span class="detail-duration">适合判断现在的清晨窗口是在变早还是变晚。</span>
+          </div>
+
+          <div class="detail-card glass-card">
+            <h3>未来 30 天预估</h3>
+            <div class="detail-time">
+              <div>
+                <span class="data-label">日照时长</span>
+                <span class="detail-time-value">{formatRelativeDaylight(daylightIn30Days, '今天')}</span>
+              </div>
+              <div>
+                <span class="data-label">日出 / 日落</span>
+                <span class="detail-time-value">{formatRelativeClockShift(sunriseIn30Days, '今天')} · {formatRelativeClockShift(sunsetIn30Days, '今天')}</span>
+              </div>
+            </div>
+            <span class="detail-duration">可以快速预判下个月本地天光时间会移动多少。</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="detail-section" aria-label="年度光照极值">
+        <div class="detail-section-head">
+          <h2><i data-lucide="trophy" class="icon-md"></i> {currentYear} 年度光照极值</h2>
+          <p>除了今天的结果，这组数据会直接告诉你本地全年最早、最晚和最长、最短的关键节点。</p>
+        </div>
+
+        <div class="detail-grid">
+          <div class="detail-card glass-card">
+            <h3>日出极值</h3>
+            <div class="detail-time">
+              <div>
+                <span class="data-label">全年最早日出</span>
+                <span class="detail-time-value">{formatTime(annualExtremes.earliestSunrise.time, city.timezone, chineseLocale)}</span>
+              </div>
+              <div>
+                <span class="data-label">全年最晚日出</span>
+                <span class="detail-time-value">{formatTime(annualExtremes.latestSunrise.time, city.timezone, chineseLocale)}</span>
+              </div>
+            </div>
+            <span class="detail-duration">{formatCalendarDate(annualExtremes.earliestSunrise.date)} · {formatCalendarDate(annualExtremes.latestSunrise.date)}</span>
+          </div>
+
+          <div class="detail-card glass-card">
+            <h3>日落极值</h3>
+            <div class="detail-time">
+              <div>
+                <span class="data-label">全年最早日落</span>
+                <span class="detail-time-value">{formatTime(annualExtremes.earliestSunset.time, city.timezone, chineseLocale)}</span>
+              </div>
+              <div>
+                <span class="data-label">全年最晚日落</span>
+                <span class="detail-time-value">{formatTime(annualExtremes.latestSunset.time, city.timezone, chineseLocale)}</span>
+              </div>
+            </div>
+            <span class="detail-duration">{formatCalendarDate(annualExtremes.earliestSunset.date)} · {formatCalendarDate(annualExtremes.latestSunset.date)}</span>
+          </div>
+        </div>
+
+        <div class="detail-grid">
+          <div class="detail-card glass-card">
+            <h3>全年最长白昼</h3>
+            <div class="detail-time">
+              <div>
+                <span class="data-label">日照时长</span>
+                <span class="detail-time-value">{annualExtremes.longestDay.daylightFormatted}</span>
+              </div>
+              <div>
+                <span class="data-label">日期</span>
+                <span class="detail-time-value">{formatCalendarDate(annualExtremes.longestDay.date)}</span>
+              </div>
+            </div>
+            <span class="detail-duration">适合快速判断一年里最宽的天光窗口。</span>
+          </div>
+
+          <div class="detail-card glass-card">
+            <h3>全年最短白昼</h3>
+            <div class="detail-time">
+              <div>
+                <span class="data-label">日照时长</span>
+                <span class="detail-time-value">{annualExtremes.shortestDay.daylightFormatted}</span>
+              </div>
+              <div>
+                <span class="data-label">日期</span>
+                <span class="detail-time-value">{formatCalendarDate(annualExtremes.shortestDay.date)}</span>
+              </div>
+            </div>
+            <span class="detail-duration">适合判断一年里最紧的白昼区间。</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="detail-section" aria-label="季节性光照节点">
+        <div class="detail-section-head">
+          <h2><i data-lucide="trees" class="icon-md"></i> 季节性光照节点</h2>
+          <p>用春分、夏至、秋分、冬至四个节点替代 365 天长表，更方便理解全年变化。</p>
+        </div>
+
+        <div class="glass-card">
+          <table>
+            <thead>
+              <tr>
+                <th>节点</th>
+                <th>日期</th>
+                <th>日出</th>
+                <th>日落</th>
+                <th>日照时长</th>
+              </tr>
+            </thead>
+            <tbody>
+              {seasonalCheckpoints.map((checkpoint) => (
+                <tr>
+                  <td>{checkpoint.label}</td>
+                  <td>{formatCalendarDate(checkpoint.date)}</td>
+                  <td>{formatTime(checkpoint.sunrise, city.timezone, chineseLocale)}</td>
+                  <td>{formatTime(checkpoint.sunset, city.timezone, chineseLocale)}</td>
+                  <td>{checkpoint.daylightFormatted}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
       <section class="detail-section" id="nearby" aria-label="相近城市">
         <div class="detail-section-head">
           <h2><i data-lucide="map-pin" class="icon-md"></i> 同区域其他城市</h2>
@@ -291,6 +469,20 @@ const jsonLd = [
             </a>
           ))}
         </div>
+
+        {otherCities.length > 0 && (
+          <>
+            <h3 class="other-cities-title">更多可对比城市</h3>
+            <div class="nearby-grid">
+              {otherCities.map((entry) => (
+                <a href={`/zh-cn/sunrise/${entry.slug}/`} class="nearby-card glass-card">
+                  <span class="nearby-name">{getChineseCityName(entry)}</span>
+                  <span class="nearby-country">{getChineseCityLocationLabel(entry)}</span>
+                </a>
+              ))}
+            </div>
+          </>
+        )}
       </section>
     </div>
   </main>

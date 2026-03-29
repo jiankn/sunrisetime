@@ -2,7 +2,7 @@
 import Base from '@layouts/Base.astro';
 import LocalizedHeader from '@components/LocalizedHeader.astro';
 import LocalizedFooter from '@components/LocalizedFooter.astro';
-import cities from '@data/cities.json';
+import { getCityBySlug, getComparisonCities, getNearbyCities } from '@data/site';
 import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
 import {
   getSpanishCityName,
@@ -11,20 +11,19 @@ import {
   getSpanishPrayerName,
   spanishLocale,
 } from '@i18n/spanish';
-import { getDaylightSeries, getGoldenHour, getSunTimes, formatTime, getSunriseDelta, getSunsetDelta } from '@utils/sun';
+import { getAnnualSunExtremes, getDaylightSeries, getGoldenHour, getSeasonalSunCheckpoints, getSunTimes, formatTime, getSunriseDelta, getSunsetDelta } from '@utils/sun';
 import { getMoonData, getNextMoonEvent } from '@utils/moon';
 import { getNextPrayer, getPrayerTimes } from '@utils/prayer-times';
 import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
 
-export function getStaticPaths() {
-  return cities.cities.map((city) => ({
-    params: { city: city.slug },
-    props: { city },
-  }));
-}
+export const prerender = false;
+Astro.response.headers.set('Cache-Control', 'public, max-age=300, s-maxage=3600');
 
-type City = typeof cities.cities[0];
-const { city } = Astro.props as { city: City };
+const city = getCityBySlug(Astro.params.city ?? '');
+
+if (!city) {
+  return new Response(null, { status: 404, statusText: 'Not found' });
+}
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
@@ -48,6 +47,14 @@ function formatMinuteShift(delta: number) {
 function formatMinuteShiftSentence(delta: number) {
   if (delta === 0) return 'a la misma hora local que ayer';
   return `${Math.abs(delta)} minutos ${delta > 0 ? 'más tarde' : 'más temprano'} que ayer`;
+}
+
+function formatCalendarDate(date: Date) {
+  return date.toLocaleDateString(spanishLocale, {
+    month: 'short',
+    day: 'numeric',
+    timeZone: city.timezone,
+  });
 }
 
 const today = new Date();
@@ -114,6 +121,10 @@ const localTimeLabel = today.toLocaleTimeString(spanishLocale, {
   minute: '2-digit',
   timeZone: city.timezone,
 });
+const currentYear = Number(new Intl.DateTimeFormat(spanishLocale, {
+  year: 'numeric',
+  timeZone: city.timezone,
+}).format(today));
 const lightStatus = today < sun.dawn
   ? 'Todavía es de noche.'
   : today < sun.sunrise
@@ -123,14 +134,19 @@ const lightStatus = today < sun.dawn
       : today < sun.dusk
         ? 'El crepúsculo civil se está apagando.'
         : 'La noche ya volvió.';
+const annualExtremes = getAnnualSunExtremes(currentYear, city.lat, city.lng, city.timezone);
+const seasonalCheckpoints = getSeasonalSunCheckpoints(currentYear, city.lat, city.lng).map((checkpoint) => ({
+  ...checkpoint,
+  label: ({
+    'March Equinox': 'Equinoccio de marzo',
+    'June Solstice': 'Solsticio de junio',
+    'September Equinox': 'Equinoccio de septiembre',
+    'December Solstice': 'Solsticio de diciembre',
+  }[checkpoint.label] ?? checkpoint.label),
+}));
 
-const nearbyCities = cities.cities
-  .filter((entry) => entry.continent === city.continent && entry.slug !== city.slug)
-  .slice(0, 6);
-
-const otherCities = cities.cities
-  .filter((entry) => entry.continent !== city.continent)
-  .slice(0, 4);
+const nearbyCities = getNearbyCities(city, 6);
+const otherCities = getComparisonCities(city, 4);
 
 const pagePath = `/sunrise/${city.slug}/`;
 const spanishPath = localizePath('es', pagePath);
@@ -436,6 +452,109 @@ const jsonLd = [
           <p>
             La hora dorada de la mañana va de {formatTime(golden.morning.start, city.timezone, spanishLocale)} a {formatTime(golden.morning.end, city.timezone, spanishLocale)}, mientras que la de la tarde va de {formatTime(golden.evening.start, city.timezone, spanishLocale)} a {formatTime(golden.evening.end, city.timezone, spanishLocale)}. También puedes revisar la fase lunar actual y abrir la página completa de horarios de oración de {cityName}.
           </p>
+        </div>
+      </section>
+
+      <section class="detail-section" aria-label="Extremos anuales de luz">
+        <div class="detail-section-head">
+          <h2><i data-lucide="trophy" class="icon-md"></i> Extremos de luz en {currentYear}</h2>
+          <p>Después de responder la hora de hoy, lo siguiente útil es ver dónde caen los límites reales del año.</p>
+        </div>
+
+        <div class="detail-grid">
+          <div class="detail-card glass-card">
+            <h3>Extremos del amanecer</h3>
+            <div class="detail-time">
+              <div>
+                <span class="data-label">Amanecer más temprano</span>
+                <span class="detail-time-value">{formatTime(annualExtremes.earliestSunrise.time, city.timezone, spanishLocale)}</span>
+              </div>
+              <div>
+                <span class="data-label">Amanecer más tardío</span>
+                <span class="detail-time-value">{formatTime(annualExtremes.latestSunrise.time, city.timezone, spanishLocale)}</span>
+              </div>
+            </div>
+            <span class="detail-duration">{formatCalendarDate(annualExtremes.earliestSunrise.date)} · {formatCalendarDate(annualExtremes.latestSunrise.date)}</span>
+          </div>
+
+          <div class="detail-card glass-card">
+            <h3>Extremos del atardecer</h3>
+            <div class="detail-time">
+              <div>
+                <span class="data-label">Atardecer más temprano</span>
+                <span class="detail-time-value">{formatTime(annualExtremes.earliestSunset.time, city.timezone, spanishLocale)}</span>
+              </div>
+              <div>
+                <span class="data-label">Atardecer más tardío</span>
+                <span class="detail-time-value">{formatTime(annualExtremes.latestSunset.time, city.timezone, spanishLocale)}</span>
+              </div>
+            </div>
+            <span class="detail-duration">{formatCalendarDate(annualExtremes.earliestSunset.date)} · {formatCalendarDate(annualExtremes.latestSunset.date)}</span>
+          </div>
+        </div>
+
+        <div class="detail-grid">
+          <div class="detail-card glass-card">
+            <h3>Día más largo</h3>
+            <div class="detail-time">
+              <div>
+                <span class="data-label">Luz diurna</span>
+                <span class="detail-time-value">{annualExtremes.longestDay.daylightFormatted}</span>
+              </div>
+              <div>
+                <span class="data-label">Fecha</span>
+                <span class="detail-time-value">{formatCalendarDate(annualExtremes.longestDay.date)}</span>
+              </div>
+            </div>
+            <span class="detail-duration">La ventana de luz natural más amplia del año en {cityName}.</span>
+          </div>
+
+          <div class="detail-card glass-card">
+            <h3>Día más corto</h3>
+            <div class="detail-time">
+              <div>
+                <span class="data-label">Luz diurna</span>
+                <span class="detail-time-value">{annualExtremes.shortestDay.daylightFormatted}</span>
+              </div>
+              <div>
+                <span class="data-label">Fecha</span>
+                <span class="detail-time-value">{formatCalendarDate(annualExtremes.shortestDay.date)}</span>
+              </div>
+            </div>
+            <span class="detail-duration">La ventana de luz natural más estrecha del año en {cityName}.</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="detail-section" aria-label="Puntos estacionales de luz">
+        <div class="detail-section-head">
+          <h2><i data-lucide="trees" class="icon-md"></i> Puntos estacionales de luz</h2>
+          <p>Cuatro checkpoints hacen el año mucho más legible que un calendario completo de 365 filas.</p>
+        </div>
+
+        <div class="glass-card">
+          <table>
+            <thead>
+              <tr>
+                <th>Checkpoint</th>
+                <th>Fecha</th>
+                <th>Amanecer</th>
+                <th>Atardecer</th>
+                <th>Luz diurna</th>
+              </tr>
+            </thead>
+            <tbody>
+              {seasonalCheckpoints.map((checkpoint) => (
+                <tr>
+                  <td>{checkpoint.label}</td>
+                  <td>{formatCalendarDate(checkpoint.date)}</td>
+                  <td>{formatTime(checkpoint.sunrise, city.timezone, spanishLocale)}</td>
+                  <td>{formatTime(checkpoint.sunset, city.timezone, spanishLocale)}</td>
+                  <td>{checkpoint.daylightFormatted}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </section>
 

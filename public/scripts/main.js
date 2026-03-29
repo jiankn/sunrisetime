@@ -17,6 +17,8 @@ document.addEventListener('DOMContentLoaded', () => {
   initFooterSearch();
 });
 
+let citySearchDataPromise = null;
+
 function initNavbar() {
   const navbar = document.getElementById('navbar');
   if (!navbar) return;
@@ -190,6 +192,24 @@ function initScrollAnimations() {
   });
 
   document.querySelectorAll('.fade-in').forEach(element => observer.observe(element));
+}
+
+function loadCitySearchData() {
+  if (!citySearchDataPromise) {
+    citySearchDataPromise = fetch('/city-search.json', {
+      headers: { Accept: 'application/json' },
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`Search data request failed with ${response.status}`);
+        }
+
+        return response.json();
+      })
+      .catch(() => null);
+  }
+
+  return citySearchDataPromise;
 }
 
 function normalizeText(value) {
@@ -591,7 +611,7 @@ function initHeroSearch() {
   }
 }
 
-function initFooterSearch() {
+async function initFooterSearch() {
   const searchRoot = document.querySelector('[data-footer-search]');
   if (!searchRoot) return;
 
@@ -599,7 +619,8 @@ function initFooterSearch() {
   const status = searchRoot.querySelector('[data-footer-search-status]');
   const locationButton = searchRoot.querySelector('[data-footer-use-location]');
   const locationLabel = searchRoot.querySelector('[data-footer-location-label]');
-  const searchData = readJsonScript('footerSearchData');
+  const inlineSearchData = readJsonScript('footerSearchData');
+  const searchData = Array.isArray(inlineSearchData) ? inlineSearchData : await loadCitySearchData();
   const config = {
     useMyLocation: 'Use my location',
     typeCity: 'Type a city name to continue.',
