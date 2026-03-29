@@ -3,6 +3,11 @@ import { getCityBySlug } from '@data/site';
 import { getGoldenHour, getSunTimes, formatTime } from '@utils/sun';
 import { getMoonData } from '@utils/moon';
 import { getPrayerTimes } from '@utils/prayer-times';
+import { apiError, buildApiMeta, jsonResponse, optionsResponse } from '@utils/api';
+
+export const prerender = false;
+
+const CACHE_TTL_SECONDS = 900;
 
 function parseDateInput(value: string | null) {
   if (!value) {
@@ -13,30 +18,41 @@ function parseDateInput(value: string | null) {
   return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
 
-export const GET: APIRoute = ({ url }) => {
+export const OPTIONS: APIRoute = ({ request }) => optionsResponse(request.headers.get('Origin'));
+
+export const GET: APIRoute = ({ url, request }) => {
+  const requestOrigin = request.headers.get('Origin');
   const citySlug = url.searchParams.get('city')?.trim().toLowerCase() ?? '';
-  const date = parseDateInput(url.searchParams.get('date'));
+  const requestedDate = url.searchParams.get('date')?.trim() ?? '';
+  const date = parseDateInput(requestedDate || null);
 
   if (!citySlug) {
-    return new Response(JSON.stringify({ error: 'Missing required "city" query parameter.' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json; charset=utf-8' },
+    return apiError(400, 'missing_city', 'Missing required "city" query parameter.', {
+      details: {
+        parameter: 'city',
+      },
+      requestOrigin,
     });
   }
 
   if (!date) {
-    return new Response(JSON.stringify({ error: 'Invalid "date" query parameter. Use YYYY-MM-DD.' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json; charset=utf-8' },
+    return apiError(400, 'invalid_date', 'Invalid "date" query parameter. Use YYYY-MM-DD.', {
+      details: {
+        parameter: 'date',
+        received: requestedDate,
+      },
+      requestOrigin,
     });
   }
 
   const city = getCityBySlug(citySlug);
 
   if (!city) {
-    return new Response(JSON.stringify({ error: `Unknown city slug: ${citySlug}` }), {
-      status: 404,
-      headers: { 'Content-Type': 'application/json; charset=utf-8' },
+    return apiError(404, 'unknown_city', `Unknown city slug: ${citySlug}`, {
+      details: {
+        city: citySlug,
+      },
+      requestOrigin,
     });
   }
 
@@ -49,6 +65,13 @@ export const GET: APIRoute = ({ url }) => {
   });
 
   const body = {
+    meta: buildApiMeta('/api/v1/times', {
+      city: citySlug,
+      date: requestedDate || localDate,
+    }, CACHE_TTL_SECONDS, {
+      self: url.toString(),
+      timezone: city.timezone,
+    }),
     city: {
       slug: city.slug,
       name: city.name,
@@ -58,6 +81,11 @@ export const GET: APIRoute = ({ url }) => {
       latitude: city.lat,
       longitude: city.lng,
       timezone: city.timezone,
+    },
+    links: {
+      cityLookup: `${url.origin}/api/v1/cities?query=${encodeURIComponent(city.name)}`,
+      sunrisePage: `${url.origin}/sunrise/${city.slug}/`,
+      prayerPage: `${url.origin}/prayer-times/${city.slug}/`,
     },
     date: localDate,
     methods: {
@@ -95,10 +123,8 @@ export const GET: APIRoute = ({ url }) => {
     },
   };
 
-  return new Response(JSON.stringify(body, null, 2), {
-    headers: {
-      'Content-Type': 'application/json; charset=utf-8',
-      'Cache-Control': 'public, max-age=900, s-maxage=900',
-    },
+  return jsonResponse(body, {
+    cacheControl: `public, max-age=${CACHE_TTL_SECONDS}, s-maxage=${CACHE_TTL_SECONDS}`,
+    requestOrigin,
   });
 };

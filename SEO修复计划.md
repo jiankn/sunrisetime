@@ -48,6 +48,8 @@
 - `进行中` 第二阶段 `2C`：`golden-hour` guide 已新增数据对比表、快速结论摘要和方法/API 复用入口。
 - `完成` 第二阶段 `2A / 2B`：中文、西语、法语、土耳其语、阿拉伯语的 sunrise / prayer 页已补齐年度极值与季节节点模块，多语言年尺度数据层完成第一轮覆盖。
 - `完成` 第二阶段 `2C`：`moon-phase` guide 已新增月相对比表、快速结论摘要，以及方法/API 复用入口，guide 资产从 3 个扩展到 4 个主题。
+- `完成` API 产品化增强：`/api/v1/times` 已补统一 `meta`、结构化错误、CORS 与产品级响应头；同时新增 `/api/v1/cities` 城市发现接口与 `/api/v1/openapi.json` 机器可读描述。
+- `完成` API 文档增强：`/guides/api/` 已升级为开发者首页，补齐 quickstart、参数说明、示例代码、错误码和运营说明。
 - `完成` 建立开发者入口：新增 `/api/v1/times` API 与 `/guides/api/` 文档页，并接入站内引导与 sitemap。
 - `验证` 本地 `npm run build` 已通过，动态路由、API 路由、JSON 数据路由均已进入构建产物。
 
@@ -93,7 +95,10 @@
 ### 6. 建立外链增长基础设施
 
 - 已新增 `GET /api/v1/times?city=<slug>&date=YYYY-MM-DD` 接口。
+- 已新增 `GET /api/v1/cities?query=<term>&limit=<n>` 城市发现接口，降低外部接入门槛。
+- 已新增 `GET /api/v1/openapi.json` 机器可读描述，方便后续生成客户端或接入内部工具。
 - 已新增 `/guides/api/` 文档页，说明请求方式、返回字段和入口。
+- API 现已补齐统一 `meta`、结构化错误体、CORS 响应头与更明确的缓存策略。
 - guides 索引页与 sitemap 已接入该开发者资产，方便收录与后续外链介绍。
 
 ## 下一步

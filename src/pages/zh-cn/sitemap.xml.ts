@@ -17,6 +17,7 @@ export const GET: APIRoute = () => {
     '/zh-cn/methodology/',
     '/zh-cn/cities/',
     '/zh-cn/guides/',
+    '/zh-cn/guides/api/',
     '/zh-cn/sitemap/',
   ];
 

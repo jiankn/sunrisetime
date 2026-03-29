@@ -97,6 +97,7 @@ const jsonLd = [
         <article class="sitemap-section glass-card">
           <h2>主题指南</h2>
           <ul class="sitemap-links">
+            <li><a href="/zh-cn/guides/api/">API</a></li>
             {useCaseHubs.map((hub) => {
               const content = getChineseGuideContent(hub);
               return <li><a href={`/zh-cn/guides/${hub.slug}/`}>{content.name}</a></li>;
