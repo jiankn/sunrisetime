@@ -1,0 +1,491 @@
+---
+import AdUnit from '@components/AdUnit.astro';
+import { getComparisonCities, getNearbyCities } from '@data/site';
+import type { City } from '@data/site';
+import { localizePath, type EnabledLanguageCode } from '@i18n/config';
+import type { GoldenHourPageCopy } from '@i18n/golden-hour-page';
+import {
+  formatTime,
+  getAnnualSunExtremes,
+  getDaylightSeries,
+  getGoldenHour,
+  getLocalYear,
+  getSeasonalSunCheckpoints,
+  getSunTimes,
+} from '@utils/sun';
+
+interface Props {
+  city: City;
+  cityName: string;
+  cityDisplayName: string;
+  cityLocationLabel: string;
+  languageCode: EnabledLanguageCode;
+  locale: string;
+  copy: GoldenHourPageCopy;
+  formatCityName: (city: City) => string;
+  formatCityLocationLabel: (city: City) => string;
+}
+
+const {
+  city,
+  cityName,
+  cityDisplayName,
+  cityLocationLabel,
+  languageCode,
+  locale,
+  copy,
+  formatCityName,
+  formatCityLocationLabel,
+} = Astro.props;
+
+const today = new Date();
+const sun = getSunTimes(today, city.lat, city.lng);
+const golden = getGoldenHour(today, city.lat, city.lng);
+const currentYear = getLocalYear(today, city.timezone);
+const annualExtremes = getAnnualSunExtremes(currentYear, city.lat, city.lng, city.timezone);
+const seasonalCheckpoints = getSeasonalSunCheckpoints(currentYear, city.lat, city.lng).map((checkpoint) => ({
+  ...checkpoint,
+  label: copy.translateSeasonalLabel(checkpoint.label),
+}));
+const series = getDaylightSeries(today, 7, city.lat, city.lng);
+const nearbyCities = getNearbyCities(city, 6);
+const otherCities = getComparisonCities(city, 4);
+
+const citiesPath = localizePath(languageCode, '/cities/');
+const sunrisePath = localizePath(languageCode, `/sunrise/${city.slug}/`);
+const prayerPath = localizePath(languageCode, `/prayer-times/${city.slug}/`);
+
+function formatLocalTime(date: Date) {
+  return formatTime(date, city.timezone, locale);
+}
+
+function formatCalendarDate(date: Date) {
+  return date.toLocaleDateString(locale, {
+    month: 'long',
+    day: 'numeric',
+    timeZone: city.timezone,
+  });
+}
+
+function formatCountdown(ms: number) {
+  return copy.formatDuration(Math.max(1, Math.round(ms / 60000)));
+}
+
+function getNextGoldenWindow() {
+  if (today < golden.morning.start) {
+    return {
+      label: copy.nextMorningStarts,
+      countdown: formatCountdown(golden.morning.start.getTime() - today.getTime()),
+      time: formatLocalTime(golden.morning.start),
+      support: copy.nextMorningSupport(formatLocalTime(golden.morning.start), formatLocalTime(golden.morning.end)),
+    };
+  }
+
+  if (today < golden.morning.end) {
+    return {
+      label: copy.nextMorningEnds,
+      countdown: formatCountdown(golden.morning.end.getTime() - today.getTime()),
+      time: formatLocalTime(golden.morning.end),
+      support: copy.nextMorningSupport(formatLocalTime(golden.morning.start), formatLocalTime(golden.morning.end)),
+    };
+  }
+
+  if (today < golden.evening.start) {
+    return {
+      label: copy.nextEveningStarts,
+      countdown: formatCountdown(golden.evening.start.getTime() - today.getTime()),
+      time: formatLocalTime(golden.evening.start),
+      support: copy.nextEveningSupport(formatLocalTime(golden.evening.start), formatLocalTime(golden.evening.end)),
+    };
+  }
+
+  if (today < golden.evening.end) {
+    return {
+      label: copy.nextEveningEnds,
+      countdown: formatCountdown(golden.evening.end.getTime() - today.getTime()),
+      time: formatLocalTime(golden.evening.end),
+      support: copy.nextEveningSupport(formatLocalTime(golden.evening.start), formatLocalTime(golden.evening.end)),
+    };
+  }
+
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const tomorrowGolden = getGoldenHour(tomorrow, city.lat, city.lng);
+
+  return {
+    label: copy.nextTomorrowMorningStarts,
+    countdown: formatCountdown(tomorrowGolden.morning.start.getTime() - today.getTime()),
+    time: formatLocalTime(tomorrowGolden.morning.start),
+    support: copy.nextTomorrowSupport(
+      formatLocalTime(tomorrowGolden.morning.start),
+      formatLocalTime(tomorrowGolden.morning.end),
+    ),
+  };
+}
+
+const nextWindow = getNextGoldenWindow();
+const localDateLabel = today.toLocaleDateString(locale, {
+  weekday: 'long',
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+  timeZone: city.timezone,
+});
+const localTimeLabel = today.toLocaleTimeString(locale, {
+  hour: 'numeric',
+  minute: '2-digit',
+  timeZone: city.timezone,
+});
+---
+
+<main class="city-page">
+  <div class="container">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href={localizePath(languageCode, '/')}>{copy.breadcrumbHome}</a>
+      <i data-lucide="chevron-right" class="icon-xs"></i>
+      <a href={citiesPath}>{copy.breadcrumbCities}</a>
+      <i data-lucide="chevron-right" class="icon-xs"></i>
+      <span>{cityName}</span>
+    </nav>
+
+    <section class="city-snapshot glass-card-lg">
+      <div class="city-snapshot-copy">
+        <span class="city-kicker">{copy.kicker(cityName)}</span>
+        <h1>{copy.heading(cityName)}</h1>
+        <p class="city-lead">{copy.lead(localTimeLabel, nextWindow.label, nextWindow.countdown, nextWindow.time)}</p>
+
+        <div class="city-chip-row">
+          <span class="city-chip city-country-badge">{cityLocationLabel}</span>
+          <span class="city-chip">{city.timezone}</span>
+          <span class="city-chip">{localDateLabel}</span>
+        </div>
+
+        <div class="city-action-row">
+          <a href={citiesPath} class="btn-primary">
+            <i data-lucide="search" class="icon-xs"></i>
+            {copy.browseCities}
+          </a>
+          <a href={sunrisePath} class="btn-secondary">
+            <i data-lucide="sunrise" class="icon-xs"></i>
+            {copy.sunrisePage}
+          </a>
+          <a href={prayerPath} class="btn-secondary">
+            <i data-lucide="clock" class="icon-xs"></i>
+            {copy.prayerPage}
+          </a>
+        </div>
+      </div>
+
+      <div class="city-snapshot-panel">
+        <div class="city-next-event glass-card">
+          <span class="city-next-label">{nextWindow.label}</span>
+          <strong>{nextWindow.countdown}</strong>
+          <span class="city-next-time">{nextWindow.time}</span>
+          <p>{nextWindow.support}</p>
+        </div>
+
+        <div class="city-snapshot-metrics">
+          <div class="city-metric-card glass-card accent-sunrise">
+            <span class="city-metric-label">{copy.metricMorning}</span>
+            <strong class="city-metric-value">{formatLocalTime(golden.morning.start)}</strong>
+            <small class="city-metric-note">
+              {formatLocalTime(golden.morning.end)} · {copy.formatDuration(golden.morning.durationMin)}
+            </small>
+          </div>
+          <div class="city-metric-card glass-card accent-sunset">
+            <span class="city-metric-label">{copy.metricEvening}</span>
+            <strong class="city-metric-value">{formatLocalTime(golden.evening.start)}</strong>
+            <small class="city-metric-note">
+              {formatLocalTime(golden.evening.end)} · {copy.formatDuration(golden.evening.durationMin)}
+            </small>
+          </div>
+          <div class="city-metric-card glass-card accent-daylight">
+            <span class="city-metric-label">{copy.metricSunrise}</span>
+            <strong class="city-metric-value">{formatLocalTime(sun.sunrise)}</strong>
+            <small class="city-metric-note">{copy.metricSunset}: {formatLocalTime(sun.sunset)}</small>
+          </div>
+          <div class="city-metric-card glass-card accent-moon">
+            <span class="city-metric-label">{copy.metricDaylight}</span>
+            <strong class="city-metric-value">{copy.formatDuration(sun.daylightDuration)}</strong>
+            <small class="city-metric-note">{cityDisplayName}</small>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="detail-section" aria-label="Light windows">
+      <div class="detail-section-head">
+        <h2><i data-lucide="camera" class="icon-md"></i> {copy.lightWindowsTitle(cityName)}</h2>
+        <p>{copy.lightWindowsDescription}</p>
+      </div>
+
+      <div class="detail-grid">
+        <div class="detail-card glass-card">
+          <h3>{copy.morningGoldenHour}</h3>
+          <div class="detail-time">
+            <div>
+              <span class="data-label">{copy.startsLabel}</span>
+              <span class="detail-time-value">{formatLocalTime(golden.morning.start)}</span>
+            </div>
+            <div>
+              <span class="data-label">{copy.endsLabel}</span>
+              <span class="detail-time-value">{formatLocalTime(golden.morning.end)}</span>
+            </div>
+          </div>
+          <span class="detail-duration">{copy.durationLabel}: {copy.formatDuration(golden.morning.durationMin)}</span>
+        </div>
+
+        <div class="detail-card glass-card">
+          <h3>{copy.eveningGoldenHour}</h3>
+          <div class="detail-time">
+            <div>
+              <span class="data-label">{copy.startsLabel}</span>
+              <span class="detail-time-value">{formatLocalTime(golden.evening.start)}</span>
+            </div>
+            <div>
+              <span class="data-label">{copy.endsLabel}</span>
+              <span class="detail-time-value">{formatLocalTime(golden.evening.end)}</span>
+            </div>
+          </div>
+          <span class="detail-duration">{copy.durationLabel}: {copy.formatDuration(golden.evening.durationMin)}</span>
+        </div>
+      </div>
+
+      <div class="glass-card">
+        <h3>{copy.twilightTitle}</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>{copy.phaseLabel}</th>
+              <th>{copy.dawnLabel}</th>
+              <th>{copy.duskLabel}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>{copy.civilTwilight}</td>
+              <td>{formatLocalTime(sun.dawn)}</td>
+              <td>{formatLocalTime(sun.dusk)}</td>
+            </tr>
+            <tr>
+              <td>{copy.nauticalTwilight}</td>
+              <td>{formatLocalTime(sun.nauticalDawn)}</td>
+              <td>{formatLocalTime(sun.nauticalDusk)}</td>
+            </tr>
+            <tr>
+              <td>{copy.astronomicalTwilight}</td>
+              <td>{formatLocalTime(sun.nightEnd)}</td>
+              <td>{formatLocalTime(sun.night)}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="detail-section" aria-label="Trend and extremes">
+      <div class="detail-section-head">
+        <h2><i data-lucide="calendar-range" class="icon-md"></i> {copy.trendTitle}</h2>
+        <p>{copy.trendDescription}</p>
+      </div>
+
+      <div class="detail-grid">
+        <div class="glass-card">
+          <h3>{copy.daylightLabel}</h3>
+          <p class="detail-duration">{copy.annualExtremesDescription}</p>
+          <div class="chart-bars-static">
+            {series.map((entry, index) => {
+              const pct = Math.min(100, Math.round((entry.hours / 16) * 100));
+              const weekday = entry.date.toLocaleDateString(locale, {
+                weekday: 'short',
+                timeZone: city.timezone,
+              });
+              return (
+                <div class={`chart-col ${index === 0 ? 'active' : ''}`}>
+                  <span class="chart-val">{copy.formatHours(entry.hours)}</span>
+                  <div class="chart-fill" style={`height:${pct}%`}></div>
+                  <span class="chart-day">{weekday}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div class="detail-card glass-card">
+          <h3>{copy.annualExtremesTitle(currentYear)}</h3>
+          <div class="outlook-list">
+            <div class="outlook-item">
+              <span class="outlook-metric">{copy.earliestSunrise}</span>
+              <span class="outlook-shift">{formatLocalTime(annualExtremes.earliestSunrise.time)} · {formatCalendarDate(annualExtremes.earliestSunrise.date)}</span>
+            </div>
+            <div class="outlook-item">
+              <span class="outlook-metric">{copy.latestSunrise}</span>
+              <span class="outlook-shift">{formatLocalTime(annualExtremes.latestSunrise.time)} · {formatCalendarDate(annualExtremes.latestSunrise.date)}</span>
+            </div>
+            <div class="outlook-item">
+              <span class="outlook-metric">{copy.earliestSunset}</span>
+              <span class="outlook-shift">{formatLocalTime(annualExtremes.earliestSunset.time)} · {formatCalendarDate(annualExtremes.earliestSunset.date)}</span>
+            </div>
+            <div class="outlook-item">
+              <span class="outlook-metric">{copy.latestSunset}</span>
+              <span class="outlook-shift">{formatLocalTime(annualExtremes.latestSunset.time)} · {formatCalendarDate(annualExtremes.latestSunset.date)}</span>
+            </div>
+            <div class="outlook-item">
+              <span class="outlook-metric">{copy.longestDay}</span>
+              <span class="outlook-shift">{copy.formatDuration(annualExtremes.longestDay.daylightDuration)} · {formatCalendarDate(annualExtremes.longestDay.date)}</span>
+            </div>
+            <div class="outlook-item">
+              <span class="outlook-metric">{copy.shortestDay}</span>
+              <span class="outlook-shift">{copy.formatDuration(annualExtremes.shortestDay.daylightDuration)} · {formatCalendarDate(annualExtremes.shortestDay.date)}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="glass-card">
+        <h3>{copy.seasonalTitle}</h3>
+        <p class="detail-duration">{copy.seasonalDescription}</p>
+        <table>
+          <thead>
+            <tr>
+              <th>{copy.checkpointLabel}</th>
+              <th>{copy.dateLabel}</th>
+              <th>{copy.sunriseLabel}</th>
+              <th>{copy.sunsetLabel}</th>
+              <th>{copy.daylightLabel}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {seasonalCheckpoints.map((checkpoint) => (
+              <tr>
+                <td>{checkpoint.label}</td>
+                <td>{formatCalendarDate(checkpoint.date)}</td>
+                <td>{formatLocalTime(checkpoint.sunrise)}</td>
+                <td>{formatLocalTime(checkpoint.sunset)}</td>
+                <td>{copy.formatDuration(checkpoint.daylightDuration)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <AdUnit id={`ad-${languageCode}-golden-hour-city`} />
+
+    <section class="detail-section seo-content" aria-label="About golden hour">
+      <h2><i data-lucide="info" class="icon-md"></i> {copy.aboutTitle(cityName)}</h2>
+      <div class="seo-text glass-card">
+        <p>{copy.aboutIntro(cityName, formatLocalTime(sun.sunrise), formatLocalTime(sun.sunset), copy.formatDuration(sun.daylightDuration))}</p>
+        <p>{copy.aboutPhotography(cityName, formatLocalTime(golden.morning.start), formatLocalTime(golden.morning.end), formatLocalTime(golden.evening.start), formatLocalTime(golden.evening.end))}</p>
+        <p>{copy.aboutTwilight(formatLocalTime(sun.dawn), formatLocalTime(sun.dusk), formatLocalTime(sun.nauticalDawn), formatLocalTime(sun.nauticalDusk))}</p>
+        <p>{copy.aboutLocalClock(cityName, localDateLabel, localTimeLabel, city.timezone)}</p>
+      </div>
+    </section>
+
+    <section class="detail-section" aria-label="Nearby cities">
+      <div class="detail-section-head">
+        <h2><i data-lucide="map-pin" class="icon-md"></i> {copy.nearbyTitle(cityName)}</h2>
+        <p>{copy.nearbyDescription}</p>
+      </div>
+
+      <div class="nearby-grid">
+        {nearbyCities.map((entry) => (
+          <a href={localizePath(languageCode, `/golden-hour/${entry.slug}/`)} class="nearby-card glass-card">
+            <span class="nearby-name">{formatCityName(entry)}</span>
+            <span class="nearby-country">{formatCityLocationLabel(entry)}</span>
+          </a>
+        ))}
+      </div>
+
+      {otherCities.length > 0 && (
+        <>
+          <h3 class="other-cities-title">{copy.moreCitiesToCompare}</h3>
+          <div class="nearby-grid">
+            {otherCities.map((entry) => (
+              <a href={localizePath(languageCode, `/golden-hour/${entry.slug}/`)} class="nearby-card glass-card">
+                <span class="nearby-name">{formatCityName(entry)}</span>
+                <span class="nearby-country">{formatCityLocationLabel(entry)}</span>
+              </a>
+            ))}
+          </div>
+        </>
+      )}
+
+      <div class="cities-cta" style="margin-top:2rem;">
+        <a href={citiesPath} class="btn-secondary">
+          <i data-lucide="globe" class="icon-xs"></i>
+          {copy.browseAllCities}
+        </a>
+      </div>
+    </section>
+  </div>
+</main>
+
+<style>
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+    font-size: 0.95rem;
+  }
+
+  th,
+  td {
+    padding: 0.75rem 1rem;
+    text-align: left;
+    white-space: nowrap;
+  }
+
+  th {
+    border-bottom: 2px solid var(--border, #e5e7eb);
+    font-weight: 600;
+  }
+
+  td {
+    border-bottom: 1px solid var(--border, #e5e7eb);
+  }
+
+  tr:last-child td {
+    border-bottom: none;
+  }
+
+  .outlook-list {
+    display: grid;
+    gap: 0.85rem;
+    margin-top: 1rem;
+  }
+
+  .outlook-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border, #e5e7eb);
+  }
+
+  .outlook-item:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+
+  .outlook-metric {
+    font-size: 0.85rem;
+    color: var(--text-muted, #6b7280);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+  }
+
+  .outlook-shift {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-main, #111827);
+  }
+
+  @media (max-width: 640px) {
+    th,
+    td {
+      padding: 0.5rem;
+      font-size: 0.85rem;
+    }
+  }
+</style>

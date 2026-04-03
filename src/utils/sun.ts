@@ -153,6 +153,24 @@ export function formatTime(
   }
 }
 
+export function getLocalYear(date: Date, timezone?: string): number {
+  try {
+    const parts = new Intl.DateTimeFormat('en-US', {
+      year: 'numeric',
+      ...(timezone ? { timeZone: timezone } : {}),
+    }).formatToParts(date);
+    const year = Number(parts.find((part) => part.type === 'year')?.value);
+
+    if (Number.isFinite(year)) {
+      return year;
+    }
+  } catch {
+    // Fall through to the runtime-local year below.
+  }
+
+  return date.getFullYear();
+}
+
 function getClockMinutes(date: Date, timezone?: string): number {
   if (!timezone) {
     return date.getHours() * 60 + date.getMinutes();

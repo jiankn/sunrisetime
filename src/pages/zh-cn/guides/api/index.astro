@@ -1,27 +1,37 @@
 ---
-import Base from '@layouts/Base.astro';
-import ChineseHeader from '@components/ChineseHeader.astro';
+import ApiGuideContent from '@components/ApiGuideContent.astro';
 import ChineseFooter from '@components/ChineseFooter.astro';
-import { supportEmail, supportEmailHref, totalCities } from '@data/site';
+import ChineseHeader from '@components/ChineseHeader.astro';
+import { supportEmail, totalCities } from '@data/site';
+import Base from '@layouts/Base.astro';
 import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
+import { chineseApiGuideCopy } from '@i18n/api-guide-page';
 import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
 
 const pagePath = '/guides/api/';
-const zhPath = localizePath('zh-cn', pagePath);
-const pageUrl = `https://sunrisetime.co${zhPath}`;
-const languageLinks = buildLanguageSwitcherLinks(pagePath, ['en', 'zh-cn']);
+const localizedPath = localizePath('zh-cn', pagePath);
+const pageUrl = `https://sunrisetime.co${localizedPath}`;
 const alternates = buildAlternateLinks([
   { hrefLang: 'en', path: pagePath },
-  { hrefLang: 'zh-cn', path: zhPath },
+  { hrefLang: 'zh-cn', path: localizedPath },
   { hrefLang: 'x-default', path: pagePath },
 ]);
+const languageLinks = buildLanguageSwitcherLinks(pagePath);
+
+const sampleCitiesUrl = `https://sunrisetime.co/api/v1/cities?query=${chineseApiGuideCopy.sampleQueryCity}&limit=3`;
+const sampleTimesUrl = `https://sunrisetime.co/api/v1/times?city=${chineseApiGuideCopy.sampleCitySlug}&date=2026-03-29`;
+const openApiUrl = 'https://sunrisetime.co/api/v1/openapi.json';
+const cityLookupCurl = `curl "${sampleCitiesUrl}"`;
+const timingCurl = `curl "${sampleTimesUrl}"`;
+const jsExample = `const cityLookup = await fetch("https://sunrisetime.co/api/v1/cities?query=${chineseApiGuideCopy.sampleQueryCity}&limit=1");\nconst cityResult = await cityLookup.json();\nconst citySlug = cityResult.cities[0]?.slug;\n\nconst timingResponse = await fetch(\`https://sunrisetime.co/api/v1/times?city=\${citySlug}&date=2026-03-29\`\n);\nconst timingData = await timingResponse.json();\n\nconsole.log(timingData.sun.sunrise, timingData.prayerTimes.maghrib);`;
+const sampleResponse = `{\n  "meta": {\n    "version": "v1",\n    "endpoint": "/api/v1/times",\n    "cacheTtlSeconds": 900\n  },\n  "city": {\n    "slug": "${chineseApiGuideCopy.sampleCitySlug}",\n    "name": "Shanghai",\n    "timezone": "Asia/Shanghai"\n  },\n  "sun": {\n    "sunrise": "5:43 AM",\n    "sunset": "6:08 PM"\n  },\n  "moon": {\n    "phase": "Waxing Crescent",\n    "illumination": 12\n  },\n  "prayerTimes": {\n    "fajr": "4:46 AM",\n    "maghrib": "6:09 PM"\n  }\n}`;
 
 const jsonLd = [
   {
     "@type": "TechArticle",
     "@id": `${pageUrl}#article`,
-    "headline": "SunriseTime API 简体中文文档",
-    "description": "SunriseTime API 的简体中文开发者文档，包含城市发现、时间查询、错误码与接入说明。",
+    "headline": chineseApiGuideCopy.pageTitle,
+    "description": chineseApiGuideCopy.pageDescription,
     "url": pageUrl,
     "inLanguage": "zh-CN",
     "author": {
@@ -32,270 +42,34 @@ const jsonLd = [
   buildBreadcrumbJsonLd([
     { name: '首页', path: '/zh-cn/' },
     { name: '主题指南', path: '/zh-cn/guides/' },
-    { name: 'API', path: zhPath },
+    { name: 'API', path: localizedPath },
   ]),
 ];
-
-const sampleCitiesUrl = 'https://sunrisetime.co/api/v1/cities?query=shanghai&limit=3';
-const sampleTimesUrl = 'https://sunrisetime.co/api/v1/times?city=shanghai&date=2026-03-29';
-const openApiUrl = 'https://sunrisetime.co/api/v1/openapi.json';
-
-const cityLookupCurl = `curl "${sampleCitiesUrl}"`;
-const timingCurl = `curl "${sampleTimesUrl}"`;
-const jsExample = `const cityLookup = await fetch("https://sunrisetime.co/api/v1/cities?query=shanghai&limit=1");\nconst cityResult = await cityLookup.json();\nconst citySlug = cityResult.cities[0]?.slug;\n\nconst timingResponse = await fetch(\`https://sunrisetime.co/api/v1/times?city=\${citySlug}&date=2026-03-29\`\n);\nconst timingData = await timingResponse.json();\n\nconsole.log(timingData.sun.sunrise, timingData.prayerTimes.maghrib);`;
 ---
 
 <Base
-  title="SunriseTime API - 简体中文调用文档"
-  description="SunriseTime API 简体中文调用文档：先查城市 slug，再获取 sunrise、sunset、golden hour、moon 和 prayer times 数据。"
+  title={chineseApiGuideCopy.pageTitle}
+  description={chineseApiGuideCopy.pageDescription}
   canonical={pageUrl}
-  keywords="日出 API, 日落 API, 礼拜时间 API, 月相 API, 城市查询 API"
+  keywords={chineseApiGuideCopy.keywords}
   jsonLd={jsonLd}
   lang="zh-CN"
   langPrefix="/zh-cn"
   alternates={alternates}
 >
   <ChineseHeader languageLinks={languageLinks} currentLanguage="zh-cn" />
-
-  <main class="resource-page">
-    <div class="container">
-      <nav class="breadcrumb" aria-label="面包屑导航">
-        <a href="/zh-cn/">首页</a>
-        <i data-lucide="chevron-right" class="icon-xs"></i>
-        <a href="/zh-cn/guides/">主题指南</a>
-        <i data-lucide="chevron-right" class="icon-xs"></i>
-        <span>API</span>
-      </nav>
-
-      <header class="resource-header">
-        <span class="section-badge">
-          <i data-lucide="code-2" class="icon-xs"></i>
-          API
-        </span>
-        <h1>先查城市，再取当天时间数据。</h1>
-        <p class="resource-subtitle">如果你想自己调用 SunriseTime 的数据，这页就是最短路径。先拿城市 slug，再请求某个城市某一天的日出、日落、黄金时刻、月相和礼拜时间。当前目录覆盖 {totalCities} 座已索引城市。</p>
-      </header>
-
-      <section class="resource-grid resource-grid-3">
-        <article class="resource-card glass-card">
-          <h2>现在怎么用</h2>
-          <ul class="resource-list">
-            <li>公开 beta</li>
-            <li>暂不要求 API key</li>
-            <li>适合先跑通调用、做原型或轻量查询</li>
-            <li>匿名访问的上线目标是 `100 次 / IP / 天`</li>
-          </ul>
-        </article>
-
-        <article class="resource-card glass-card">
-          <h2>现在能直接用什么</h2>
-          <ul class="resource-list">
-            <li>先查支持的城市和 slug</li>
-            <li>再查单城市、单日期的数据</li>
-            <li>浏览器侧 CORS 当前只对第一方域名开放</li>
-            <li>JSON 响应会带 `X-Robots-Tag: noindex`，避免 API 被搜索引擎抓取</li>
-          </ul>
-        </article>
-
-        <article class="resource-card glass-card">
-          <h2>缓存策略</h2>
-          <ul class="resource-list">
-            <li><code>/api/v1/times</code>：15 分钟</li>
-            <li><code>/api/v1/cities</code>：60 分钟</li>
-            <li><code>/api/v1/openapi.json</code>：60 分钟</li>
-          </ul>
-        </article>
-      </section>
-
-      <section class="resource-section">
-        <div class="detail-section-head">
-          <h2>快速开始</h2>
-          <p>推荐先查城市，再用返回的 slug 请求时间数据。</p>
-        </div>
-
-        <div class="resource-grid">
-          <article class="resource-card glass-card">
-            <h3>1. 查城市 slug</h3>
-            <pre class="docs-code-block"><code>{cityLookupCurl}</code></pre>
-          </article>
-
-          <article class="resource-card glass-card">
-            <h3>2. 查时间数据</h3>
-            <pre class="docs-code-block"><code>{timingCurl}</code></pre>
-          </article>
-        </div>
-      </section>
-
-      <section class="resource-section">
-        <div class="detail-section-head">
-          <h2>接口列表</h2>
-          <p>当前先开放三条最常用的接口，足够把基本调用跑通。</p>
-        </div>
-
-        <div class="resource-link-grid">
-          <a href={sampleCitiesUrl} class="resource-link-card glass-card">
-            <strong><code>GET /api/v1/cities</code></strong>
-            <span>按城市名、slug、国家或地区检索支持的城市，并返回稳定 slug。</span>
-          </a>
-          <a href={sampleTimesUrl} class="resource-link-card glass-card">
-            <strong><code>GET /api/v1/times</code></strong>
-            <span>按城市和日期返回 sunrise、sunset、golden hour、moon 和 prayer times。</span>
-          </a>
-          <a href={openApiUrl} class="resource-link-card glass-card">
-            <strong><code>GET /api/v1/openapi.json</code></strong>
-            <span>读取机器可读的 OpenAPI 描述，方便生成客户端或做内部集成。</span>
-          </a>
-        </div>
-      </section>
-
-      <section class="resource-section">
-        <div class="detail-section-head">
-          <h2>参数说明</h2>
-          <p>流程很简单：先查 slug，再按城市请求某一天的数据。</p>
-        </div>
-
-        <div class="resource-grid">
-          <article class="resource-card glass-card">
-            <h3><code>/api/v1/cities</code></h3>
-            <div class="docs-table-wrap">
-              <table class="docs-table">
-                <thead>
-                  <tr>
-                    <th>参数</th>
-                    <th>必填</th>
-                    <th>说明</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td><code>query</code></td>
-                    <td>否</td>
-                    <td>城市、slug、国家或行政区。留空时返回更通用的热门城市结果。</td>
-                  </tr>
-                  <tr>
-                    <td><code>limit</code></td>
-                    <td>否</td>
-                    <td>默认 10，最大 25。</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </article>
-
-          <article class="resource-card glass-card">
-            <h3><code>/api/v1/times</code></h3>
-            <div class="docs-table-wrap">
-              <table class="docs-table">
-                <thead>
-                  <tr>
-                    <th>参数</th>
-                    <th>必填</th>
-                    <th>说明</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td><code>city</code></td>
-                    <td>是</td>
-                    <td>稳定城市 slug，例如 <code>shanghai</code>、<code>beijing</code>、<code>london</code>。</td>
-                  </tr>
-                  <tr>
-                    <td><code>date</code></td>
-                    <td>否</td>
-                    <td>可选，格式为 <code>YYYY-MM-DD</code>。</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </article>
-        </div>
-      </section>
-
-      <section class="resource-section">
-        <div class="detail-section-head">
-          <h2>集成示例</h2>
-          <p>如果你只是先把调用跑通，最省事的方式是服务端脚本、本地工具或命令行。第三方浏览器页面直连暂时不建议。</p>
-        </div>
-
-        <div class="resource-grid">
-          <article class="resource-card glass-card">
-            <h3>cURL</h3>
-            <pre class="docs-code-block"><code>{timingCurl}</code></pre>
-          </article>
-
-          <article class="resource-card glass-card">
-            <h3>JavaScript</h3>
-            <pre class="docs-code-block"><code>{jsExample}</code></pre>
-          </article>
-        </div>
-      </section>
-
-      <section class="resource-section">
-        <div class="detail-section-head">
-          <h2>错误模型</h2>
-          <p>错误会返回结构化 JSON，方便你在脚本、前端或服务端里直接判断。</p>
-        </div>
-
-        <div class="glass-card">
-          <div class="docs-table-wrap">
-            <table class="docs-table">
-              <thead>
-                <tr>
-                  <th>错误码</th>
-                  <th>状态码</th>
-                  <th>含义</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td><code>missing_city</code></td>
-                  <td>400</td>
-                  <td><code>/api/v1/times</code> 没有传入 <code>city</code> 参数。</td>
-                </tr>
-                <tr>
-                  <td><code>invalid_date</code></td>
-                  <td>400</td>
-                  <td><code>date</code> 不是合法的 <code>YYYY-MM-DD</code> 格式。</td>
-                </tr>
-                <tr>
-                  <td><code>unknown_city</code></td>
-                  <td>404</td>
-                  <td>传入的城市 slug 不存在。</td>
-                </tr>
-                <tr>
-                  <td><code>invalid_limit</code></td>
-                  <td>400</td>
-                  <td><code>/api/v1/cities</code> 的 <code>limit</code> 参数不合法。</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-
-      <section class="resource-section">
-        <div class="detail-section-head">
-          <h2>接下来怎么用</h2>
-          <p>如果你想先核对计算方法、人工确认城市 slug，或者需要更高配额，可以继续看下面三个入口。</p>
-        </div>
-
-        <div class="resource-link-grid">
-          <a href="/zh-cn/methodology/" class="resource-link-card glass-card">
-            <strong>方法说明</strong>
-            <span>查看太阳、月相和礼拜时间的计算假设。</span>
-          </a>
-          <a href="/zh-cn/cities/" class="resource-link-card glass-card">
-            <strong>城市索引</strong>
-            <span>如果你想先人工检查 slug，可直接浏览城市索引页。</span>
-          </a>
-          <a href={supportEmailHref} class="resource-link-card glass-card">
-            <strong>联系支持</strong>
-            <span>如果你需要更高配额、商业接入或白标方案，请邮件联系 {supportEmail}。</span>
-          </a>
-        </div>
-      </section>
-    </div>
-  </main>
-
+  <ApiGuideContent
+    copy={chineseApiGuideCopy}
+    sampleCitiesUrl={sampleCitiesUrl}
+    sampleTimesUrl={sampleTimesUrl}
+    openApiUrl={openApiUrl}
+    cityLookupCurl={cityLookupCurl}
+    timingCurl={timingCurl}
+    jsExample={jsExample}
+    sampleResponse={sampleResponse}
+    supportEmail={supportEmail}
+  >
+    <span slot="subtitle">{chineseApiGuideCopy.subtitle(totalCities)}</span>
+  </ApiGuideContent>
   <ChineseFooter />
 </Base>

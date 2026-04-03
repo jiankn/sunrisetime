@@ -11,7 +11,7 @@ import {
   getFrenchPrayerName,
   frenchLocale,
 } from '@i18n/french';
-import { getAnnualSunExtremes, getDaylightSeries, getGoldenHour, getSeasonalSunCheckpoints, getSunTimes, formatTime, getSunriseDelta, getSunsetDelta, getDaylightChangeDays, getSunEventShiftDays } from '@utils/sun';
+import { getAnnualSunExtremes, getDaylightSeries, getGoldenHour, getSeasonalSunCheckpoints, getSunTimes, formatTime, getSunriseDelta, getSunsetDelta, getDaylightChangeDays, getSunEventShiftDays, getLocalYear } from '@utils/sun';
 import { getMoonData, getNextMoonEvent } from '@utils/moon';
 import { getNextPrayer, getPrayerTimes } from '@utils/prayer-times';
 import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
@@ -144,10 +144,7 @@ const localTimeLabel = today.toLocaleTimeString(frenchLocale, {
   minute: '2-digit',
   timeZone: city.timezone,
 });
-const currentYear = Number(new Intl.DateTimeFormat(frenchLocale, {
-  year: 'numeric',
-  timeZone: city.timezone,
-}).format(today));
+const currentYear = getLocalYear(today, city.timezone);
 const lightStatus = today < sun.dawn
   ? 'La nuit domine encore.'
   : today < sun.sunrise

@@ -1,0 +1,117 @@
+---
+import GoldenHourCityContent from '@components/GoldenHourCityContent.astro';
+import LocalizedFooter from '@components/LocalizedFooter.astro';
+import LocalizedHeader from '@components/LocalizedHeader.astro';
+import { getCityBySlug } from '@data/site';
+import Base from '@layouts/Base.astro';
+import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
+import { spanishGoldenHourCopy } from '@i18n/golden-hour-page';
+import {
+  getSpanishCityDisplayName,
+  getSpanishCityLocationLabel,
+  getSpanishCityName,
+} from '@i18n/spanish';
+import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
+import { formatTime, getGoldenHour } from '@utils/sun';
+
+export const prerender = false;
+Astro.response.headers.set('Cache-Control', 'public, max-age=300, s-maxage=3600');
+
+const city = getCityBySlug(Astro.params.city ?? '');
+
+if (!city) {
+  return new Response(null, { status: 404, statusText: 'Not found' });
+}
+
+const today = new Date();
+const golden = getGoldenHour(today, city.lat, city.lng);
+const cityName = getSpanishCityName(city);
+const cityDisplayName = getSpanishCityDisplayName(city, { includeAdmin1: Boolean(city.admin1) });
+const cityLocationLabel = getSpanishCityLocationLabel(city, { includeAdmin1: Boolean(city.admin1) });
+const pagePath = `/golden-hour/${city.slug}/`;
+const localizedPath = localizePath('es', pagePath);
+const pageUrl = `https://sunrisetime.co${localizedPath}`;
+const alternates = buildAlternateLinks([
+  { hrefLang: 'en', path: pagePath },
+  { hrefLang: 'es', path: localizedPath },
+  { hrefLang: 'x-default', path: pagePath },
+]);
+const languageLinks = buildLanguageSwitcherLinks(pagePath);
+const pageTitle = spanishGoldenHourCopy.pageTitle(cityDisplayName);
+const pageDesc = spanishGoldenHourCopy.pageDescription(
+  cityDisplayName,
+  formatTime(golden.morning.start, city.timezone, spanishGoldenHourCopy.locale),
+  formatTime(golden.morning.end, city.timezone, spanishGoldenHourCopy.locale),
+  formatTime(golden.evening.start, city.timezone, spanishGoldenHourCopy.locale),
+);
+
+const jsonLd = [
+  {
+    "@type": "WebPage",
+    "@id": `${pageUrl}#webpage`,
+    "name": pageTitle,
+    "description": pageDesc,
+    "url": pageUrl,
+    "inLanguage": "es",
+  },
+  buildBreadcrumbJsonLd([
+    { name: 'Inicio', path: '/es/' },
+    { name: 'Ciudades', path: '/es/cities/' },
+    { name: cityName, path: localizedPath },
+  ]),
+  {
+    "@type": "FAQPage",
+    "@id": `${pageUrl}#faq`,
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": spanishGoldenHourCopy.faqMorningQuestion(cityName),
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": spanishGoldenHourCopy.faqMorningAnswer(
+            cityName,
+            formatTime(golden.morning.start, city.timezone, spanishGoldenHourCopy.locale),
+            formatTime(golden.morning.end, city.timezone, spanishGoldenHourCopy.locale),
+          ),
+        },
+      },
+      {
+        "@type": "Question",
+        "name": spanishGoldenHourCopy.faqEveningQuestion(cityName),
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": spanishGoldenHourCopy.faqEveningAnswer(
+            cityName,
+            formatTime(golden.evening.start, city.timezone, spanishGoldenHourCopy.locale),
+            formatTime(golden.evening.end, city.timezone, spanishGoldenHourCopy.locale),
+          ),
+        },
+      },
+    ],
+  },
+];
+---
+
+<Base
+  title={`${pageTitle} - SunriseTime Español`}
+  description={pageDesc}
+  canonical={pageUrl}
+  keywords={spanishGoldenHourCopy.keywords(cityDisplayName)}
+  jsonLd={jsonLd}
+  lang="es"
+  alternates={alternates}
+>
+  <LocalizedHeader languageLinks={languageLinks} currentLanguage="es" />
+  <GoldenHourCityContent
+    city={city}
+    cityName={cityName}
+    cityDisplayName={cityDisplayName}
+    cityLocationLabel={cityLocationLabel}
+    languageCode="es"
+    locale={spanishGoldenHourCopy.locale}
+    copy={spanishGoldenHourCopy}
+    formatCityName={getSpanishCityName}
+    formatCityLocationLabel={(entry) => getSpanishCityLocationLabel(entry, { includeAdmin1: Boolean(entry.admin1) })}
+  />
+  <LocalizedFooter />
+</Base>

@@ -11,7 +11,7 @@ import {
   getSpanishPrayerName,
   spanishLocale,
 } from '@i18n/spanish';
-import { getAnnualSunExtremes, getDaylightSeries, getGoldenHour, getSeasonalSunCheckpoints, getSunTimes, formatTime, getSunriseDelta, getSunsetDelta } from '@utils/sun';
+import { getAnnualSunExtremes, getDaylightSeries, getGoldenHour, getSeasonalSunCheckpoints, getSunTimes, formatTime, getSunriseDelta, getSunsetDelta, getLocalYear } from '@utils/sun';
 import { getMoonData, getNextMoonEvent } from '@utils/moon';
 import { getNextPrayer, getPrayerTimes } from '@utils/prayer-times';
 import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
@@ -121,10 +121,7 @@ const localTimeLabel = today.toLocaleTimeString(spanishLocale, {
   minute: '2-digit',
   timeZone: city.timezone,
 });
-const currentYear = Number(new Intl.DateTimeFormat(spanishLocale, {
-  year: 'numeric',
-  timeZone: city.timezone,
-}).format(today));
+const currentYear = getLocalYear(today, city.timezone);
 const lightStatus = today < sun.dawn
   ? 'Todavía es de noche.'
   : today < sun.sunrise

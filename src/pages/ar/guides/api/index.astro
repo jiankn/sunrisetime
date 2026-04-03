@@ -1,0 +1,75 @@
+---
+import ApiGuideContent from '@components/ApiGuideContent.astro';
+import ArabicFooter from '@components/ArabicFooter.astro';
+import ArabicHeader from '@components/ArabicHeader.astro';
+import { supportEmail, totalCities } from '@data/site';
+import Base from '@layouts/Base.astro';
+import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
+import { arabicApiGuideCopy } from '@i18n/api-guide-page';
+import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
+
+const pagePath = '/guides/api/';
+const localizedPath = localizePath('ar', pagePath);
+const pageUrl = `https://sunrisetime.co${localizedPath}`;
+const alternates = buildAlternateLinks([
+  { hrefLang: 'en', path: pagePath },
+  { hrefLang: 'ar', path: localizedPath },
+  { hrefLang: 'x-default', path: pagePath },
+]);
+const languageLinks = buildLanguageSwitcherLinks(pagePath);
+
+const sampleCitiesUrl = `https://sunrisetime.co/api/v1/cities?query=${arabicApiGuideCopy.sampleQueryCity}&limit=3`;
+const sampleTimesUrl = `https://sunrisetime.co/api/v1/times?city=${arabicApiGuideCopy.sampleCitySlug}&date=2026-03-29`;
+const openApiUrl = 'https://sunrisetime.co/api/v1/openapi.json';
+const cityLookupCurl = `curl "${sampleCitiesUrl}"`;
+const timingCurl = `curl "${sampleTimesUrl}"`;
+const jsExample = `const cityLookup = await fetch("https://sunrisetime.co/api/v1/cities?query=${arabicApiGuideCopy.sampleQueryCity}&limit=1");\nconst cityResult = await cityLookup.json();\nconst citySlug = cityResult.cities[0]?.slug;\n\nconst timingResponse = await fetch(\`https://sunrisetime.co/api/v1/times?city=\${citySlug}&date=2026-03-29\`\n);\nconst timingData = await timingResponse.json();\n\nconsole.log(timingData.sun.sunrise, timingData.prayerTimes.maghrib);`;
+const sampleResponse = `{\n  "meta": {\n    "version": "v1",\n    "endpoint": "/api/v1/times",\n    "cacheTtlSeconds": 900\n  },\n  "city": {\n    "slug": "${arabicApiGuideCopy.sampleCitySlug}",\n    "name": "Dubai",\n    "timezone": "Asia/Dubai"\n  },\n  "sun": {\n    "sunrise": "6:15 AM",\n    "sunset": "6:33 PM"\n  },\n  "moon": {\n    "phase": "Waxing Crescent",\n    "illumination": 12\n  },\n  "prayerTimes": {\n    "fajr": "5:00 AM",\n    "maghrib": "6:34 PM"\n  }\n}`;
+
+const jsonLd = [
+  {
+    "@type": "TechArticle",
+    "@id": `${pageUrl}#article`,
+    "headline": arabicApiGuideCopy.pageTitle,
+    "description": arabicApiGuideCopy.pageDescription,
+    "url": pageUrl,
+    "inLanguage": "ar",
+    "author": {
+      "@type": "Organization",
+      "name": "SunriseTime",
+    },
+  },
+  buildBreadcrumbJsonLd([
+    { name: 'الرئيسية', path: '/ar/' },
+    { name: 'الأدلة', path: '/ar/guides/' },
+    { name: 'API', path: localizedPath },
+  ]),
+];
+---
+
+<Base
+  title={arabicApiGuideCopy.pageTitle}
+  description={arabicApiGuideCopy.pageDescription}
+  canonical={pageUrl}
+  keywords={arabicApiGuideCopy.keywords}
+  jsonLd={jsonLd}
+  lang="ar"
+  dir="rtl"
+  alternates={alternates}
+>
+  <ArabicHeader languageLinks={languageLinks} currentLanguage="ar" />
+  <ApiGuideContent
+    copy={arabicApiGuideCopy}
+    sampleCitiesUrl={sampleCitiesUrl}
+    sampleTimesUrl={sampleTimesUrl}
+    openApiUrl={openApiUrl}
+    cityLookupCurl={cityLookupCurl}
+    timingCurl={timingCurl}
+    jsExample={jsExample}
+    sampleResponse={sampleResponse}
+    supportEmail={supportEmail}
+  >
+    <span slot="subtitle">{arabicApiGuideCopy.subtitle(totalCities)}</span>
+  </ApiGuideContent>
+  <ArabicFooter />
+</Base>

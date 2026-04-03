@@ -69,17 +69,18 @@ function formatDaylightTrend(minutes: number) {
 }
 
 function formatRelativeClockShift(delta: number, baseline: string) {
-  if (delta === 0) return `Same local time as ${baseline}`;
+  if (delta === 0) return `Same as ${baseline}`;
 
   const direction = delta > 0 ? 'later' : 'earlier';
-  return `${Math.abs(delta)} min ${direction} than ${baseline}`;
+  return `${Math.abs(delta)} min ${direction}`;
 }
 
 function formatRelativeDaylight(delta: number, baseline: string) {
-  if (delta === 0) return `Same daylight length as ${baseline}`;
+  if (delta === 0) return `No change`;
 
   const direction = delta > 0 ? 'longer' : 'shorter';
-  return `${Math.abs(delta)} min ${direction} than ${baseline}`;
+  const sign = delta > 0 ? '+' : '-';
+  return `${sign}${Math.abs(delta)} min`;
 }
 
 function formatCalendarDate(date: Date) {
@@ -181,9 +182,9 @@ const daysUntilMoonEvent = Math.max(1, Math.ceil((nextMoonEvent.date.getTime() -
 const nearbyCities = getNearbyCities(city, 6);
 const otherCities = getComparisonCities(city, 4);
 
-const pageTitle = `Sunrise & Sunset Times in ${cityLabel} Today — SunriseTime`;
-const pageDesc = `Today's sunrise in ${cityLabel} is at ${formatTime(sun.sunrise, city.timezone)}, sunset at ${formatTime(sun.sunset, city.timezone)}. ${sun.daylightFormatted} of daylight. Golden hour, moon phase, and prayer times included.`;
-const pagePath = `/sunrise/${city.slug}/`;
+const pageTitle = `Golden Hour & Blue Hour Photography Times in ${cityLabel} Today`;
+const pageDesc = `Today's morning golden hour in ${cityLabel} runs from ${formatTime(golden.morning.start, city.timezone)} to ${formatTime(golden.morning.end, city.timezone)}. Evening golden hour starts at ${formatTime(golden.evening.start, city.timezone)}. Find exact sunlight phases.`;
+const pagePath = `/golden-hour/${city.slug}/`;
 const pageUrl = `https://sunrisetime.co${pagePath}`;
 const alternates = buildAlternateLinks([
   { hrefLang: 'en', path: pagePath },
@@ -195,7 +196,7 @@ const UrlPrayerTimes = `/prayer-times/${city.slug}/`;
 const breadcrumbItems = [
   { name: 'Home', path: '/' },
   { name: 'Cities', path: '/cities/' },
-  { name: city.name, path: `/sunrise/${city.slug}/` },
+  { name: `${city.name} Photography`, path: `/golden-hour/${city.slug}/` },
 ];
 
 const jsonLd = [
@@ -239,7 +240,7 @@ const jsonLd = [
   title={pageTitle}
   description={pageDesc}
   canonical={pageUrl}
-  keywords={`sunrise ${cityLabel}, sunset ${cityLabel}, golden hour ${cityLabel}, ${cityLabel} sun times`}
+  keywords={`golden hour ${cityLabel}, blue hour ${cityLabel}, photography ${cityLabel}, ${cityLabel} sun time for photos`}
   jsonLd={jsonLd}
   lang="en"
   alternates={alternates}
@@ -258,8 +259,8 @@ const jsonLd = [
 
       <section class="city-snapshot glass-card-lg">
         <div class="city-snapshot-copy">
-          <span class="city-kicker">Today&apos;s light in {city.name}</span>
-          <h1>Sunrise & Sunset in <span class="gradient-text">{city.name}</span></h1>
+          <span class="city-kicker">Photographer's Guide to {city.name}</span>
+          <h1>Golden Hour & Twilight in <span class="gradient-text">{city.name}</span></h1>
           <p class="city-lead">
             Local time is {localTimeLabel}. {nextSunEvent.label} {nextSunEvent.countdown}, at {nextSunEvent.time}.
             Use the quick paths below to jump straight to photography, moon, or prayer details.
@@ -276,9 +277,9 @@ const jsonLd = [
               <i data-lucide="search" class="icon-xs"></i>
               Search another city
             </a>
-            <a href="#photography" class="btn-secondary">
-              <i data-lucide="camera" class="icon-xs"></i>
-              See golden hour
+            <a href={`/sunrise/${city.slug}/`} class="btn-secondary">
+              <i data-lucide="sunrise" class="icon-xs"></i>
+              Basic Sun Times
             </a>
             <a href={UrlPrayerTimes} class="btn-secondary">
               <i data-lucide="clock" class="icon-xs"></i>
@@ -552,28 +553,52 @@ const jsonLd = [
         <div class="detail-grid">
           <div class="detail-card glass-card">
             <h3>Compared with 30 days ago</h3>
-            <div class="outlook-stat">
-              <span class="outlook-label">Daylight</span>
-              <span class="outlook-val">{formatRelativeDaylight(daylightVs30DaysAgo, '30 days ago')}</span>
+            <div class="outlook-mini-grid">
+              <div class="outlook-item">
+                <span class="outlook-metric">Daylight</span>
+                <span class={`outlook-shift ${daylightVs30DaysAgo > 0 ? 'positive' : 'negative'}`}>
+                  {daylightVs30DaysAgo === 0 ? 'No change' : `${daylightVs30DaysAgo > 0 ? '+' : ''}${daylightVs30DaysAgo} min`}
+                </span>
+              </div>
+              <div class="outlook-item">
+                <span class="outlook-metric">Sunrise</span>
+                <span class="outlook-shift">
+                  {sunriseVs30DaysAgo === 0 ? '--' : `${Math.abs(sunriseVs30DaysAgo)} min ${sunriseVs30DaysAgo > 0 ? 'later' : 'earlier'}`}
+                </span>
+              </div>
+              <div class="outlook-item">
+                <span class="outlook-metric">Sunset</span>
+                <span class="outlook-shift">
+                  {sunsetVs30DaysAgo === 0 ? '--' : `${Math.abs(sunsetVs30DaysAgo)} min ${sunsetVs30DaysAgo > 0 ? 'later' : 'earlier'}`}
+                </span>
+              </div>
             </div>
-            <div class="outlook-stat">
-              <span class="outlook-label">Sunrise & Sunset</span>
-              <span class="outlook-val">{formatRelativeClockShift(sunriseVs30DaysAgo, '30 days ago')} · {formatRelativeClockShift(sunsetVs30DaysAgo, '30 days ago')}</span>
-            </div>
-            <span class="detail-duration" style="margin-top: 0.5rem; display:block;">This helps explain whether mornings are opening up or tightening right now.</span>
+            <span class="detail-duration" style="margin-top: 1rem; display:block;">This helps explain whether mornings are opening up or tightening right now.</span>
           </div>
 
           <div class="detail-card glass-card">
             <h3>Expected 30 days from now</h3>
-            <div class="outlook-stat">
-              <span class="outlook-label">Daylight</span>
-              <span class="outlook-val">{formatRelativeDaylight(daylightIn30Days, 'today')}</span>
+            <div class="outlook-mini-grid">
+              <div class="outlook-item">
+                <span class="outlook-metric">Daylight</span>
+                <span class={`outlook-shift ${daylightIn30Days > 0 ? 'positive' : 'negative'}`}>
+                  {daylightIn30Days === 0 ? 'No change' : `${daylightIn30Days > 0 ? '+' : ''}${daylightIn30Days} min`}
+                </span>
+              </div>
+              <div class="outlook-item">
+                <span class="outlook-metric">Sunrise</span>
+                <span class="outlook-shift">
+                  {sunriseIn30Days === 0 ? '--' : `${Math.abs(sunriseIn30Days)} min ${sunriseIn30Days > 0 ? 'later' : 'earlier'}`}
+                </span>
+              </div>
+              <div class="outlook-item">
+                <span class="outlook-metric">Sunset</span>
+                <span class="outlook-shift">
+                  {sunsetIn30Days === 0 ? '--' : `${Math.abs(sunsetIn30Days)} min ${sunsetIn30Days > 0 ? 'later' : 'earlier'}`}
+                </span>
+              </div>
             </div>
-            <div class="outlook-stat">
-              <span class="outlook-label">Sunrise & Sunset</span>
-              <span class="outlook-val">{formatRelativeClockShift(sunriseIn30Days, 'today')} · {formatRelativeClockShift(sunsetIn30Days, 'today')}</span>
-            </div>
-            <span class="detail-duration" style="margin-top: 0.5rem; display:block;">A quick way to see how much the local light schedule will move over the next month.</span>
+            <span class="detail-duration" style="margin-top: 1rem; display:block;">A quick way to see how much the local light schedule will move over the next month.</span>
           </div>
         </div>
       </section>
@@ -744,23 +769,36 @@ const jsonLd = [
     border-bottom: none;
   }
   
-  .outlook-stat {
-    margin-top: 1rem;
+  .outlook-mini-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-top: 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border, #e5e7eb);
+  }
+  .outlook-item {
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
+    gap: 0.5rem;
   }
-  .outlook-label {
-    font-size: 0.8rem;
+  .outlook-metric {
+    font-size: 0.85rem;
     color: var(--text-muted, #6b7280);
     text-transform: uppercase;
     letter-spacing: 0.05em;
     font-weight: 600;
   }
-  .outlook-val {
-    font-size: 1.05rem;
-    font-weight: 500;
-    line-height: 1.4;
+  .outlook-shift {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-main, #111827);
+  }
+  .outlook-shift.positive {
+    color: #10b981; /* emerald-500 */
+  }
+  .outlook-shift.negative {
+    color: #ef4444; /* red-500 */
   }
   
   @media (max-width: 640px) {

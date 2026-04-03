@@ -10,7 +10,7 @@ import {
   getSpanishPrayerName,
   spanishLocale,
 } from '@i18n/spanish';
-import { getSunTimes, formatTime, getClockTimeDelta, getDaylightChangeDays } from '@utils/sun';
+import { getSunTimes, formatTime, getClockTimeDelta, getDaylightChangeDays, getLocalYear } from '@utils/sun';
 import { getAnnualPrayerExtremes, getNextPrayer, getPrayerSeasonalCheckpoints, getPrayerTimes } from '@utils/prayer-times';
 import type { AsrJuristic, CalculationMethod } from '@utils/prayer-times';
 import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
@@ -86,10 +86,7 @@ const localTimeLabel = today.toLocaleTimeString(spanishLocale, {
   minute: '2-digit',
   timeZone: city.timezone,
 });
-const currentYear = Number(new Intl.DateTimeFormat(spanishLocale, {
-  year: 'numeric',
-  timeZone: city.timezone,
-}).format(today));
+const currentYear = getLocalYear(today, city.timezone);
 const prayerYearExtremes = getAnnualPrayerExtremes(currentYear, city.lat, city.lng, city.timezone, 'MWL', 'Standard');
 const prayerSeasonalCheckpoints = getPrayerSeasonalCheckpoints(currentYear, city.lat, city.lng, 'MWL', 'Standard').map((checkpoint) => ({
   ...checkpoint,

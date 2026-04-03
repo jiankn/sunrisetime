@@ -11,7 +11,7 @@ import Header from '@components/Header.astro';
 import Footer from '@components/Footer.astro';
 import AdUnit from '@components/AdUnit.astro';
 import { getCityBySlug, getCityDisplayName, getCityLocationLabel, getComparisonCities, getNearbyCities } from '@data/site';
-import { getSunTimes, formatTime, getClockTimeDelta, getDaylightChangeDays } from '@utils/sun';
+import { getSunTimes, formatTime, getClockTimeDelta, getDaylightChangeDays, getLocalYear } from '@utils/sun';
 import { getPrayerTimes, getNextPrayer, getAnnualPrayerExtremes, getPrayerSeasonalCheckpoints } from '@utils/prayer-times';
 import type { CalculationMethod, AsrJuristic } from '@utils/prayer-times';
 import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
@@ -84,10 +84,7 @@ const localTimeLabel = today.toLocaleTimeString('en-US', {
   hour12: true,
   timeZone: city.timezone,
 });
-const currentYear = Number(new Intl.DateTimeFormat('en-US', {
-  year: 'numeric',
-  timeZone: city.timezone,
-}).format(today));
+const currentYear = getLocalYear(today, city.timezone);
 
 // Nearby cities for internal linking (same continent, exclude self)
 const nearbyCities = getNearbyCities(city, 6);

@@ -1,0 +1,118 @@
+---
+import ChineseFooter from '@components/ChineseFooter.astro';
+import ChineseHeader from '@components/ChineseHeader.astro';
+import GoldenHourCityContent from '@components/GoldenHourCityContent.astro';
+import { getCityBySlug } from '@data/site';
+import Base from '@layouts/Base.astro';
+import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
+import { chineseGoldenHourCopy } from '@i18n/golden-hour-page';
+import {
+  getChineseCityDisplayName,
+  getChineseCityLocationLabel,
+  getChineseCityName,
+} from '@i18n/chinese';
+import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
+import { formatTime, getGoldenHour } from '@utils/sun';
+
+export const prerender = false;
+Astro.response.headers.set('Cache-Control', 'public, max-age=300, s-maxage=3600');
+
+const city = getCityBySlug(Astro.params.city ?? '');
+
+if (!city) {
+  return new Response(null, { status: 404, statusText: 'Not found' });
+}
+
+const today = new Date();
+const golden = getGoldenHour(today, city.lat, city.lng);
+const cityName = getChineseCityName(city);
+const cityDisplayName = getChineseCityDisplayName(city);
+const cityLocationLabel = getChineseCityLocationLabel(city);
+const pagePath = `/golden-hour/${city.slug}/`;
+const localizedPath = localizePath('zh-cn', pagePath);
+const pageUrl = `https://sunrisetime.co${localizedPath}`;
+const alternates = buildAlternateLinks([
+  { hrefLang: 'en', path: pagePath },
+  { hrefLang: 'zh-cn', path: localizedPath },
+  { hrefLang: 'x-default', path: pagePath },
+]);
+const languageLinks = buildLanguageSwitcherLinks(pagePath);
+const pageTitle = chineseGoldenHourCopy.pageTitle(cityDisplayName);
+const pageDesc = chineseGoldenHourCopy.pageDescription(
+  cityDisplayName,
+  formatTime(golden.morning.start, city.timezone, chineseGoldenHourCopy.locale),
+  formatTime(golden.morning.end, city.timezone, chineseGoldenHourCopy.locale),
+  formatTime(golden.evening.start, city.timezone, chineseGoldenHourCopy.locale),
+);
+
+const jsonLd = [
+  {
+    "@type": "WebPage",
+    "@id": `${pageUrl}#webpage`,
+    "name": pageTitle,
+    "description": pageDesc,
+    "url": pageUrl,
+    "inLanguage": "zh-CN",
+  },
+  buildBreadcrumbJsonLd([
+    { name: '首页', path: '/zh-cn/' },
+    { name: '城市索引', path: '/zh-cn/cities/' },
+    { name: cityName, path: localizedPath },
+  ]),
+  {
+    "@type": "FAQPage",
+    "@id": `${pageUrl}#faq`,
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": chineseGoldenHourCopy.faqMorningQuestion(cityName),
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": chineseGoldenHourCopy.faqMorningAnswer(
+            cityName,
+            formatTime(golden.morning.start, city.timezone, chineseGoldenHourCopy.locale),
+            formatTime(golden.morning.end, city.timezone, chineseGoldenHourCopy.locale),
+          ),
+        },
+      },
+      {
+        "@type": "Question",
+        "name": chineseGoldenHourCopy.faqEveningQuestion(cityName),
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": chineseGoldenHourCopy.faqEveningAnswer(
+            cityName,
+            formatTime(golden.evening.start, city.timezone, chineseGoldenHourCopy.locale),
+            formatTime(golden.evening.end, city.timezone, chineseGoldenHourCopy.locale),
+          ),
+        },
+      },
+    ],
+  },
+];
+---
+
+<Base
+  title={`${pageTitle} - SunriseTime`}
+  description={pageDesc}
+  canonical={pageUrl}
+  keywords={chineseGoldenHourCopy.keywords(cityDisplayName)}
+  jsonLd={jsonLd}
+  lang="zh-CN"
+  langPrefix="/zh-cn"
+  alternates={alternates}
+>
+  <ChineseHeader languageLinks={languageLinks} currentLanguage="zh-cn" />
+  <GoldenHourCityContent
+    city={city}
+    cityName={cityName}
+    cityDisplayName={cityDisplayName}
+    cityLocationLabel={cityLocationLabel}
+    languageCode="zh-cn"
+    locale={chineseGoldenHourCopy.locale}
+    copy={chineseGoldenHourCopy}
+    formatCityName={getChineseCityName}
+    formatCityLocationLabel={getChineseCityLocationLabel}
+  />
+  <ChineseFooter />
+</Base>

@@ -1,0 +1,74 @@
+---
+import ApiGuideContent from '@components/ApiGuideContent.astro';
+import FrenchFooter from '@components/FrenchFooter.astro';
+import FrenchHeader from '@components/FrenchHeader.astro';
+import { supportEmail, totalCities } from '@data/site';
+import Base from '@layouts/Base.astro';
+import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
+import { frenchApiGuideCopy } from '@i18n/api-guide-page';
+import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
+
+const pagePath = '/guides/api/';
+const localizedPath = localizePath('fr', pagePath);
+const pageUrl = `https://sunrisetime.co${localizedPath}`;
+const alternates = buildAlternateLinks([
+  { hrefLang: 'en', path: pagePath },
+  { hrefLang: 'fr', path: localizedPath },
+  { hrefLang: 'x-default', path: pagePath },
+]);
+const languageLinks = buildLanguageSwitcherLinks(pagePath);
+
+const sampleCitiesUrl = `https://sunrisetime.co/api/v1/cities?query=${frenchApiGuideCopy.sampleQueryCity}&limit=3`;
+const sampleTimesUrl = `https://sunrisetime.co/api/v1/times?city=${frenchApiGuideCopy.sampleCitySlug}&date=2026-03-29`;
+const openApiUrl = 'https://sunrisetime.co/api/v1/openapi.json';
+const cityLookupCurl = `curl "${sampleCitiesUrl}"`;
+const timingCurl = `curl "${sampleTimesUrl}"`;
+const jsExample = `const cityLookup = await fetch("https://sunrisetime.co/api/v1/cities?query=${frenchApiGuideCopy.sampleQueryCity}&limit=1");\nconst cityResult = await cityLookup.json();\nconst citySlug = cityResult.cities[0]?.slug;\n\nconst timingResponse = await fetch(\`https://sunrisetime.co/api/v1/times?city=\${citySlug}&date=2026-03-29\`\n);\nconst timingData = await timingResponse.json();\n\nconsole.log(timingData.sun.sunrise, timingData.prayerTimes.maghrib);`;
+const sampleResponse = `{\n  "meta": {\n    "version": "v1",\n    "endpoint": "/api/v1/times",\n    "cacheTtlSeconds": 900\n  },\n  "city": {\n    "slug": "${frenchApiGuideCopy.sampleCitySlug}",\n    "name": "Paris",\n    "timezone": "Europe/Paris"\n  },\n  "sun": {\n    "sunrise": "7:25 AM",\n    "sunset": "8:09 PM"\n  },\n  "moon": {\n    "phase": "Waxing Crescent",\n    "illumination": 12\n  },\n  "prayerTimes": {\n    "fajr": "5:57 AM",\n    "maghrib": "8:10 PM"\n  }\n}`;
+
+const jsonLd = [
+  {
+    "@type": "TechArticle",
+    "@id": `${pageUrl}#article`,
+    "headline": frenchApiGuideCopy.pageTitle,
+    "description": frenchApiGuideCopy.pageDescription,
+    "url": pageUrl,
+    "inLanguage": "fr",
+    "author": {
+      "@type": "Organization",
+      "name": "SunriseTime",
+    },
+  },
+  buildBreadcrumbJsonLd([
+    { name: 'Accueil', path: '/fr/' },
+    { name: 'Guides', path: '/fr/guides/' },
+    { name: 'API', path: localizedPath },
+  ]),
+];
+---
+
+<Base
+  title={frenchApiGuideCopy.pageTitle}
+  description={frenchApiGuideCopy.pageDescription}
+  canonical={pageUrl}
+  keywords={frenchApiGuideCopy.keywords}
+  jsonLd={jsonLd}
+  lang="fr"
+  alternates={alternates}
+>
+  <FrenchHeader languageLinks={languageLinks} currentLanguage="fr" />
+  <ApiGuideContent
+    copy={frenchApiGuideCopy}
+    sampleCitiesUrl={sampleCitiesUrl}
+    sampleTimesUrl={sampleTimesUrl}
+    openApiUrl={openApiUrl}
+    cityLookupCurl={cityLookupCurl}
+    timingCurl={timingCurl}
+    jsExample={jsExample}
+    sampleResponse={sampleResponse}
+    supportEmail={supportEmail}
+  >
+    <span slot="subtitle">{frenchApiGuideCopy.subtitle(totalCities)}</span>
+  </ApiGuideContent>
+  <FrenchFooter />
+</Base>

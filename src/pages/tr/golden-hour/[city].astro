@@ -1,0 +1,117 @@
+---
+import GoldenHourCityContent from '@components/GoldenHourCityContent.astro';
+import TurkishFooter from '@components/TurkishFooter.astro';
+import TurkishHeader from '@components/TurkishHeader.astro';
+import { getCityBySlug } from '@data/site';
+import Base from '@layouts/Base.astro';
+import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
+import { turkishGoldenHourCopy } from '@i18n/golden-hour-page';
+import {
+  getTurkishCityDisplayName,
+  getTurkishCityLocationLabel,
+  getTurkishCityName,
+} from '@i18n/turkish';
+import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
+import { formatTime, getGoldenHour } from '@utils/sun';
+
+export const prerender = false;
+Astro.response.headers.set('Cache-Control', 'public, max-age=300, s-maxage=3600');
+
+const city = getCityBySlug(Astro.params.city ?? '');
+
+if (!city) {
+  return new Response(null, { status: 404, statusText: 'Not found' });
+}
+
+const today = new Date();
+const golden = getGoldenHour(today, city.lat, city.lng);
+const cityName = getTurkishCityName(city);
+const cityDisplayName = getTurkishCityDisplayName(city, { includeAdmin1: Boolean(city.admin1) });
+const cityLocationLabel = getTurkishCityLocationLabel(city, { includeAdmin1: Boolean(city.admin1) });
+const pagePath = `/golden-hour/${city.slug}/`;
+const localizedPath = localizePath('tr', pagePath);
+const pageUrl = `https://sunrisetime.co${localizedPath}`;
+const alternates = buildAlternateLinks([
+  { hrefLang: 'en', path: pagePath },
+  { hrefLang: 'tr', path: localizedPath },
+  { hrefLang: 'x-default', path: pagePath },
+]);
+const languageLinks = buildLanguageSwitcherLinks(pagePath);
+const pageTitle = turkishGoldenHourCopy.pageTitle(cityDisplayName);
+const pageDesc = turkishGoldenHourCopy.pageDescription(
+  cityDisplayName,
+  formatTime(golden.morning.start, city.timezone, turkishGoldenHourCopy.locale),
+  formatTime(golden.morning.end, city.timezone, turkishGoldenHourCopy.locale),
+  formatTime(golden.evening.start, city.timezone, turkishGoldenHourCopy.locale),
+);
+
+const jsonLd = [
+  {
+    "@type": "WebPage",
+    "@id": `${pageUrl}#webpage`,
+    "name": pageTitle,
+    "description": pageDesc,
+    "url": pageUrl,
+    "inLanguage": "tr",
+  },
+  buildBreadcrumbJsonLd([
+    { name: 'Ana sayfa', path: '/tr/' },
+    { name: 'Sehirler', path: '/tr/cities/' },
+    { name: cityName, path: localizedPath },
+  ]),
+  {
+    "@type": "FAQPage",
+    "@id": `${pageUrl}#faq`,
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": turkishGoldenHourCopy.faqMorningQuestion(cityName),
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": turkishGoldenHourCopy.faqMorningAnswer(
+            cityName,
+            formatTime(golden.morning.start, city.timezone, turkishGoldenHourCopy.locale),
+            formatTime(golden.morning.end, city.timezone, turkishGoldenHourCopy.locale),
+          ),
+        },
+      },
+      {
+        "@type": "Question",
+        "name": turkishGoldenHourCopy.faqEveningQuestion(cityName),
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": turkishGoldenHourCopy.faqEveningAnswer(
+            cityName,
+            formatTime(golden.evening.start, city.timezone, turkishGoldenHourCopy.locale),
+            formatTime(golden.evening.end, city.timezone, turkishGoldenHourCopy.locale),
+          ),
+        },
+      },
+    ],
+  },
+];
+---
+
+<Base
+  title={`${pageTitle} - SunriseTime Turkce`}
+  description={pageDesc}
+  canonical={pageUrl}
+  keywords={turkishGoldenHourCopy.keywords(cityDisplayName)}
+  jsonLd={jsonLd}
+  lang="tr"
+  alternates={alternates}
+>
+  <TurkishHeader languageLinks={languageLinks} currentLanguage="tr" />
+  <GoldenHourCityContent
+    city={city}
+    cityName={cityName}
+    cityDisplayName={cityDisplayName}
+    cityLocationLabel={cityLocationLabel}
+    languageCode="tr"
+    locale={turkishGoldenHourCopy.locale}
+    copy={turkishGoldenHourCopy}
+    formatCityName={getTurkishCityName}
+    formatCityLocationLabel={(entry) => getTurkishCityLocationLabel(entry, { includeAdmin1: Boolean(entry.admin1) })}
+  />
+  <TurkishFooter />
+</Base>

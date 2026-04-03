@@ -95,6 +95,7 @@ const jsonLd = [
         <article class="sitemap-section glass-card">
           <h2>Guías</h2>
           <ul class="sitemap-links">
+            <li><a href="/es/guides/api/">API</a></li>
             {useCaseHubs.map((hub) => {
               const content = getSpanishGuideContent(hub);
               return <li><a href={`/es/guides/${hub.slug}/`}>{content.name}</a></li>;

@@ -11,7 +11,7 @@ import {
   getTurkishPrayerName,
   turkishLocale,
 } from '@i18n/turkish';
-import { getAnnualSunExtremes, getDaylightSeries, getGoldenHour, getSeasonalSunCheckpoints, getSunTimes, formatTime, getSunriseDelta, getSunsetDelta, getDaylightChangeDays, getSunEventShiftDays } from '@utils/sun';
+import { getAnnualSunExtremes, getDaylightSeries, getGoldenHour, getSeasonalSunCheckpoints, getSunTimes, formatTime, getSunriseDelta, getSunsetDelta, getDaylightChangeDays, getSunEventShiftDays, getLocalYear } from '@utils/sun';
 import { getMoonData, getNextMoonEvent } from '@utils/moon';
 import { getNextPrayer } from '@utils/prayer-times';
 import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
@@ -143,10 +143,7 @@ const localTimeLabel = today.toLocaleTimeString(turkishLocale, {
   minute: '2-digit',
   timeZone: city.timezone,
 });
-const currentYear = Number(new Intl.DateTimeFormat(turkishLocale, {
-  year: 'numeric',
-  timeZone: city.timezone,
-}).format(today));
+const currentYear = getLocalYear(today, city.timezone);
 const lightStatus = today < sun.dawn
   ? 'Gece hâlâ baskın.'
   : today < sun.sunrise

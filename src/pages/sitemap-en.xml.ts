@@ -28,6 +28,7 @@ export const GET: APIRoute = () => {
     ...allCities.flatMap((city) => [
       `/sunrise/${city.slug}/`,
       `/prayer-times/${city.slug}/`,
+      `/golden-hour/${city.slug}/`,
     ]),
   ];
 

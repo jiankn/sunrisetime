@@ -1,0 +1,118 @@
+---
+import ArabicFooter from '@components/ArabicFooter.astro';
+import ArabicHeader from '@components/ArabicHeader.astro';
+import GoldenHourCityContent from '@components/GoldenHourCityContent.astro';
+import { getCityBySlug } from '@data/site';
+import Base from '@layouts/Base.astro';
+import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
+import { arabicGoldenHourCopy } from '@i18n/golden-hour-page';
+import {
+  getArabicCityDisplayName,
+  getArabicCityLocationLabel,
+  getArabicCityName,
+} from '@i18n/arabic';
+import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
+import { formatTime, getGoldenHour } from '@utils/sun';
+
+export const prerender = false;
+Astro.response.headers.set('Cache-Control', 'public, max-age=300, s-maxage=3600');
+
+const city = getCityBySlug(Astro.params.city ?? '');
+
+if (!city) {
+  return new Response(null, { status: 404, statusText: 'Not found' });
+}
+
+const today = new Date();
+const golden = getGoldenHour(today, city.lat, city.lng);
+const cityName = getArabicCityName(city);
+const cityDisplayName = getArabicCityDisplayName(city, { includeAdmin1: Boolean(city.admin1) });
+const cityLocationLabel = getArabicCityLocationLabel(city, { includeAdmin1: Boolean(city.admin1) });
+const pagePath = `/golden-hour/${city.slug}/`;
+const localizedPath = localizePath('ar', pagePath);
+const pageUrl = `https://sunrisetime.co${localizedPath}`;
+const alternates = buildAlternateLinks([
+  { hrefLang: 'en', path: pagePath },
+  { hrefLang: 'ar', path: localizedPath },
+  { hrefLang: 'x-default', path: pagePath },
+]);
+const languageLinks = buildLanguageSwitcherLinks(pagePath);
+const pageTitle = arabicGoldenHourCopy.pageTitle(cityDisplayName);
+const pageDesc = arabicGoldenHourCopy.pageDescription(
+  cityDisplayName,
+  formatTime(golden.morning.start, city.timezone, arabicGoldenHourCopy.locale),
+  formatTime(golden.morning.end, city.timezone, arabicGoldenHourCopy.locale),
+  formatTime(golden.evening.start, city.timezone, arabicGoldenHourCopy.locale),
+);
+
+const jsonLd = [
+  {
+    "@type": "WebPage",
+    "@id": `${pageUrl}#webpage`,
+    "name": pageTitle,
+    "description": pageDesc,
+    "url": pageUrl,
+    "inLanguage": "ar",
+  },
+  buildBreadcrumbJsonLd([
+    { name: 'الرئيسية', path: '/ar/' },
+    { name: 'المدن', path: '/ar/cities/' },
+    { name: cityName, path: localizedPath },
+  ]),
+  {
+    "@type": "FAQPage",
+    "@id": `${pageUrl}#faq`,
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": arabicGoldenHourCopy.faqMorningQuestion(cityName),
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": arabicGoldenHourCopy.faqMorningAnswer(
+            cityName,
+            formatTime(golden.morning.start, city.timezone, arabicGoldenHourCopy.locale),
+            formatTime(golden.morning.end, city.timezone, arabicGoldenHourCopy.locale),
+          ),
+        },
+      },
+      {
+        "@type": "Question",
+        "name": arabicGoldenHourCopy.faqEveningQuestion(cityName),
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": arabicGoldenHourCopy.faqEveningAnswer(
+            cityName,
+            formatTime(golden.evening.start, city.timezone, arabicGoldenHourCopy.locale),
+            formatTime(golden.evening.end, city.timezone, arabicGoldenHourCopy.locale),
+          ),
+        },
+      },
+    ],
+  },
+];
+---
+
+<Base
+  title={`${pageTitle} - SunriseTime العربية`}
+  description={pageDesc}
+  canonical={pageUrl}
+  keywords={arabicGoldenHourCopy.keywords(cityDisplayName)}
+  jsonLd={jsonLd}
+  lang="ar"
+  dir="rtl"
+  alternates={alternates}
+>
+  <ArabicHeader languageLinks={languageLinks} currentLanguage="ar" />
+  <GoldenHourCityContent
+    city={city}
+    cityName={cityName}
+    cityDisplayName={cityDisplayName}
+    cityLocationLabel={cityLocationLabel}
+    languageCode="ar"
+    locale={arabicGoldenHourCopy.locale}
+    copy={arabicGoldenHourCopy}
+    formatCityName={getArabicCityName}
+    formatCityLocationLabel={(entry) => getArabicCityLocationLabel(entry, { includeAdmin1: Boolean(entry.admin1) })}
+  />
+  <ArabicFooter />
+</Base>

@@ -1,0 +1,74 @@
+---
+import ApiGuideContent from '@components/ApiGuideContent.astro';
+import TurkishFooter from '@components/TurkishFooter.astro';
+import TurkishHeader from '@components/TurkishHeader.astro';
+import { supportEmail, totalCities } from '@data/site';
+import Base from '@layouts/Base.astro';
+import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
+import { turkishApiGuideCopy } from '@i18n/api-guide-page';
+import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
+
+const pagePath = '/guides/api/';
+const localizedPath = localizePath('tr', pagePath);
+const pageUrl = `https://sunrisetime.co${localizedPath}`;
+const alternates = buildAlternateLinks([
+  { hrefLang: 'en', path: pagePath },
+  { hrefLang: 'tr', path: localizedPath },
+  { hrefLang: 'x-default', path: pagePath },
+]);
+const languageLinks = buildLanguageSwitcherLinks(pagePath);
+
+const sampleCitiesUrl = `https://sunrisetime.co/api/v1/cities?query=${turkishApiGuideCopy.sampleQueryCity}&limit=3`;
+const sampleTimesUrl = `https://sunrisetime.co/api/v1/times?city=${turkishApiGuideCopy.sampleCitySlug}&date=2026-03-29`;
+const openApiUrl = 'https://sunrisetime.co/api/v1/openapi.json';
+const cityLookupCurl = `curl "${sampleCitiesUrl}"`;
+const timingCurl = `curl "${sampleTimesUrl}"`;
+const jsExample = `const cityLookup = await fetch("https://sunrisetime.co/api/v1/cities?query=${turkishApiGuideCopy.sampleQueryCity}&limit=1");\nconst cityResult = await cityLookup.json();\nconst citySlug = cityResult.cities[0]?.slug;\n\nconst timingResponse = await fetch(\`https://sunrisetime.co/api/v1/times?city=\${citySlug}&date=2026-03-29\`\n);\nconst timingData = await timingResponse.json();\n\nconsole.log(timingData.sun.sunrise, timingData.prayerTimes.maghrib);`;
+const sampleResponse = `{\n  "meta": {\n    "version": "v1",\n    "endpoint": "/api/v1/times",\n    "cacheTtlSeconds": 900\n  },\n  "city": {\n    "slug": "${turkishApiGuideCopy.sampleCitySlug}",\n    "name": "Istanbul",\n    "timezone": "Europe/Istanbul"\n  },\n  "sun": {\n    "sunrise": "6:43 AM",\n    "sunset": "7:22 PM"\n  },\n  "moon": {\n    "phase": "Waxing Crescent",\n    "illumination": 12\n  },\n  "prayerTimes": {\n    "fajr": "5:08 AM",\n    "maghrib": "7:23 PM"\n  }\n}`;
+
+const jsonLd = [
+  {
+    "@type": "TechArticle",
+    "@id": `${pageUrl}#article`,
+    "headline": turkishApiGuideCopy.pageTitle,
+    "description": turkishApiGuideCopy.pageDescription,
+    "url": pageUrl,
+    "inLanguage": "tr",
+    "author": {
+      "@type": "Organization",
+      "name": "SunriseTime",
+    },
+  },
+  buildBreadcrumbJsonLd([
+    { name: 'Ana sayfa', path: '/tr/' },
+    { name: 'Rehberler', path: '/tr/guides/' },
+    { name: 'API', path: localizedPath },
+  ]),
+];
+---
+
+<Base
+  title={turkishApiGuideCopy.pageTitle}
+  description={turkishApiGuideCopy.pageDescription}
+  canonical={pageUrl}
+  keywords={turkishApiGuideCopy.keywords}
+  jsonLd={jsonLd}
+  lang="tr"
+  alternates={alternates}
+>
+  <TurkishHeader languageLinks={languageLinks} currentLanguage="tr" />
+  <ApiGuideContent
+    copy={turkishApiGuideCopy}
+    sampleCitiesUrl={sampleCitiesUrl}
+    sampleTimesUrl={sampleTimesUrl}
+    openApiUrl={openApiUrl}
+    cityLookupCurl={cityLookupCurl}
+    timingCurl={timingCurl}
+    jsExample={jsExample}
+    sampleResponse={sampleResponse}
+    supportEmail={supportEmail}
+  >
+    <span slot="subtitle">{turkishApiGuideCopy.subtitle(totalCities)}</span>
+  </ApiGuideContent>
+  <TurkishFooter />
+</Base>

@@ -1,0 +1,167 @@
+---
+interface Props {
+  lat: number;
+  lng: number;
+  timezone: string;
+}
+
+const { lat, lng, timezone } = Astro.props;
+---
+
+<div class="sunrise-quality-card glass-card" data-lat={lat} data-lng={lng} data-tz={timezone}>
+  <div class="sq-header">
+    <span class="sq-icon"><i data-lucide="sun" class="icon-md"></i></span>
+    <div class="sq-title-col">
+      <h3 class="sq-title">Tomorrow's Sunrise Quality</h3>
+      <span class="sq-status" id="sq-status">Analyzing forecast...</span>
+    </div>
+    <div class="sq-score-circle">
+      <span id="sq-score">--</span>
+    </div>
+  </div>
+  <p class="sq-description" id="sq-description">Fetching cloud and mist probabilities...</p>
+</div>
+
+<script>
+  async function fetchQuality() {
+    const cards = document.querySelectorAll('.sunrise-quality-card');
+    for (const card of cards) {
+      if (!(card instanceof HTMLElement)) continue;
+      
+      const lat = card.dataset.lat;
+      const lng = card.dataset.lng;
+      
+      if (!lat || !lng) continue;
+
+      try {
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&daily=sunrise&hourly=cloudcover_low,cloudcover_mid,cloudcover_high,relative_humidity_2m&timezone=auto&forecast_days=2`;
+        const res = await fetch(url);
+        const data = await res.json();
+        
+        if (!data.daily || !data.daily.sunrise || data.daily.sunrise.length < 2) throw new Error("No sunrise data");
+        
+        const tmrwSunriseStr = data.daily.sunrise[1]; 
+        const tmrwSunriseTime = new Date(tmrwSunriseStr).getTime();
+        
+        let closestIdx = 0;
+        let minDiff = Infinity;
+        
+        data.hourly.time.forEach((timeStr, idx) => {
+          const t = new Date(timeStr).getTime();
+          const diff = Math.abs(t - tmrwSunriseTime);
+          if (diff < minDiff) {
+            minDiff = diff;
+            closestIdx = idx;
+          }
+        });
+
+        const lowCloud = data.hourly.cloudcover_low[closestIdx] || 0;
+        const midCloud = data.hourly.cloudcover_mid[closestIdx] || 0;
+        const highCloud = data.hourly.cloudcover_high[closestIdx] || 0;
+        const humidity = data.hourly.relative_humidity_2m[closestIdx] || 0;
+
+        // Base score
+        let score = 50;
+        
+        // Low Clouds block the sun entirely
+        score -= (lowCloud * 0.4); 
+        
+        // Mid and High clouds catch the red light
+        score += (midCloud * 0.3);
+        score += (highCloud * 0.3);
+        
+        if (humidity > 85) {
+          score += 15;
+        }
+
+        score = Math.floor(Math.max(0, Math.min(100, score)));
+        
+        let status = "Average";
+        let desc = "Standard sunrise predicted. Weather looks typical.";
+        let color = "#fbbf24"; // amber-400
+        
+        if (score >= 80) {
+          status = "Epic 🔥";
+          desc = "High chance of vibrant morning colors and a dynamic sky!";
+          color = "#ef4444"; // red-500
+        } else if (score >= 60) {
+          status = "Good";
+          desc = "Nice conditions for a colorful dawn.";
+          color = "#f97316"; 
+        } else if (score < 30) {
+          status = "Poor";
+          desc = "Low clouds may completely block the sunrise view.";
+          color = "#9ca3af"; // gray-400
+        }
+
+        const scoreEl = card.querySelector('#sq-score');
+        const statusEl = card.querySelector('#sq-status');
+        const descEl = card.querySelector('#sq-description');
+        const circleEl = card.querySelector('.sq-score-circle');
+        
+        if (scoreEl) scoreEl.textContent = score.toString();
+        if (statusEl) statusEl.textContent = status;
+        if (descEl) descEl.textContent = desc;
+        if (circleEl && circleEl instanceof HTMLElement) circleEl.style.borderColor = color;
+
+      } catch (err) {
+        console.error(err);
+        const statusEl = card.querySelector('#sq-status');
+        const descEl = card.querySelector('#sq-description');
+        if (statusEl) statusEl.textContent = "Data unavailable";
+        if (descEl) descEl.textContent = "Could not load forecast from weather service.";
+      }
+    }
+  }
+
+  // Run on load
+  document.addEventListener("DOMContentLoaded", fetchQuality);
+</script>
+
+<style>
+  .sunrise-quality-card {
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    border-left: 4px solid var(--accent, #f97316);
+    margin-top: 1.5rem;
+  }
+  .sq-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  .sq-icon {
+    color: var(--accent, #f97316);
+  }
+  .sq-title-col {
+    flex: 1;
+  }
+  .sq-title {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+  }
+  .sq-status {
+    font-size: 0.9rem;
+    opacity: 0.8;
+  }
+  .sq-score-circle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 3.5rem;
+    height: 3.5rem;
+    border-radius: 50%;
+    border: 3px solid var(--border, #e5e7eb);
+    font-weight: 700;
+    font-size: 1.2rem;
+    transition: border-color 0.5s ease;
+  }
+  .sq-description {
+    margin: 0;
+    font-size: 0.95rem;
+    line-height: 1.5;
+  }
+</style>

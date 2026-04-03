@@ -1,0 +1,270 @@
+---
+import type { ApiGuidePageCopy } from '@i18n/api-guide-page';
+
+interface Props {
+  copy: ApiGuidePageCopy;
+  sampleCitiesUrl: string;
+  sampleTimesUrl: string;
+  openApiUrl: string;
+  cityLookupCurl: string;
+  timingCurl: string;
+  jsExample: string;
+  sampleResponse: string;
+  supportEmail: string;
+}
+
+const { copy, sampleCitiesUrl, sampleTimesUrl, openApiUrl, cityLookupCurl, timingCurl, jsExample, sampleResponse, supportEmail } = Astro.props;
+---
+
+<main class="resource-page">
+  <div class="container">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href={copy.languageCode === 'en' ? '/' : `/${copy.languageCode}/`}>{copy.breadcrumbHome}</a>
+      <i data-lucide="chevron-right" class="icon-xs"></i>
+      <a href={copy.languageCode === 'en' ? '/guides/' : `/${copy.languageCode}/guides/`}>{copy.breadcrumbGuides}</a>
+      <i data-lucide="chevron-right" class="icon-xs"></i>
+      <span>API</span>
+    </nav>
+
+    <header class="resource-header">
+      <span class="section-badge">
+        <i data-lucide="code-2" class="icon-xs"></i>
+        API
+      </span>
+      <h1>{copy.heading}</h1>
+      <p class="resource-subtitle"><slot name="subtitle" /></p>
+    </header>
+
+    <section class="resource-grid resource-grid-3">
+      <article class="resource-card glass-card">
+        <h2>{copy.accessTitle}</h2>
+        <ul class="resource-list">
+          {copy.accessBullets.map((item) => <li>{item}</li>)}
+        </ul>
+      </article>
+
+      <article class="resource-card glass-card">
+        <h2>{copy.basicsTitle}</h2>
+        <ul class="resource-list">
+          {copy.basicsBullets.map((item) => <li>{item}</li>)}
+        </ul>
+      </article>
+
+      <article class="resource-card glass-card">
+        <h2>{copy.cacheTitle}</h2>
+        <ul class="resource-list">
+          {copy.cacheBullets.map((item) => <li>{item}</li>)}
+        </ul>
+      </article>
+    </section>
+
+    <section class="resource-section">
+      <div class="detail-section-head">
+        <h2>{copy.quickstartTitle}</h2>
+        <p>{copy.quickstartDescription}</p>
+      </div>
+
+      <div class="resource-grid">
+        <article class="resource-card glass-card">
+          <h3>{copy.stepResolveCity}</h3>
+          <pre class="docs-code-block"><code>{cityLookupCurl}</code></pre>
+        </article>
+
+        <article class="resource-card glass-card">
+          <h3>{copy.stepFetchTimes}</h3>
+          <pre class="docs-code-block"><code>{timingCurl}</code></pre>
+        </article>
+      </div>
+    </section>
+
+    <section class="resource-section">
+      <div class="detail-section-head">
+        <h2>{copy.endpointsTitle}</h2>
+        <p>{copy.endpointsDescription}</p>
+      </div>
+
+      <div class="resource-link-grid">
+        <a href={sampleCitiesUrl} class="resource-link-card glass-card">
+          <strong><code>GET /api/v1/cities</code></strong>
+          <span>{copy.citiesEndpointDescription}</span>
+        </a>
+        <a href={sampleTimesUrl} class="resource-link-card glass-card">
+          <strong><code>GET /api/v1/times</code></strong>
+          <span>{copy.timesEndpointDescription}</span>
+        </a>
+        <a href={openApiUrl} class="resource-link-card glass-card">
+          <strong><code>GET /api/v1/openapi.json</code></strong>
+          <span>{copy.openApiEndpointDescription}</span>
+        </a>
+      </div>
+    </section>
+
+    <section class="resource-section">
+      <div class="detail-section-head">
+        <h2>{copy.parametersTitle}</h2>
+        <p>{copy.parametersDescription}</p>
+      </div>
+
+      <div class="resource-grid">
+        <article class="resource-card glass-card">
+          <h3><code>/api/v1/cities</code></h3>
+          <div class="docs-table-wrap">
+            <table class="docs-table">
+              <thead>
+                <tr>
+                  <th>{copy.parameterColumn}</th>
+                  <th>{copy.requiredColumn}</th>
+                  <th>{copy.notesColumn}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>query</code></td>
+                  <td>{copy.noLabel}</td>
+                  <td>{copy.cityQueryNotes}</td>
+                </tr>
+                <tr>
+                  <td><code>limit</code></td>
+                  <td>{copy.noLabel}</td>
+                  <td>{copy.limitNotes}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </article>
+
+        <article class="resource-card glass-card">
+          <h3><code>/api/v1/times</code></h3>
+          <div class="docs-table-wrap">
+            <table class="docs-table">
+              <thead>
+                <tr>
+                  <th>{copy.parameterColumn}</th>
+                  <th>{copy.requiredColumn}</th>
+                  <th>{copy.notesColumn}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>city</code></td>
+                  <td>{copy.yesLabel}</td>
+                  <td>{copy.citySlugNotes}</td>
+                </tr>
+                <tr>
+                  <td><code>date</code></td>
+                  <td>{copy.noLabel}</td>
+                  <td>{copy.dateNotes}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="resource-section">
+      <div class="detail-section-head">
+        <h2>{copy.responseTitle}</h2>
+        <p>{copy.responseDescription}</p>
+      </div>
+
+      <div class="resource-grid">
+        <article class="resource-card glass-card">
+          <h3>JSON</h3>
+          <ul class="resource-list">
+            {copy.responseBullets.map((item) => <li>{item}</li>)}
+          </ul>
+        </article>
+
+        <article class="resource-card glass-card">
+          <h3>Sample response</h3>
+          <pre class="docs-code-block"><code>{sampleResponse}</code></pre>
+        </article>
+      </div>
+    </section>
+
+    <section class="resource-section">
+      <div class="detail-section-head">
+        <h2>{copy.examplesTitle}</h2>
+        <p>{copy.examplesDescription}</p>
+      </div>
+
+      <div class="resource-grid">
+        <article class="resource-card glass-card">
+          <h3>{copy.curlLabel}</h3>
+          <pre class="docs-code-block"><code>{timingCurl}</code></pre>
+        </article>
+
+        <article class="resource-card glass-card">
+          <h3>{copy.javascriptLabel}</h3>
+          <pre class="docs-code-block"><code>{jsExample}</code></pre>
+        </article>
+      </div>
+    </section>
+
+    <section class="resource-section">
+      <div class="detail-section-head">
+        <h2>{copy.errorsTitle}</h2>
+        <p>{copy.errorsDescription}</p>
+      </div>
+
+      <div class="glass-card">
+        <div class="docs-table-wrap">
+          <table class="docs-table">
+            <thead>
+              <tr>
+                <th>{copy.codeColumn}</th>
+                <th>{copy.statusColumn}</th>
+                <th>{copy.meaningColumn}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>missing_city</code></td>
+                <td>400</td>
+                <td>{copy.missingCityMeaning}</td>
+              </tr>
+              <tr>
+                <td><code>invalid_date</code></td>
+                <td>400</td>
+                <td>{copy.invalidDateMeaning}</td>
+              </tr>
+              <tr>
+                <td><code>unknown_city</code></td>
+                <td>404</td>
+                <td>{copy.unknownCityMeaning}</td>
+              </tr>
+              <tr>
+                <td><code>invalid_limit</code></td>
+                <td>400</td>
+                <td>{copy.invalidLimitMeaning}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="resource-section">
+      <div class="detail-section-head">
+        <h2>{copy.nextStepsTitle}</h2>
+        <p>{copy.nextStepsDescription}</p>
+      </div>
+
+      <div class="resource-link-grid">
+        <a href={copy.languageCode === 'en' ? '/methodology/' : `/${copy.languageCode}/methodology/`} class="resource-link-card glass-card">
+          <strong>{copy.methodologyLabel}</strong>
+          <span>{copy.methodologyDescription}</span>
+        </a>
+        <a href={copy.languageCode === 'en' ? '/cities/' : `/${copy.languageCode}/cities/`} class="resource-link-card glass-card">
+          <strong>{copy.cityIndexLabel}</strong>
+          <span>{copy.cityIndexDescription}</span>
+        </a>
+        <a href={`mailto:${supportEmail}`} class="resource-link-card glass-card">
+          <strong>{copy.contactLabel}</strong>
+          <span>{copy.contactDescription(supportEmail)}</span>
+        </a>
+      </div>
+    </section>
+  </div>
+</main>

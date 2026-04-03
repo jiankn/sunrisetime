@@ -1,28 +1,37 @@
 ---
-import Base from '@layouts/Base.astro';
-import Header from '@components/Header.astro';
+import ApiGuideContent from '@components/ApiGuideContent.astro';
 import Footer from '@components/Footer.astro';
-import { supportEmail, supportEmailHref, totalCities } from '@data/site';
+import Header from '@components/Header.astro';
+import { supportEmail, totalCities } from '@data/site';
+import Base from '@layouts/Base.astro';
 import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
+import { englishApiGuideCopy } from '@i18n/api-guide-page';
 import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
 
 const pagePath = '/guides/api/';
 const pageUrl = `https://sunrisetime.co${pagePath}`;
-const zhPath = localizePath('zh-cn', pagePath);
-const languageLinks = buildLanguageSwitcherLinks(pagePath, ['en', 'zh-cn']);
 const alternates = buildAlternateLinks([
   { hrefLang: 'en', path: pagePath },
-  { hrefLang: 'zh-cn', path: zhPath },
   { hrefLang: 'x-default', path: pagePath },
 ]);
+const languageLinks = buildLanguageSwitcherLinks(pagePath);
+
+const sampleCitiesUrl = `https://sunrisetime.co/api/v1/cities?query=${englishApiGuideCopy.sampleQueryCity}&limit=3`;
+const sampleTimesUrl = `https://sunrisetime.co/api/v1/times?city=${englishApiGuideCopy.sampleCitySlug}&date=2026-03-29`;
+const openApiUrl = 'https://sunrisetime.co/api/v1/openapi.json';
+const cityLookupCurl = `curl "${sampleCitiesUrl}"`;
+const timingCurl = `curl "${sampleTimesUrl}"`;
+const jsExample = `const cityLookup = await fetch("https://sunrisetime.co/api/v1/cities?query=${englishApiGuideCopy.sampleQueryCity}&limit=1");\nconst cityResult = await cityLookup.json();\nconst citySlug = cityResult.cities[0]?.slug;\n\nconst timingResponse = await fetch(\`https://sunrisetime.co/api/v1/times?city=\${citySlug}&date=2026-03-29\`\n);\nconst timingData = await timingResponse.json();\n\nconsole.log(timingData.sun.sunrise, timingData.prayerTimes.maghrib);`;
+const sampleResponse = `{\n  "meta": {\n    "version": "v1",\n    "endpoint": "/api/v1/times",\n    "cacheTtlSeconds": 900\n  },\n  "city": {\n    "slug": "${englishApiGuideCopy.sampleCitySlug}",\n    "name": "London",\n    "timezone": "Europe/London"\n  },\n  "sun": {\n    "sunrise": "6:44 AM",\n    "sunset": "7:26 PM"\n  },\n  "moon": {\n    "phase": "Waxing Crescent",\n    "illumination": 12\n  },\n  "prayerTimes": {\n    "fajr": "5:10 AM",\n    "maghrib": "7:26 PM"\n  }\n}`;
 
 const jsonLd = [
   {
     "@type": "TechArticle",
     "@id": `${pageUrl}#article`,
-    "headline": "SunriseTime API",
-    "description": "Public beta API for city lookup, sunrise, sunset, golden hour, moon, and prayer-time data.",
+    "headline": englishApiGuideCopy.pageTitle,
+    "description": englishApiGuideCopy.pageDescription,
     "url": pageUrl,
+    "inLanguage": "en",
     "author": {
       "@type": "Organization",
       "name": "SunriseTime",
@@ -34,291 +43,30 @@ const jsonLd = [
     { name: 'API', path: pagePath },
   ]),
 ];
-
-const sampleCitiesUrl = 'https://sunrisetime.co/api/v1/cities?query=london&limit=3';
-const sampleTimesUrl = 'https://sunrisetime.co/api/v1/times?city=london&date=2026-03-29';
-const openApiUrl = 'https://sunrisetime.co/api/v1/openapi.json';
-
-const cityLookupCurl = `curl "${sampleCitiesUrl}"`;
-const timingCurl = `curl "${sampleTimesUrl}"`;
-const jsExample = `const cityLookup = await fetch("https://sunrisetime.co/api/v1/cities?query=istanbul&limit=1");\nconst cityResult = await cityLookup.json();\nconst citySlug = cityResult.cities[0]?.slug;\n\nconst timingResponse = await fetch(\`https://sunrisetime.co/api/v1/times?city=\${citySlug}&date=2026-03-29\`\n);\nconst timingData = await timingResponse.json();\n\nconsole.log(timingData.sun.sunrise, timingData.moon.phase);`;
-const sampleResponse = `{\n  "meta": {\n    "version": "v1",\n    "endpoint": "/api/v1/times",\n    "cacheTtlSeconds": 900\n  },\n  "city": {\n    "slug": "london",\n    "name": "London",\n    "timezone": "Europe/London"\n  },\n  "sun": {\n    "sunrise": "6:44 AM",\n    "sunset": "7:26 PM"\n  },\n  "moon": {\n    "phase": "Waxing Crescent",\n    "illumination": 12\n  },\n  "prayerTimes": {\n    "fajr": "5:10 AM",\n    "maghrib": "7:26 PM"\n  }\n}`;
 ---
 
 <Base
-  title="SunriseTime API - Public Beta"
-  description="Use the SunriseTime API to search supported cities and fetch sunrise, sunset, golden hour, moon, and prayer-time data."
+  title={englishApiGuideCopy.pageTitle}
+  description={englishApiGuideCopy.pageDescription}
   canonical={pageUrl}
-  keywords="sunrise api, sunset api, prayer times api, moon phase api, city lookup api"
+  keywords={englishApiGuideCopy.keywords}
   jsonLd={jsonLd}
   lang="en"
   alternates={alternates}
 >
   <Header languageLinks={languageLinks} currentLanguage="en" />
-
-  <main class="resource-page">
-    <div class="container">
-      <nav class="breadcrumb" aria-label="Breadcrumb">
-        <a href="/">Home</a>
-        <i data-lucide="chevron-right" class="icon-xs"></i>
-        <a href="/guides/">Guides</a>
-        <i data-lucide="chevron-right" class="icon-xs"></i>
-        <span>API</span>
-      </nav>
-
-      <header class="resource-header">
-        <span class="section-badge">
-          <i data-lucide="code-2" class="icon-xs"></i>
-          API
-        </span>
-        <h1>City lookup plus timing data in one public beta API.</h1>
-        <p class="resource-subtitle">SunriseTime API now works more like a product surface: discover supported city slugs, fetch sun and prayer data with structured JSON responses, and integrate from a single docs page. The current catalog covers {totalCities} indexed cities.</p>
-      </header>
-
-      <section class="resource-grid resource-grid-3">
-        <article class="resource-card glass-card">
-          <h2>Access model</h2>
-          <ul class="resource-list">
-            <li>Public beta</li>
-            <li>No API key required right now</li>
-            <li>Best for read-only integrations and lightweight tooling</li>
-            <li>Cloudflare Free edge rollout target: 100 requests per IP per day</li>
-          </ul>
-        </article>
-
-        <article class="resource-card glass-card">
-          <h2>Product basics</h2>
-          <ul class="resource-list">
-            <li>Browser-side CORS is limited to first-party origins during public beta</li>
-            <li>Versioned under <code>/api/v1/</code></li>
-            <li>Structured <code>meta</code> block on every JSON response</li>
-            <li>API JSON responses send <code>X-Robots-Tag: noindex</code></li>
-          </ul>
-        </article>
-
-        <article class="resource-card glass-card">
-          <h2>Current cache policy</h2>
-          <ul class="resource-list">
-            <li><code>/api/v1/times</code>: 15-minute cache window</li>
-            <li><code>/api/v1/cities</code>: 60-minute cache window</li>
-            <li><code>/api/v1/openapi.json</code>: 60-minute cache window</li>
-          </ul>
-        </article>
-      </section>
-
-      <section class="resource-section">
-        <div class="detail-section-head">
-          <h2>Quickstart</h2>
-          <p>Use city lookup first, then request timing data with the returned slug.</p>
-        </div>
-
-        <div class="resource-grid">
-          <article class="resource-card glass-card">
-            <h3>1. Resolve a city slug</h3>
-            <pre class="docs-code-block"><code>{cityLookupCurl}</code></pre>
-          </article>
-
-          <article class="resource-card glass-card">
-            <h3>2. Fetch timing data</h3>
-            <pre class="docs-code-block"><code>{timingCurl}</code></pre>
-          </article>
-        </div>
-      </section>
-
-      <section class="resource-section">
-        <div class="detail-section-head">
-          <h2>Endpoints</h2>
-          <p>These three endpoints are enough for most external integrations.</p>
-        </div>
-
-        <div class="resource-link-grid">
-          <a href={sampleCitiesUrl} class="resource-link-card glass-card">
-            <strong><code>GET /api/v1/cities</code></strong>
-            <span>Search supported cities by name, slug, country, or region and get stable slugs back.</span>
-          </a>
-          <a href={sampleTimesUrl} class="resource-link-card glass-card">
-            <strong><code>GET /api/v1/times</code></strong>
-            <span>Fetch sunrise, sunset, golden hour, moon, and prayer-time data for one city and date.</span>
-          </a>
-          <a href={openApiUrl} class="resource-link-card glass-card">
-            <strong><code>GET /api/v1/openapi.json</code></strong>
-            <span>Read the machine-friendly OpenAPI document for generated clients or internal tooling.</span>
-          </a>
-        </div>
-      </section>
-
-      <section class="resource-section">
-        <div class="detail-section-head">
-          <h2>Parameters</h2>
-          <p>Keep the flow simple: discover a slug, then request one city at a time.</p>
-        </div>
-
-        <div class="resource-grid">
-          <article class="resource-card glass-card">
-            <h3><code>/api/v1/cities</code></h3>
-            <div class="docs-table-wrap">
-              <table class="docs-table">
-                <thead>
-                  <tr>
-                    <th>Parameter</th>
-                    <th>Required</th>
-                    <th>Notes</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td><code>query</code></td>
-                    <td>No</td>
-                    <td>City, slug, country, or admin region. Empty query returns popular cities.</td>
-                  </tr>
-                  <tr>
-                    <td><code>limit</code></td>
-                    <td>No</td>
-                    <td>Default 10, max 25.</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </article>
-
-          <article class="resource-card glass-card">
-            <h3><code>/api/v1/times</code></h3>
-            <div class="docs-table-wrap">
-              <table class="docs-table">
-                <thead>
-                  <tr>
-                    <th>Parameter</th>
-                    <th>Required</th>
-                    <th>Notes</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td><code>city</code></td>
-                    <td>Yes</td>
-                    <td>Stable city slug such as <code>new-york</code>, <code>istanbul</code>, or <code>london</code>.</td>
-                  </tr>
-                  <tr>
-                    <td><code>date</code></td>
-                    <td>No</td>
-                    <td>Optional local date in <code>YYYY-MM-DD</code> format.</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </article>
-        </div>
-      </section>
-
-      <section class="resource-section">
-        <div class="detail-section-head">
-          <h2>Response shape</h2>
-          <p>The JSON shape is intentionally stable and grouped by use case rather than raw calculation internals.</p>
-        </div>
-
-        <div class="resource-grid">
-          <article class="resource-card glass-card">
-            <h3>Top-level blocks</h3>
-            <ul class="resource-list">
-              <li><code>meta</code>: version, endpoint, docs URL, cache TTL, query echo</li>
-              <li><code>city</code>: slug, name, coordinates, timezone, population metadata</li>
-              <li><code>links</code>: API and site URLs related to the resolved city</li>
-              <li><code>sun</code>, <code>goldenHour</code>, <code>moon</code>, <code>prayerTimes</code></li>
-            </ul>
-          </article>
-
-          <article class="resource-card glass-card">
-            <h3>Compact sample</h3>
-            <pre class="docs-code-block"><code>{sampleResponse}</code></pre>
-          </article>
-        </div>
-      </section>
-
-      <section class="resource-section">
-        <div class="detail-section-head">
-          <h2>Integration examples</h2>
-          <p>Command-line and server-side usage work best right now. Third-party browser access should wait until API keys and broader CORS controls are available.</p>
-        </div>
-
-        <div class="resource-grid">
-          <article class="resource-card glass-card">
-            <h3>cURL</h3>
-            <pre class="docs-code-block"><code>{timingCurl}</code></pre>
-          </article>
-
-          <article class="resource-card glass-card">
-            <h3>JavaScript</h3>
-            <pre class="docs-code-block"><code>{jsExample}</code></pre>
-          </article>
-        </div>
-      </section>
-
-      <section class="resource-section">
-        <div class="detail-section-head">
-          <h2>Error model</h2>
-          <p>Errors now return structured JSON instead of plain strings, which makes external handling more predictable.</p>
-        </div>
-
-        <div class="glass-card">
-          <div class="docs-table-wrap">
-            <table class="docs-table">
-              <thead>
-                <tr>
-                  <th>Code</th>
-                  <th>Status</th>
-                  <th>Meaning</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td><code>missing_city</code></td>
-                  <td>400</td>
-                  <td>The <code>city</code> query parameter was not sent to <code>/api/v1/times</code>.</td>
-                </tr>
-                <tr>
-                  <td><code>invalid_date</code></td>
-                  <td>400</td>
-                  <td>The <code>date</code> value was not in <code>YYYY-MM-DD</code> format.</td>
-                </tr>
-                <tr>
-                  <td><code>unknown_city</code></td>
-                  <td>404</td>
-                  <td>The provided city slug does not exist in the current index.</td>
-                </tr>
-                <tr>
-                  <td><code>invalid_limit</code></td>
-                  <td>400</td>
-                  <td>The <code>limit</code> value sent to <code>/api/v1/cities</code> was invalid.</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-
-      <section class="resource-section">
-        <div class="detail-section-head">
-          <h2>Operational notes</h2>
-          <p>This is already usable externally, but it is still a public beta rather than a metered commercial API. External browser embeds should wait until API keys and stronger edge controls are in place.</p>
-        </div>
-
-        <div class="resource-link-grid">
-          <a href="/methodology/" class="resource-link-card glass-card">
-            <strong>Methodology</strong>
-            <span>Review the solar, lunar, and prayer assumptions behind the response blocks.</span>
-          </a>
-          <a href="/cities/" class="resource-link-card glass-card">
-            <strong>City index</strong>
-            <span>Browse the public city directory if you want to inspect slugs manually.</span>
-          </a>
-          <a href={supportEmailHref} class="resource-link-card glass-card">
-            <strong>Contact</strong>
-            <span>Need higher-volume usage or a dedicated integration path? Email {supportEmail}.</span>
-          </a>
-        </div>
-      </section>
-    </div>
-  </main>
-
+  <ApiGuideContent
+    copy={englishApiGuideCopy}
+    sampleCitiesUrl={sampleCitiesUrl}
+    sampleTimesUrl={sampleTimesUrl}
+    openApiUrl={openApiUrl}
+    cityLookupCurl={cityLookupCurl}
+    timingCurl={timingCurl}
+    jsExample={jsExample}
+    sampleResponse={sampleResponse}
+    supportEmail={supportEmail}
+  >
+    <span slot="subtitle">{englishApiGuideCopy.subtitle(totalCities)}</span>
+  </ApiGuideContent>
   <Footer />
 </Base>

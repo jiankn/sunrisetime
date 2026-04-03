@@ -12,7 +12,7 @@ import {
   getArabicPrayerName,
 } from '@i18n/arabic';
 import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
-import { getAnnualSunExtremes, getDaylightSeries, getGoldenHour, getSeasonalSunCheckpoints, getSunTimes, formatTime, getSunriseDelta, getSunsetDelta, getDaylightChangeDays, getSunEventShiftDays } from '@utils/sun';
+import { getAnnualSunExtremes, getDaylightSeries, getGoldenHour, getSeasonalSunCheckpoints, getSunTimes, formatTime, getSunriseDelta, getSunsetDelta, getDaylightChangeDays, getSunEventShiftDays, getLocalYear } from '@utils/sun';
 import { getMoonData } from '@utils/moon';
 import { getNextPrayer } from '@utils/prayer-times';
 import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
@@ -109,10 +109,7 @@ const localTimeLabel = today.toLocaleTimeString(arabicLocale, {
   minute: '2-digit',
   timeZone: city.timezone,
 });
-const currentYear = Number(new Intl.DateTimeFormat('en-US', {
-  year: 'numeric',
-  timeZone: city.timezone,
-}).format(today));
+const currentYear = getLocalYear(today, city.timezone);
 const annualExtremes = getAnnualSunExtremes(currentYear, city.lat, city.lng, city.timezone);
 const seasonalCheckpoints = getSeasonalSunCheckpoints(currentYear, city.lat, city.lng).map((checkpoint) => ({
   ...checkpoint,

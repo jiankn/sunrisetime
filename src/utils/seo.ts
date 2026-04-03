@@ -18,7 +18,9 @@ export function absoluteUrl(path: string) {
 
 export function buildAlternateLinks(
   links: { hrefLang: string; path: string }[],
+  options: { includeAllEnabledLanguages?: boolean } = {},
 ) {
+  const { includeAllEnabledLanguages = true } = options;
   const normalizedLinks = new Map<string, string>();
 
   const normalizePath = (path: string) => (path.startsWith('/') ? path : `/${path}`);
@@ -48,9 +50,11 @@ export function buildAlternateLinks(
     normalizedLinks.set(link.hrefLang, normalizePath(link.path));
   }
 
-  for (const language of enabledLanguages) {
-    if (!normalizedLinks.has(language)) {
-      normalizedLinks.set(language, localizePath(language, basePath));
+  if (includeAllEnabledLanguages) {
+    for (const language of enabledLanguages) {
+      if (!normalizedLinks.has(language)) {
+        normalizedLinks.set(language, localizePath(language, basePath));
+      }
     }
   }
 
@@ -58,8 +62,17 @@ export function buildAlternateLinks(
     normalizedLinks.set('x-default', localizePath(defaultLanguage, basePath));
   }
 
+  const explicitLanguages = [
+    ...new Set(
+      links
+        .map((link) => link.hrefLang)
+        .filter((hrefLang) => isEnabledLanguage(hrefLang)),
+    ),
+  ];
+  const orderedLanguages = includeAllEnabledLanguages ? [...enabledLanguages] : explicitLanguages;
+
   const orderedLinks = [
-    ...enabledLanguages.map((language) => ({
+    ...orderedLanguages.map((language) => ({
       hrefLang: language,
       path: normalizedLinks.get(language) ?? localizePath(language, basePath),
     })),

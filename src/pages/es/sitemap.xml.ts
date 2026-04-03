@@ -17,6 +17,7 @@ export const GET: APIRoute = () => {
     '/es/methodology/',
     '/es/cities/',
     '/es/guides/',
+    '/es/guides/api/',
     '/es/sitemap/',
   ];
 
@@ -27,6 +28,7 @@ export const GET: APIRoute = () => {
     ...allCities.flatMap((city) => [
       `/es/sunrise/${city.slug}/`,
       `/es/prayer-times/${city.slug}/`,
+      `/es/golden-hour/${city.slug}/`,
     ]),
   ];
 

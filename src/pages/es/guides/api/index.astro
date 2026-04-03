@@ -1,0 +1,74 @@
+---
+import ApiGuideContent from '@components/ApiGuideContent.astro';
+import LocalizedFooter from '@components/LocalizedFooter.astro';
+import LocalizedHeader from '@components/LocalizedHeader.astro';
+import { supportEmail, totalCities } from '@data/site';
+import Base from '@layouts/Base.astro';
+import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
+import { spanishApiGuideCopy } from '@i18n/api-guide-page';
+import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
+
+const pagePath = '/guides/api/';
+const localizedPath = localizePath('es', pagePath);
+const pageUrl = `https://sunrisetime.co${localizedPath}`;
+const alternates = buildAlternateLinks([
+  { hrefLang: 'en', path: pagePath },
+  { hrefLang: 'es', path: localizedPath },
+  { hrefLang: 'x-default', path: pagePath },
+]);
+const languageLinks = buildLanguageSwitcherLinks(pagePath);
+
+const sampleCitiesUrl = `https://sunrisetime.co/api/v1/cities?query=${spanishApiGuideCopy.sampleQueryCity}&limit=3`;
+const sampleTimesUrl = `https://sunrisetime.co/api/v1/times?city=${spanishApiGuideCopy.sampleCitySlug}&date=2026-03-29`;
+const openApiUrl = 'https://sunrisetime.co/api/v1/openapi.json';
+const cityLookupCurl = `curl "${sampleCitiesUrl}"`;
+const timingCurl = `curl "${sampleTimesUrl}"`;
+const jsExample = `const cityLookup = await fetch("https://sunrisetime.co/api/v1/cities?query=${spanishApiGuideCopy.sampleQueryCity}&limit=1");\nconst cityResult = await cityLookup.json();\nconst citySlug = cityResult.cities[0]?.slug;\n\nconst timingResponse = await fetch(\`https://sunrisetime.co/api/v1/times?city=\${citySlug}&date=2026-03-29\`\n);\nconst timingData = await timingResponse.json();\n\nconsole.log(timingData.sun.sunrise, timingData.prayerTimes.maghrib);`;
+const sampleResponse = `{\n  "meta": {\n    "version": "v1",\n    "endpoint": "/api/v1/times",\n    "cacheTtlSeconds": 900\n  },\n  "city": {\n    "slug": "${spanishApiGuideCopy.sampleCitySlug}",\n    "name": "Madrid",\n    "timezone": "Europe/Madrid"\n  },\n  "sun": {\n    "sunrise": "7:48 AM",\n    "sunset": "8:22 PM"\n  },\n  "moon": {\n    "phase": "Waxing Crescent",\n    "illumination": 12\n  },\n  "prayerTimes": {\n    "fajr": "5:58 AM",\n    "maghrib": "8:23 PM"\n  }\n}`;
+
+const jsonLd = [
+  {
+    "@type": "TechArticle",
+    "@id": `${pageUrl}#article`,
+    "headline": spanishApiGuideCopy.pageTitle,
+    "description": spanishApiGuideCopy.pageDescription,
+    "url": pageUrl,
+    "inLanguage": "es",
+    "author": {
+      "@type": "Organization",
+      "name": "SunriseTime",
+    },
+  },
+  buildBreadcrumbJsonLd([
+    { name: 'Inicio', path: '/es/' },
+    { name: 'Guías', path: '/es/guides/' },
+    { name: 'API', path: localizedPath },
+  ]),
+];
+---
+
+<Base
+  title={spanishApiGuideCopy.pageTitle}
+  description={spanishApiGuideCopy.pageDescription}
+  canonical={pageUrl}
+  keywords={spanishApiGuideCopy.keywords}
+  jsonLd={jsonLd}
+  lang="es"
+  alternates={alternates}
+>
+  <LocalizedHeader languageLinks={languageLinks} currentLanguage="es" />
+  <ApiGuideContent
+    copy={spanishApiGuideCopy}
+    sampleCitiesUrl={sampleCitiesUrl}
+    sampleTimesUrl={sampleTimesUrl}
+    openApiUrl={openApiUrl}
+    cityLookupCurl={cityLookupCurl}
+    timingCurl={timingCurl}
+    jsExample={jsExample}
+    sampleResponse={sampleResponse}
+    supportEmail={supportEmail}
+  >
+    <span slot="subtitle">{spanishApiGuideCopy.subtitle(totalCities)}</span>
+  </ApiGuideContent>
+  <LocalizedFooter />
+</Base>
