@@ -2,7 +2,7 @@
 import ChineseFooter from '@components/ChineseFooter.astro';
 import ChineseHeader from '@components/ChineseHeader.astro';
 import GoldenHourCityContent from '@components/GoldenHourCityContent.astro';
-import { getCityBySlug } from '@data/site';
+import { getCityBySlug, getCityStaticPaths } from '@data/site';
 import Base from '@layouts/Base.astro';
 import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
 import { chineseGoldenHourCopy } from '@i18n/golden-hour-page';
@@ -14,7 +14,10 @@ import {
 import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
 import { formatTime, getGoldenHour } from '@utils/sun';
 
-export const prerender = false;
+export function getStaticPaths() {
+  return getCityStaticPaths();
+}
+
 Astro.response.headers.set('Cache-Control', 'public, max-age=300, s-maxage=3600');
 
 const city = getCityBySlug(Astro.params.city ?? '');

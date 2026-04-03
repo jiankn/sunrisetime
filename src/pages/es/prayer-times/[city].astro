@@ -2,7 +2,7 @@
 import Base from '@layouts/Base.astro';
 import LocalizedHeader from '@components/LocalizedHeader.astro';
 import LocalizedFooter from '@components/LocalizedFooter.astro';
-import { getCityBySlug, getComparisonCities, getNearbyCities } from '@data/site';
+import { getCityBySlug, getCityStaticPaths, getComparisonCities, getNearbyCities } from '@data/site';
 import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
 import {
   getSpanishCityName,
@@ -15,7 +15,10 @@ import { getAnnualPrayerExtremes, getNextPrayer, getPrayerSeasonalCheckpoints, g
 import type { AsrJuristic, CalculationMethod } from '@utils/prayer-times';
 import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
 
-export const prerender = false;
+export function getStaticPaths() {
+  return getCityStaticPaths();
+}
+
 Astro.response.headers.set('Cache-Control', 'public, max-age=300, s-maxage=3600');
 
 const city = getCityBySlug(Astro.params.city ?? '');
@@ -105,6 +108,28 @@ const otherCities = getComparisonCities(city, 4);
 const pagePath = `/prayer-times/${city.slug}/`;
 const spanishPath = localizePath('es', pagePath);
 const pageUrl = `https://sunrisetime.co${spanishPath}`;
+const liveCityConfig = {
+  kind: 'prayer',
+  citySlug: city.slug,
+  timezone: city.timezone,
+  locale: spanishLocale,
+  duration: {
+    hourLabel: 'h',
+    minuteLabel: 'min',
+    numberUnitSeparator: ' ',
+    partSeparator: ' ',
+  },
+  leadTemplate: 'La hora local es {{localTime}}. La próxima oración es <strong>{{nextPrayerName}}</strong> a las {{nextPrayerTime}}, dentro de {{countdown}}.',
+  countdownTemplate: 'Faltan {{countdown}}',
+  prayerLabels: {
+    fajr: getSpanishPrayerName('Fajr'),
+    sunrise: getSpanishPrayerName('Sunrise'),
+    dhuhr: getSpanishPrayerName('Dhuhr'),
+    asr: getSpanishPrayerName('Asr'),
+    maghrib: getSpanishPrayerName('Maghrib'),
+    isha: getSpanishPrayerName('Isha'),
+  },
+};
 const alternates = buildAlternateLinks([
   { hrefLang: 'en', path: pagePath },
   { hrefLang: 'es', path: spanishPath },
@@ -190,7 +215,7 @@ const jsonLd = [
 >
   <LocalizedHeader languageLinks={languageLinks} currentLanguage="es" />
 
-  <main class="city-page prayer-page">
+  <main class="city-page prayer-page" data-live-city-root data-live-config-id="cityLiveConfig">
     <div class="container">
       <nav class="breadcrumb" aria-label="Breadcrumb">
         <a href="/es/">Inicio</a>
@@ -202,9 +227,9 @@ const jsonLd = [
 
       <section class="prayer-hero glass-card-lg">
         <div class="prayer-hero-copy">
-          <span class="city-kicker">{localDateLabel}</span>
+          <span class="city-kicker">Horario local de oración</span>
           <h1>Horarios de oración en <span class="gradient-text">{cityName}</span></h1>
-          <p class="city-lead">
+          <p class="city-lead" data-live-lead>
             La hora local es {localTimeLabel}. La próxima oración es <strong>{getSpanishPrayerName(nextPrayer.name)}</strong> a las {formatTime(nextPrayer.time, city.timezone, spanishLocale)}{nextPrayerCountdown ? `, dentro de ${nextPrayerCountdown}` : ''}.
             Esta URL reúne el horario completo, el método de cálculo y el vínculo entre el calendario de oración y el amanecer local.
           </p>
@@ -230,10 +255,10 @@ const jsonLd = [
         <div class="prayer-hero-panel">
           <div class="prayer-next-hero glass-card">
             <span class="prayer-next-label">Próxima oración</span>
-            <strong class="prayer-next-name">{getSpanishPrayerName(nextPrayer.name)}</strong>
-            <span class="prayer-next-time">{formatTime(nextPrayer.time, city.timezone, spanishLocale)}</span>
+            <strong class="prayer-next-name" data-live-next-prayer-name>{getSpanishPrayerName(nextPrayer.name)}</strong>
+            <span class="prayer-next-time" data-live-next-prayer-time>{formatTime(nextPrayer.time, city.timezone, spanishLocale)}</span>
             {nextPrayerCountdown && (
-              <span class="prayer-next-countdown">Faltan {nextPrayerCountdown}</span>
+              <span class="prayer-next-countdown" data-live-next-prayer-countdown>Faltan {nextPrayerCountdown}</span>
             )}
           </div>
         </div>
@@ -241,16 +266,19 @@ const jsonLd = [
 
       <section class="detail-section" id="schedule" aria-label="Horario de oración">
         <div class="detail-section-head">
-          <h2><i data-lucide="clock" class="icon-md"></i> Horario de oración de hoy</h2>
-          <p>Los horarios de oración de {cityName} se muestran para {localDateLabel} en la zona horaria {city.timezone}.</p>
+          <h2><i data-lucide="clock" class="icon-md"></i> Horario de oración</h2>
+          <p>Los horarios de oración de {cityName} se muestran en la zona horaria {city.timezone}.</p>
         </div>
 
         <div class="prayer-grid">
           {prayerList.map((entry) => (
-            <div class={`prayer-card glass-card ${nextPrayer.name === entry.name ? 'prayer-card-active' : ''}`}>
+            <div
+              class={`prayer-card glass-card ${nextPrayer.name === entry.name ? 'prayer-card-active' : ''}`}
+              data-live-prayer-card={entry.name.toLowerCase()}
+            >
               <i data-lucide={entry.icon} class="icon-md"></i>
               <span class="prayer-name">{getSpanishPrayerName(entry.name)}</span>
-              <span class="prayer-time">{formatTime(entry.time, city.timezone, spanishLocale)}</span>
+              <span class="prayer-time" data-live-prayer-time={entry.name.toLowerCase()}>{formatTime(entry.time, city.timezone, spanishLocale)}</span>
               <span class="prayer-desc">{entry.desc}</span>
             </div>
           ))}
@@ -341,7 +369,7 @@ const jsonLd = [
         <h2><i data-lucide="info" class="icon-md"></i> Cómo se calculan los horarios de oración en {cityName}</h2>
         <div class="seo-text glass-card">
           <p>
-            Los horarios de oración en {cityName} se calculan a partir de la posición del sol en relación con el horizonte. Hoy, {localDateLabel}, Fajr es a las {formatTime(prayers.fajr, city.timezone, spanishLocale)}, Dhuhr a las {formatTime(prayers.dhuhr, city.timezone, spanishLocale)}, Asr a las {formatTime(prayers.asr, city.timezone, spanishLocale)}, Maghrib a las {formatTime(prayers.maghrib, city.timezone, spanishLocale)} e Isha a las {formatTime(prayers.isha, city.timezone, spanishLocale)}.
+            Los horarios de oración en {cityName} se calculan a partir de la posición del sol en relación con el horizonte. Fajr es a las {formatTime(prayers.fajr, city.timezone, spanishLocale)}, Dhuhr a las {formatTime(prayers.dhuhr, city.timezone, spanishLocale)}, Asr a las {formatTime(prayers.asr, city.timezone, spanishLocale)}, Maghrib a las {formatTime(prayers.maghrib, city.timezone, spanishLocale)} e Isha a las {formatTime(prayers.isha, city.timezone, spanishLocale)}.
           </p>
 
           <h3>Base técnica de la página</h3>
@@ -503,4 +531,5 @@ const jsonLd = [
   </main>
 
   <LocalizedFooter />
+  <script type="application/json" id="cityLiveConfig" set:html={JSON.stringify(liveCityConfig)} />
 </Base>

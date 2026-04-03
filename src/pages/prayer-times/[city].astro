@@ -10,14 +10,17 @@ import Base from '@layouts/Base.astro';
 import Header from '@components/Header.astro';
 import Footer from '@components/Footer.astro';
 import AdUnit from '@components/AdUnit.astro';
-import { getCityBySlug, getCityDisplayName, getCityLocationLabel, getComparisonCities, getNearbyCities } from '@data/site';
+import { getCityBySlug, getCityDisplayName, getCityLocationLabel, getCityStaticPaths, getComparisonCities, getNearbyCities } from '@data/site';
 import { getSunTimes, formatTime, getClockTimeDelta, getDaylightChangeDays, getLocalYear } from '@utils/sun';
 import { getPrayerTimes, getNextPrayer, getAnnualPrayerExtremes, getPrayerSeasonalCheckpoints } from '@utils/prayer-times';
 import type { CalculationMethod, AsrJuristic } from '@utils/prayer-times';
 import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
 import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
 
-export const prerender = false;
+export function getStaticPaths() {
+  return getCityStaticPaths();
+}
+
 Astro.response.headers.set('Cache-Control', 'public, max-age=300, s-maxage=3600');
 
 const city = getCityBySlug(Astro.params.city ?? '');
@@ -109,6 +112,28 @@ const pageTitle = `Prayer Times in ${cityLabel} Today — SunriseTime`;
 const pageDesc = `Today's prayer times in ${cityLabel}: Fajr ${formatTime(prayers.fajr, city.timezone)}, Dhuhr ${formatTime(prayers.dhuhr, city.timezone)}, Asr ${formatTime(prayers.asr, city.timezone)}, Maghrib ${formatTime(prayers.maghrib, city.timezone)}, Isha ${formatTime(prayers.isha, city.timezone)}. Accurate times using MWL method.`;
 const pagePath = `/prayer-times/${city.slug}/`;
 const pageUrl = `https://sunrisetime.co${pagePath}`;
+const liveCityConfig = {
+  kind: 'prayer',
+  citySlug: city.slug,
+  timezone: city.timezone,
+  locale: 'en-US',
+  duration: {
+    hourLabel: 'h',
+    minuteLabel: 'm',
+    numberUnitSeparator: '',
+    partSeparator: ' ',
+  },
+  leadTemplate: 'Local time is {{localTime}}. Next prayer is <strong>{{nextPrayerName}}</strong> at {{nextPrayerTime}} — {{countdown}} from now.',
+  countdownTemplate: '{{countdown}} from now',
+  prayerLabels: {
+    fajr: 'Fajr',
+    sunrise: 'Sunrise',
+    dhuhr: 'Dhuhr',
+    asr: 'Asr',
+    maghrib: 'Maghrib',
+    isha: 'Isha',
+  },
+};
 const alternates = buildAlternateLinks([
   { hrefLang: 'en', path: pagePath },
   { hrefLang: 'es', path: localizePath('es', pagePath) },
@@ -207,7 +232,7 @@ const jsonLd = [
 >
   <Header languageLinks={languageLinks} currentLanguage="en" />
 
-  <main class="city-page prayer-page">
+  <main class="city-page prayer-page" data-live-city-root data-live-config-id="cityLiveConfig">
     <div class="container">
       <nav class="breadcrumb" aria-label="Breadcrumb">
         <a href="/">Home</a>
@@ -220,9 +245,9 @@ const jsonLd = [
       <!-- Hero Section -->
       <section class="prayer-hero glass-card-lg">
         <div class="prayer-hero-copy">
-          <span class="city-kicker">{localDateLabel}</span>
+          <span class="city-kicker">Local prayer schedule</span>
           <h1>Prayer Times in <span class="gradient-text">{city.name}</span></h1>
-          <p class="city-lead">
+          <p class="city-lead" data-live-lead>
             Local time is {localTimeLabel}. Next prayer is <strong>{nextPrayer.name}</strong> at {formatTime(nextPrayer.time, city.timezone)}{nextPrayerCountdown ? ` — ${nextPrayerCountdown} from now` : ''}.
           </p>
 
@@ -248,28 +273,31 @@ const jsonLd = [
         <div class="prayer-hero-panel">
           <div class="prayer-next-hero glass-card">
             <span class="prayer-next-label">Next prayer</span>
-            <strong class="prayer-next-name">{nextPrayer.name}</strong>
-            <span class="prayer-next-time">{formatTime(nextPrayer.time, city.timezone)}</span>
+            <strong class="prayer-next-name" data-live-next-prayer-name>{nextPrayer.name}</strong>
+            <span class="prayer-next-time" data-live-next-prayer-time>{formatTime(nextPrayer.time, city.timezone)}</span>
             {nextPrayerCountdown && (
-              <span class="prayer-next-countdown">{nextPrayerCountdown} from now</span>
+              <span class="prayer-next-countdown" data-live-next-prayer-countdown>{nextPrayerCountdown} from now</span>
             )}
           </div>
         </div>
       </section>
 
       <!-- Full Prayer Schedule -->
-      <section class="detail-section" id="schedule" aria-label="Today's prayer schedule">
+      <section class="detail-section" id="schedule" aria-label="Prayer schedule">
         <div class="detail-section-head">
-          <h2><i data-lucide="clock" class="icon-md"></i> Today&apos;s Prayer Schedule</h2>
-          <p>All five daily prayers plus sunrise. Times are for {city.name} ({city.timezone}) on {localDateLabel}.</p>
+          <h2><i data-lucide="clock" class="icon-md"></i> Prayer Schedule</h2>
+          <p>All five daily prayers plus sunrise. Times are for {city.name} in the {city.timezone} time zone.</p>
         </div>
 
         <div class="prayer-grid">
           {prayerList.map(p => (
-            <div class={`prayer-card glass-card ${nextPrayer.name === p.name ? 'prayer-card-active' : ''}`}>
+            <div
+              class={`prayer-card glass-card ${nextPrayer.name === p.name ? 'prayer-card-active' : ''}`}
+              data-live-prayer-card={p.name.toLowerCase()}
+            >
               <i data-lucide={p.icon} class="icon-md"></i>
               <span class="prayer-name">{p.name}</span>
-              <span class="prayer-time">{formatTime(p.time, city.timezone)}</span>
+              <span class="prayer-time" data-live-prayer-time={p.name.toLowerCase()}>{formatTime(p.time, city.timezone)}</span>
               <span class="prayer-desc">{p.desc}</span>
             </div>
           ))}
@@ -364,7 +392,7 @@ const jsonLd = [
         <h2><i data-lucide="info" class="icon-md"></i> About Prayer Times in {city.name}</h2>
         <div class="seo-text glass-card">
           <p>
-            Islamic prayer times in {city.name} are calculated based on the position of the sun relative to the horizon. The five daily prayers — Fajr, Dhuhr, Asr, Maghrib, and Isha — each correspond to specific solar positions. Today, {localDateLabel}, the first prayer (Fajr) begins at {formatTime(prayers.fajr, city.timezone)}, well before sunrise at {formatTime(prayers.sunrise, city.timezone)}.
+            Islamic prayer times in {city.name} are calculated based on the position of the sun relative to the horizon. The five daily prayers — Fajr, Dhuhr, Asr, Maghrib, and Isha — each correspond to specific solar positions. The first prayer (Fajr) begins at {formatTime(prayers.fajr, city.timezone)}, well before sunrise at {formatTime(prayers.sunrise, city.timezone)}.
           </p>
 
           <h3>How Prayer Times Are Calculated</h3>
@@ -539,4 +567,5 @@ const jsonLd = [
   </main>
 
   <Footer />
+  <script type="application/json" id="cityLiveConfig" set:html={JSON.stringify(liveCityConfig)} />
 </Base>

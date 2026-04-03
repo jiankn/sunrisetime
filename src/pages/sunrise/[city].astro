@@ -9,7 +9,7 @@ import Base from '@layouts/Base.astro';
 import Header from '@components/Header.astro';
 import Footer from '@components/Footer.astro';
 import AdUnit from '@components/AdUnit.astro';
-import { getCityBySlug, getCityDisplayName, getCityLocationLabel, getComparisonCities, getNearbyCities } from '@data/site';
+import { getCityBySlug, getCityDisplayName, getCityLocationLabel, getCityStaticPaths, getComparisonCities, getNearbyCities } from '@data/site';
 import { getSunTimes, getGoldenHour, getDaylightSeries, formatTime, getSunriseDelta, getSunsetDelta, getDaylightChangeDays, getSunEventShiftDays, getAnnualSunExtremes, getSeasonalSunCheckpoints, getLocalYear } from '@utils/sun';
 import { getMoonData, getNextMoonEvent } from '@utils/moon';
 import { getPrayerTimes, getNextPrayer } from '@utils/prayer-times';
@@ -17,7 +17,10 @@ import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
 import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
 import SunriseQuality from '@components/SunriseQuality.astro';
 
-export const prerender = false;
+export function getStaticPaths() {
+  return getCityStaticPaths();
+}
+
 Astro.response.headers.set('Cache-Control', 'public, max-age=300, s-maxage=3600');
 
 const city = getCityBySlug(Astro.params.city ?? '');
@@ -185,6 +188,41 @@ const pageTitle = `Sunrise & Sunset Times in ${cityLabel} Today — SunriseTime`
 const pageDesc = `Today's sunrise in ${cityLabel} is at ${formatTime(sun.sunrise, city.timezone)}, sunset at ${formatTime(sun.sunset, city.timezone)}. ${sun.daylightFormatted} of daylight. Golden hour, moon phase, and prayer times included.`;
 const pagePath = `/sunrise/${city.slug}/`;
 const pageUrl = `https://sunrisetime.co${pagePath}`;
+const liveCityConfig = {
+  kind: 'sun',
+  citySlug: city.slug,
+  timezone: city.timezone,
+  locale: 'en-US',
+  duration: {
+    hourLabel: 'h',
+    minuteLabel: 'm',
+    numberUnitSeparator: '',
+    partSeparator: ' ',
+  },
+  leadTemplate: 'Local time is {{localTime}}. Sunrise in ' + city.name + ' is at {{sunrise}} and sunset is at {{sunset}}. Use the quick paths below to jump straight to photography, moon, or prayer details.',
+  nextTimeTemplate: '{{nextTime}} local time',
+  events: {
+    sunrise: {
+      label: 'Sunrise in',
+      supportTemplate: 'Morning golden hour runs until {{morningEnd}}.',
+    },
+    sunset: {
+      label: 'Sunset in',
+      supportTemplate: 'Evening golden hour begins at {{eveningStart}}.',
+    },
+    tomorrowSunrise: {
+      label: 'Tomorrow sunrise',
+      supportTemplate: 'Tomorrow brings {{daylight}} of daylight.',
+    },
+  },
+  lightStatusLabels: {
+    beforeDawn: 'Night is still in control.',
+    beforeSunrise: 'Civil dawn has started.',
+    beforeSunset: 'Daylight is active right now.',
+    beforeDusk: 'Civil dusk is fading out.',
+    afterDusk: 'Night has taken over again.',
+  },
+};
 const alternates = buildAlternateLinks([
   { hrefLang: 'en', path: pagePath },
   { hrefLang: 'es', path: localizePath('es', pagePath) },
@@ -246,7 +284,7 @@ const jsonLd = [
 >
   <Header languageLinks={languageLinks} currentLanguage="en" />
 
-  <main class="city-page">
+  <main class="city-page" data-live-city-root data-live-config-id="cityLiveConfig">
     <div class="container">
       <nav class="breadcrumb" aria-label="Breadcrumb">
         <a href="/">Home</a>
@@ -258,17 +296,17 @@ const jsonLd = [
 
       <section class="city-snapshot glass-card-lg">
         <div class="city-snapshot-copy">
-          <span class="city-kicker">Today&apos;s light in {city.name}</span>
+          <span class="city-kicker">Local light in {city.name}</span>
           <h1>Sunrise & Sunset in <span class="gradient-text">{city.name}</span></h1>
-          <p class="city-lead">
-            Local time is {localTimeLabel}. {nextSunEvent.label} {nextSunEvent.countdown}, at {nextSunEvent.time}.
+          <p class="city-lead" data-live-lead>
+            Local time is {localTimeLabel}. Sunrise in {city.name} is at {formatTime(sun.sunrise, city.timezone)} and sunset is at {formatTime(sun.sunset, city.timezone)}.
             Use the quick paths below to jump straight to photography, moon, or prayer details.
           </p>
 
           <div class="city-chip-row">
             <span class="city-chip city-country-badge">{cityLocationLabel}</span>
             <span class="city-chip">{city.timezone}</span>
-            <span class="city-chip">{localDateLabel}</span>
+            <span class="city-chip">{sun.daylightFormatted} daylight</span>
           </div>
 
           <div class="city-action-row">
@@ -289,21 +327,21 @@ const jsonLd = [
 
         <div class="city-snapshot-panel">
           <div class="city-next-event glass-card">
-            <span class="city-next-label">{nextSunEvent.label}</span>
-            <strong>{nextSunEvent.countdown}</strong>
-            <span class="city-next-time">{nextSunEvent.time} local time</span>
-            <p>{nextSunEvent.support}</p>
+            <span class="city-next-label" data-live-next-label>{nextSunEvent.label}</span>
+            <strong data-live-next-countdown>{nextSunEvent.countdown}</strong>
+            <span class="city-next-time" data-live-next-time>{nextSunEvent.time} local time</span>
+            <p data-live-next-support>{nextSunEvent.support}</p>
           </div>
 
           <div class="city-light-track glass-card">
             <div class="city-track-head">
               <span>Dawn {formatTime(sun.dawn, city.timezone)}</span>
-              <strong>{lightStatus}</strong>
+              <strong data-live-light-status>{lightStatus}</strong>
               <span>Dusk {formatTime(sun.dusk, city.timezone)}</span>
             </div>
             <div class="city-track-bar">
-              <span class="city-track-fill" style={`width:${lightProgress}%`}></span>
-              <span class="city-track-marker" style={`left:${lightProgress}%`}></span>
+              <span class="city-track-fill" data-live-light-fill style={`width:${lightProgress}%`}></span>
+              <span class="city-track-marker" data-live-light-marker style={`left:${lightProgress}%`}></span>
             </div>
             <div class="city-track-points">
               <span>Sunrise {formatTime(sun.sunrise, city.timezone)}</span>
@@ -719,6 +757,7 @@ const jsonLd = [
   </main>
 
   <Footer />
+  <script type="application/json" id="cityLiveConfig" set:html={JSON.stringify(liveCityConfig)} />
 </Base>
 
 <style>

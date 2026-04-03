@@ -2,7 +2,7 @@
 import Base from '@layouts/Base.astro';
 import ArabicHeader from '@components/ArabicHeader.astro';
 import ArabicFooter from '@components/ArabicFooter.astro';
-import { getCityBySlug, getComparisonCities, getNearbyCities } from '@data/site';
+import { getCityBySlug, getCityStaticPaths, getComparisonCities, getNearbyCities } from '@data/site';
 import {
   arabicLocale,
   getArabicCityDisplayName,
@@ -17,7 +17,10 @@ import { getMoonData } from '@utils/moon';
 import { getNextPrayer } from '@utils/prayer-times';
 import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
 
-export const prerender = false;
+export function getStaticPaths() {
+  return getCityStaticPaths();
+}
+
 Astro.response.headers.set('Cache-Control', 'public, max-age=300, s-maxage=3600');
 
 const city = getCityBySlug(Astro.params.city ?? '');
@@ -109,6 +112,15 @@ const localTimeLabel = today.toLocaleTimeString(arabicLocale, {
   minute: '2-digit',
   timeZone: city.timezone,
 });
+const lightStatus = today < sun.dawn
+  ? 'الليل ما يزال مسيطراً.'
+  : today < sun.sunrise
+    ? 'بدأ الفجر المدني.'
+    : today < sun.sunset
+      ? 'ضوء النهار نشط الآن.'
+      : today < sun.dusk
+        ? 'يتلاشى الشفق المدني الآن.'
+        : 'عاد الليل من جديد.';
 const currentYear = getLocalYear(today, city.timezone);
 const annualExtremes = getAnnualSunExtremes(currentYear, city.lat, city.lng, city.timezone);
 const seasonalCheckpoints = getSeasonalSunCheckpoints(currentYear, city.lat, city.lng).map((checkpoint) => ({
@@ -128,6 +140,41 @@ const pagePath = `/sunrise/${city.slug}/`;
 const arPath = localizePath('ar', pagePath);
 const prayerPath = localizePath('ar', `/prayer-times/${city.slug}/`);
 const pageUrl = `https://sunrisetime.co${arPath}`;
+const liveCityConfig = {
+  kind: 'sun',
+  citySlug: city.slug,
+  timezone: city.timezone,
+  locale: arabicLocale,
+  duration: {
+    hourLabel: 'س',
+    minuteLabel: 'د',
+    numberUnitSeparator: ' ',
+    partSeparator: ' ',
+  },
+  leadTemplate: 'الوقت المحلي الآن {{localTime}}. {{nextLabel}} بعد {{countdown}} عند {{nextTime}}. تعرض الصفحة أيضًا الساعة الذهبية والقمر والصلاة القادمة.',
+  nextTimeTemplate: '{{nextTime}}',
+  events: {
+    sunrise: {
+      label: 'الشروق القادم',
+      supportTemplate: 'تنتهي الساعة الذهبية الصباحية عند {{morningEnd}}.',
+    },
+    sunset: {
+      label: 'الغروب القادم',
+      supportTemplate: 'تبدأ الساعة الذهبية المسائية عند {{eveningStart}}.',
+    },
+    tomorrowSunrise: {
+      label: 'شروق الغد',
+      supportTemplate: 'غدًا يمنحك {{daylight}} من ضوء النهار.',
+    },
+  },
+  lightStatusLabels: {
+    beforeDawn: 'الليل ما يزال مسيطراً.',
+    beforeSunrise: 'بدأ الفجر المدني.',
+    beforeSunset: 'ضوء النهار نشط الآن.',
+    beforeDusk: 'يتلاشى الشفق المدني الآن.',
+    afterDusk: 'عاد الليل من جديد.',
+  },
+};
 const alternates = buildAlternateLinks([
   { hrefLang: 'en', path: pagePath },
   { hrefLang: 'es', path: localizePath('es', pagePath) },
@@ -168,7 +215,7 @@ const jsonLd = [
 >
   <ArabicHeader languageLinks={languageLinks} currentLanguage="ar" />
 
-  <main class="city-page">
+  <main class="city-page" data-live-city-root data-live-config-id="cityLiveConfig">
     <div class="container">
       <nav class="breadcrumb" aria-label="Breadcrumb">
         <a href="/ar/">الرئيسية</a>
@@ -180,16 +227,16 @@ const jsonLd = [
 
       <section class="city-snapshot glass-card-lg">
         <div class="city-snapshot-copy">
-          <span class="city-kicker">شروق وغروب اليوم في {cityName}</span>
+          <span class="city-kicker">الشروق والغروب في {cityName}</span>
           <h1>الشروق والغروب في <span class="gradient-text">{cityName}</span></h1>
-          <p class="city-lead">
+          <p class="city-lead" data-live-lead>
             الوقت المحلي الآن {localTimeLabel}. {nextEventLabel} بعد {nextEventCountdown} عند {nextEventTime}. تعرض الصفحة أيضًا الساعة الذهبية والقمر والصلاة القادمة.
           </p>
 
           <div class="city-chip-row">
             <span class="city-chip city-country-badge">{locationLabel}</span>
             <span class="city-chip">{city.timezone}</span>
-            <span class="city-chip">{localDateLabel}</span>
+            <span class="city-chip">مدة النهار {formatCountdown(sun.daylightDuration * 60000)}</span>
           </div>
 
           <div class="city-action-row">
@@ -206,21 +253,21 @@ const jsonLd = [
 
         <div class="city-snapshot-panel">
           <div class="city-next-event glass-card">
-            <span class="city-next-label">{nextEventLabel}</span>
-            <strong>{nextEventCountdown}</strong>
-            <span class="city-next-time">{nextEventTime}</span>
-            <p>{nextEventSupport}</p>
+            <span class="city-next-label" data-live-next-label>{nextEventLabel}</span>
+            <strong data-live-next-countdown>{nextEventCountdown}</strong>
+            <span class="city-next-time" data-live-next-time>{nextEventTime}</span>
+            <p data-live-next-support>{nextEventSupport}</p>
           </div>
 
           <div class="city-light-track glass-card">
             <div class="city-track-head">
               <span>الفجر {formatTime(sun.dawn, city.timezone, arabicLocale)}</span>
-              <strong>الإجابة الأساسية في صفحة واحدة</strong>
+              <strong data-live-light-status>{lightStatus}</strong>
               <span>الغسق {formatTime(sun.dusk, city.timezone, arabicLocale)}</span>
             </div>
             <div class="city-track-bar">
-              <span class="city-track-fill" style={`width:${lightProgress}%`}></span>
-              <span class="city-track-marker" style={`left:${lightProgress}%`}></span>
+              <span class="city-track-fill" data-live-light-fill style={`width:${lightProgress}%`}></span>
+              <span class="city-track-marker" data-live-light-marker style={`left:${lightProgress}%`}></span>
             </div>
             <div class="city-track-points">
               <span>الشروق {formatTime(sun.sunrise, city.timezone, arabicLocale)}</span>
@@ -473,4 +520,5 @@ const jsonLd = [
   </main>
 
   <ArabicFooter />
+  <script type="application/json" id="cityLiveConfig" set:html={JSON.stringify(liveCityConfig)} />
 </Base>

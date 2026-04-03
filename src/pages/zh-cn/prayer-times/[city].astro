@@ -2,7 +2,7 @@
 import Base from '@layouts/Base.astro';
 import ChineseHeader from '@components/ChineseHeader.astro';
 import ChineseFooter from '@components/ChineseFooter.astro';
-import { getCityBySlug, getComparisonCities, getNearbyCities } from '@data/site';
+import { getCityBySlug, getCityStaticPaths, getComparisonCities, getNearbyCities } from '@data/site';
 import {
   chineseLocale,
   formatChineseDuration,
@@ -17,7 +17,10 @@ import { getSunTimes, formatTime, getClockTimeDelta, getDaylightChangeDays, getL
 import { getAnnualPrayerExtremes, getNextPrayer, getPrayerSeasonalCheckpoints, getPrayerTimes } from '@utils/prayer-times';
 import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
 
-export const prerender = false;
+export function getStaticPaths() {
+  return getCityStaticPaths();
+}
+
 Astro.response.headers.set('Cache-Control', 'public, max-age=300, s-maxage=3600');
 
 const city = getCityBySlug(Astro.params.city ?? '');
@@ -104,6 +107,28 @@ const zhPath = localizePath('zh-cn', pagePath);
 const sunrisePagePath = `/sunrise/${city.slug}/`;
 const sunrisePath = localizePath('zh-cn', sunrisePagePath);
 const pageUrl = `https://sunrisetime.co${zhPath}`;
+const liveCityConfig = {
+  kind: 'prayer',
+  citySlug: city.slug,
+  timezone: city.timezone,
+  locale: chineseLocale,
+  duration: {
+    hourLabel: '小时',
+    minuteLabel: '分钟',
+    numberUnitSeparator: '',
+    partSeparator: '',
+  },
+  leadTemplate: '当前本地时间为 {{localTime}}。下一次礼拜是 <strong>{{nextPrayerName}}</strong>，时间为 {{nextPrayerTime}}，还有 {{countdown}}。',
+  countdownTemplate: '还有 {{countdown}}',
+  prayerLabels: {
+    fajr: getChinesePrayerName('Fajr'),
+    sunrise: getChinesePrayerName('Sunrise'),
+    dhuhr: getChinesePrayerName('Dhuhr'),
+    asr: getChinesePrayerName('Asr'),
+    maghrib: getChinesePrayerName('Maghrib'),
+    isha: getChinesePrayerName('Isha'),
+  },
+};
 const alternates = buildAlternateLinks([
   { hrefLang: 'en', path: pagePath },
   { hrefLang: 'es', path: localizePath('es', pagePath) },
@@ -153,7 +178,7 @@ const jsonLd = [
 >
   <ChineseHeader languageLinks={languageLinks} currentLanguage="zh-cn" />
 
-  <main class="city-page prayer-page">
+  <main class="city-page prayer-page" data-live-city-root data-live-config-id="cityLiveConfig">
     <div class="container">
       <nav class="breadcrumb" aria-label="面包屑导航">
         <a href="/zh-cn/">首页</a>
@@ -165,9 +190,9 @@ const jsonLd = [
 
       <section class="prayer-hero glass-card-lg">
         <div class="prayer-hero-copy">
-          <span class="city-kicker">{localDateLabel}</span>
-          <h1><span class="gradient-text">{cityName}</span>今日礼拜时间</h1>
-          <p class="city-lead">
+          <span class="city-kicker">本地礼拜时间</span>
+          <h1><span class="gradient-text">{cityName}</span>礼拜时间</h1>
+          <p class="city-lead" data-live-lead>
             下一次礼拜是 <strong>{getChinesePrayerName(nextPrayer.name)}</strong>，时间为 {formatTime(nextPrayer.time, city.timezone, chineseLocale)}{nextPrayerCountdown ? `，还有 ${nextPrayerCountdown}` : ''}。本页同时提供与礼拜相关的日出、日落和天光信息。
           </p>
 
@@ -192,10 +217,10 @@ const jsonLd = [
         <div class="prayer-hero-panel">
           <div class="prayer-next-hero glass-card">
             <span class="prayer-next-label">下一次礼拜</span>
-            <strong class="prayer-next-name">{getChinesePrayerName(nextPrayer.name)}</strong>
-            <span class="prayer-next-time">{formatTime(nextPrayer.time, city.timezone, chineseLocale)}</span>
+            <strong class="prayer-next-name" data-live-next-prayer-name>{getChinesePrayerName(nextPrayer.name)}</strong>
+            <span class="prayer-next-time" data-live-next-prayer-time>{formatTime(nextPrayer.time, city.timezone, chineseLocale)}</span>
             {nextPrayerCountdown && (
-              <span class="prayer-next-countdown">{nextPrayerCountdown}</span>
+              <span class="prayer-next-countdown" data-live-next-prayer-countdown>{nextPrayerCountdown}</span>
             )}
           </div>
         </div>
@@ -203,16 +228,19 @@ const jsonLd = [
 
       <section class="detail-section" id="schedule" aria-label="礼拜时间表">
         <div class="detail-section-head">
-          <h2><i data-lucide="clock" class="icon-md"></i> 今日礼拜时间表</h2>
-          <p>以下时间适用于 {cityDisplayName} 的 {localDateLabel}。</p>
+          <h2><i data-lucide="clock" class="icon-md"></i> 礼拜时间表</h2>
+          <p>以下时间适用于 {cityDisplayName} 的本地时区。</p>
         </div>
 
         <div class="prayer-grid">
           {prayerList.map((entry) => (
-            <div class={`prayer-card glass-card ${nextPrayer.name === entry.name ? 'prayer-card-active' : ''}`}>
+            <div
+              class={`prayer-card glass-card ${nextPrayer.name === entry.name ? 'prayer-card-active' : ''}`}
+              data-live-prayer-card={entry.name.toLowerCase()}
+            >
               <i data-lucide={entry.icon} class="icon-md"></i>
               <span class="prayer-name">{getChinesePrayerName(entry.name)}</span>
-              <span class="prayer-time">{formatTime(entry.time, city.timezone, chineseLocale)}</span>
+              <span class="prayer-time" data-live-prayer-time={entry.name.toLowerCase()}>{formatTime(entry.time, city.timezone, chineseLocale)}</span>
               <span class="prayer-desc">{entry.desc}</span>
             </div>
           ))}
@@ -407,5 +435,6 @@ const jsonLd = [
   </main>
 
   <ChineseFooter />
+  <script type="application/json" id="cityLiveConfig" set:html={JSON.stringify(liveCityConfig)} />
 </Base>
 

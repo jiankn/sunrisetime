@@ -2,7 +2,7 @@
 import Base from '@layouts/Base.astro';
 import ChineseHeader from '@components/ChineseHeader.astro';
 import ChineseFooter from '@components/ChineseFooter.astro';
-import { getCityBySlug, getComparisonCities, getNearbyCities } from '@data/site';
+import { getCityBySlug, getCityStaticPaths, getComparisonCities, getNearbyCities } from '@data/site';
 import {
   chineseLocale,
   formatChineseDuration,
@@ -19,7 +19,10 @@ import { getMoonData } from '@utils/moon';
 import { getNextPrayer } from '@utils/prayer-times';
 import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
 
-export const prerender = false;
+export function getStaticPaths() {
+  return getCityStaticPaths();
+}
+
 Astro.response.headers.set('Cache-Control', 'public, max-age=300, s-maxage=3600');
 
 const city = getCityBySlug(Astro.params.city ?? '');
@@ -120,6 +123,15 @@ const localTimeLabel = today.toLocaleTimeString(chineseLocale, {
   minute: '2-digit',
   timeZone: city.timezone,
 });
+const lightStatus = today < sun.dawn
+  ? '当前仍处于夜间。'
+  : today < sun.sunrise
+    ? '晨光已经开始。'
+    : today < sun.sunset
+      ? '现在处于白昼时段。'
+      : today < sun.dusk
+        ? '暮光正在减弱。'
+        : '夜晚已经到来。';
 const currentYear = getLocalYear(today, city.timezone);
 const annualExtremes = getAnnualSunExtremes(currentYear, city.lat, city.lng, city.timezone);
 const seasonalCheckpoints = getSeasonalSunCheckpoints(currentYear, city.lat, city.lng).map((checkpoint) => ({
@@ -140,6 +152,41 @@ const zhPath = localizePath('zh-cn', pagePath);
 const prayerPagePath = `/prayer-times/${city.slug}/`;
 const prayerPath = localizePath('zh-cn', prayerPagePath);
 const pageUrl = `https://sunrisetime.co${zhPath}`;
+const liveCityConfig = {
+  kind: 'sun',
+  citySlug: city.slug,
+  timezone: city.timezone,
+  locale: chineseLocale,
+  duration: {
+    hourLabel: '小时',
+    minuteLabel: '分钟',
+    numberUnitSeparator: '',
+    partSeparator: '',
+  },
+  leadTemplate: '当前本地时间为 {{localTime}}。{{nextLabel}}还有 {{countdown}}，时间是 {{nextTime}}。本页同时给出黄金时刻、月相和礼拜时间入口。',
+  nextTimeTemplate: '{{nextTime}}',
+  events: {
+    sunrise: {
+      label: '下一次日出',
+      supportTemplate: '晨间黄金时刻将在 {{morningEnd}} 结束。',
+    },
+    sunset: {
+      label: '下一次日落',
+      supportTemplate: '傍晚黄金时刻会在 {{eveningStart}} 开始。',
+    },
+    tomorrowSunrise: {
+      label: '明日日出',
+      supportTemplate: '明天白昼时长约为 {{daylight}}。',
+    },
+  },
+  lightStatusLabels: {
+    beforeDawn: '当前仍处于夜间。',
+    beforeSunrise: '晨光已经开始。',
+    beforeSunset: '现在处于白昼时段。',
+    beforeDusk: '暮光正在减弱。',
+    afterDusk: '夜晚已经到来。',
+  },
+};
 const alternates = buildAlternateLinks([
   { hrefLang: 'en', path: pagePath },
   { hrefLang: 'es', path: localizePath('es', pagePath) },
@@ -180,7 +227,7 @@ const jsonLd = [
 >
   <ChineseHeader languageLinks={languageLinks} currentLanguage="zh-cn" />
 
-  <main class="city-page">
+  <main class="city-page" data-live-city-root data-live-config-id="cityLiveConfig">
     <div class="container">
       <nav class="breadcrumb" aria-label="面包屑导航">
         <a href="/zh-cn/">首页</a>
@@ -192,16 +239,16 @@ const jsonLd = [
 
       <section class="city-snapshot glass-card-lg">
         <div class="city-snapshot-copy">
-          <span class="city-kicker">{cityName} 今日日出日落</span>
+          <span class="city-kicker">{cityName} 日出日落</span>
           <h1><span class="gradient-text">{cityName}</span>的日出日落时间</h1>
-          <p class="city-lead">
+          <p class="city-lead" data-live-lead>
             当前本地时间为 {localTimeLabel}。{nextEventLabel}还有 {nextEventCountdown}，时间是 {nextEventTime}。本页同时给出黄金时刻、月相和礼拜时间入口。
           </p>
 
           <div class="city-chip-row">
             <span class="city-chip city-country-badge">{locationLabel}</span>
             <span class="city-chip">{timezoneLabel}</span>
-            <span class="city-chip">{localDateLabel}</span>
+            <span class="city-chip">白昼 {formatCountdown(sun.daylightDuration * 60000)}</span>
           </div>
 
           <div class="city-action-row">
@@ -218,21 +265,21 @@ const jsonLd = [
 
         <div class="city-snapshot-panel">
           <div class="city-next-event glass-card">
-            <span class="city-next-label">{nextEventLabel}</span>
-            <strong>{nextEventCountdown}</strong>
-            <span class="city-next-time">{nextEventTime}</span>
-            <p>{nextEventSupport}</p>
+            <span class="city-next-label" data-live-next-label>{nextEventLabel}</span>
+            <strong data-live-next-countdown>{nextEventCountdown}</strong>
+            <span class="city-next-time" data-live-next-time>{nextEventTime}</span>
+            <p data-live-next-support>{nextEventSupport}</p>
           </div>
 
           <div class="city-light-track glass-card">
             <div class="city-track-head">
               <span>晨光 {formatTime(sun.dawn, city.timezone, chineseLocale)}</span>
-              <strong>核心时间一页看完</strong>
+              <strong data-live-light-status>{lightStatus}</strong>
               <span>暮光 {formatTime(sun.dusk, city.timezone, chineseLocale)}</span>
             </div>
             <div class="city-track-bar">
-              <span class="city-track-fill" style={`width:${lightProgress}%`}></span>
-              <span class="city-track-marker" style={`left:${lightProgress}%`}></span>
+              <span class="city-track-fill" data-live-light-fill style={`width:${lightProgress}%`}></span>
+              <span class="city-track-marker" data-live-light-marker style={`left:${lightProgress}%`}></span>
             </div>
             <div class="city-track-points">
               <span>日出 {formatTime(sun.sunrise, city.timezone, chineseLocale)}</span>
@@ -505,5 +552,6 @@ const jsonLd = [
   </main>
 
   <ChineseFooter />
+  <script type="application/json" id="cityLiveConfig" set:html={JSON.stringify(liveCityConfig)} />
 </Base>
 

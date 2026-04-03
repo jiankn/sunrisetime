@@ -2,7 +2,7 @@
 import Base from '@layouts/Base.astro';
 import LocalizedHeader from '@components/LocalizedHeader.astro';
 import LocalizedFooter from '@components/LocalizedFooter.astro';
-import { getCityBySlug, getComparisonCities, getNearbyCities } from '@data/site';
+import { getCityBySlug, getCityStaticPaths, getComparisonCities, getNearbyCities } from '@data/site';
 import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
 import {
   getSpanishCityName,
@@ -16,7 +16,10 @@ import { getMoonData, getNextMoonEvent } from '@utils/moon';
 import { getNextPrayer, getPrayerTimes } from '@utils/prayer-times';
 import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
 
-export const prerender = false;
+export function getStaticPaths() {
+  return getCityStaticPaths();
+}
+
 Astro.response.headers.set('Cache-Control', 'public, max-age=300, s-maxage=3600');
 
 const city = getCityBySlug(Astro.params.city ?? '');
@@ -148,6 +151,41 @@ const otherCities = getComparisonCities(city, 4);
 const pagePath = `/sunrise/${city.slug}/`;
 const spanishPath = localizePath('es', pagePath);
 const pageUrl = `https://sunrisetime.co${spanishPath}`;
+const liveCityConfig = {
+  kind: 'sun',
+  citySlug: city.slug,
+  timezone: city.timezone,
+  locale: spanishLocale,
+  duration: {
+    hourLabel: 'h',
+    minuteLabel: 'min',
+    numberUnitSeparator: ' ',
+    partSeparator: ' ',
+  },
+  leadTemplate: 'La hora local es {{localTime}}. El amanecer en ' + cityName + ' es a las {{sunrise}} y el atardecer a las {{sunset}}. La pagina tambien muestra duracion del dia, hora dorada, fase lunar y un enlace rapido a los horarios de oracion.',
+  nextTimeTemplate: '{{nextTime}} hora local',
+  events: {
+    sunrise: {
+      label: 'Proximo amanecer',
+      supportTemplate: 'La hora dorada de la manana termina a las {{morningEnd}}.',
+    },
+    sunset: {
+      label: 'Proximo atardecer',
+      supportTemplate: 'La hora dorada de la tarde empieza a las {{eveningStart}}.',
+    },
+    tomorrowSunrise: {
+      label: 'Amanecer de manana',
+      supportTemplate: 'Manana habra {{daylight}} de luz natural.',
+    },
+  },
+  lightStatusLabels: {
+    beforeDawn: 'Todavia es de noche.',
+    beforeSunrise: 'Ya empezo el alba civil.',
+    beforeSunset: 'Ahora mismo hay luz diurna.',
+    beforeDusk: 'El crepusculo civil se esta apagando.',
+    afterDusk: 'La noche ya volvio.',
+  },
+};
 const alternates = buildAlternateLinks([
   { hrefLang: 'en', path: pagePath },
   { hrefLang: 'es', path: spanishPath },
@@ -219,7 +257,7 @@ const jsonLd = [
 >
   <LocalizedHeader languageLinks={languageLinks} currentLanguage="es" />
 
-  <main class="city-page">
+  <main class="city-page" data-live-city-root data-live-config-id="cityLiveConfig">
     <div class="container">
       <nav class="breadcrumb" aria-label="Breadcrumb">
         <a href="/es/">Inicio</a>
@@ -233,8 +271,8 @@ const jsonLd = [
         <div class="city-snapshot-copy">
           <span class="city-kicker">Amanecer y atardecer de hoy en {cityName}</span>
           <h1>Hora del amanecer y atardecer en <span class="gradient-text">{cityName}</span></h1>
-          <p class="city-lead">
-            Hoy, {localDateLabel}, la hora local es {localTimeLabel}. El amanecer en {cityName} es a las {formatTime(sun.sunrise, city.timezone, spanishLocale)} y el atardecer a las {formatTime(sun.sunset, city.timezone, spanishLocale)}.
+          <p class="city-lead" data-live-lead>
+            La hora local es {localTimeLabel}. El amanecer en {cityName} es a las {formatTime(sun.sunrise, city.timezone, spanishLocale)} y el atardecer a las {formatTime(sun.sunset, city.timezone, spanishLocale)}.
             La página también muestra duración del día, hora dorada, fase lunar y un enlace rápido a los horarios de oración.
           </p>
 
@@ -262,21 +300,21 @@ const jsonLd = [
 
         <div class="city-snapshot-panel">
           <div class="city-next-event glass-card">
-            <span class="city-next-label">{nextSunEvent.label}</span>
-            <strong>{nextSunEvent.countdown}</strong>
-            <span class="city-next-time">{nextSunEvent.time} hora local</span>
-            <p>{nextSunEvent.support}</p>
+            <span class="city-next-label" data-live-next-label>{nextSunEvent.label}</span>
+            <strong data-live-next-countdown>{nextSunEvent.countdown}</strong>
+            <span class="city-next-time" data-live-next-time>{nextSunEvent.time} hora local</span>
+            <p data-live-next-support>{nextSunEvent.support}</p>
           </div>
 
           <div class="city-light-track glass-card">
             <div class="city-track-head">
               <span>Amanecer civil {formatTime(sun.dawn, city.timezone, spanishLocale)}</span>
-              <strong>{lightStatus}</strong>
+              <strong data-live-light-status>{lightStatus}</strong>
               <span>Anochecer civil {formatTime(sun.dusk, city.timezone, spanishLocale)}</span>
             </div>
             <div class="city-track-bar">
-              <span class="city-track-fill" style={`width:${lightProgress}%`}></span>
-              <span class="city-track-marker" style={`left:${lightProgress}%`}></span>
+              <span class="city-track-fill" data-live-light-fill style={`width:${lightProgress}%`}></span>
+              <span class="city-track-marker" data-live-light-marker style={`left:${lightProgress}%`}></span>
             </div>
             <div class="city-track-points">
               <span>Amanecer {formatTime(sun.sunrise, city.timezone, spanishLocale)}</span>
@@ -595,4 +633,5 @@ const jsonLd = [
   </main>
 
   <LocalizedFooter />
+  <script type="application/json" id="cityLiveConfig" set:html={JSON.stringify(liveCityConfig)} />
 </Base>

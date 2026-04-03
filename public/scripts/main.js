@@ -15,9 +15,11 @@ document.addEventListener('DOMContentLoaded', () => {
   initScrollAnimations();
   initHeroSearch();
   initFooterSearch();
+  initLiveCityModules();
 });
 
 let citySearchDataPromise = null;
+const cityTimesCache = new Map();
 
 function initNavbar() {
   const navbar = document.getElementById('navbar');
@@ -778,4 +780,648 @@ function haversineDistance(lat1, lng1, lat2, lng2) {
     + Math.cos(toRadians(lat1)) * Math.cos(toRadians(lat2)) * Math.sin(dLng / 2) ** 2;
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return earthRadiusKm * c;
+}
+
+function initLiveCityModules() {
+  document.querySelectorAll('[data-live-city-root]').forEach((root) => {
+    const configId = root.dataset.liveConfigId;
+    if (!configId) return;
+
+    const config = readJsonScript(configId);
+    if (!config || !config.kind || !config.citySlug || !config.timezone) {
+      return;
+    }
+
+    switch (config.kind) {
+      case 'sun':
+        initLiveSunModule(root, config);
+        break;
+      case 'prayer':
+        initLivePrayerModule(root, config);
+        break;
+      case 'golden':
+        initLiveGoldenModule(root, config);
+        break;
+      default:
+        break;
+    }
+  });
+}
+
+function initLiveSunModule(root, config) {
+  const state = {
+    currentDateKey: '',
+    today: null,
+    tomorrow: null,
+    updating: false,
+  };
+
+  const elements = {
+    lead: root.querySelector('[data-live-lead]'),
+    nextLabel: root.querySelector('[data-live-next-label]'),
+    nextCountdown: root.querySelector('[data-live-next-countdown]'),
+    nextTime: root.querySelector('[data-live-next-time]'),
+    nextSupport: root.querySelector('[data-live-next-support]'),
+    lightStatus: root.querySelector('[data-live-light-status]'),
+    lightFill: root.querySelector('[data-live-light-fill]'),
+    lightMarker: root.querySelector('[data-live-light-marker]'),
+  };
+
+  async function ensureToday(now) {
+    const nextDateKey = getDateKeyInTimezone(now, config.timezone);
+    if (state.currentDateKey === nextDateKey && state.today) {
+      return state.today;
+    }
+
+    state.currentDateKey = nextDateKey;
+    state.tomorrow = null;
+    state.today = await fetchCityTimes(config.citySlug, nextDateKey);
+    return state.today;
+  }
+
+  async function ensureTomorrow() {
+    if (!state.currentDateKey) return null;
+    if (!state.tomorrow) {
+      state.tomorrow = await fetchCityTimes(config.citySlug, addDaysToDateKey(state.currentDateKey, 1));
+    }
+
+    return state.tomorrow;
+  }
+
+  async function update() {
+    if (state.updating) return;
+    state.updating = true;
+
+    try {
+      const now = new Date();
+      const today = await ensureToday(now);
+      if (!today?.sun?.sunriseIso || !today?.sun?.sunsetIso) {
+        return;
+      }
+
+      let tomorrow = null;
+      if (now >= new Date(today.sun.sunsetIso)) {
+        tomorrow = await ensureTomorrow();
+      }
+
+      const nextEvent = getNextSunEventState(now, today, tomorrow, config);
+      if (!nextEvent) {
+        return;
+      }
+
+      const countdown = formatLiveDuration(
+        new Date(nextEvent.timeIso).getTime() - now.getTime(),
+        config.duration,
+        config.locale,
+      );
+      const templateValues = {
+        countdown,
+        date: formatLiveLongDate(now, config.timezone, config.locale),
+        daylight: formatLiveDuration(
+          (today.sun.daylightMinutes || 0) * 60000,
+          config.duration,
+          config.locale,
+        ),
+        localTime: formatLiveLocalTime(now, config.timezone, config.locale),
+        nextLabel: nextEvent.label,
+        nextTime: nextEvent.timeText,
+        sunrise: formatLiveLocalTime(new Date(today.sun.sunriseIso), config.timezone, config.locale),
+        sunset: formatLiveLocalTime(new Date(today.sun.sunsetIso), config.timezone, config.locale),
+      };
+
+      if (elements.lead && config.leadTemplate) {
+        elements.lead.innerHTML = renderTemplate(config.leadTemplate, templateValues);
+      }
+
+      setText(elements.nextLabel, nextEvent.label);
+      setText(elements.nextCountdown, countdown);
+      setText(
+        elements.nextTime,
+        renderTemplate(config.nextTimeTemplate || '{{nextTime}}', {
+          nextTime: nextEvent.timeText,
+        }),
+      );
+      setText(elements.nextSupport, nextEvent.supportText);
+
+      if (elements.lightStatus) {
+        setText(elements.lightStatus, getLightStatus(now, today, config.lightStatusLabels));
+      }
+
+      const lightProgress = getLightProgress(now, today);
+      if (elements.lightFill) {
+        elements.lightFill.style.width = `${lightProgress}%`;
+      }
+
+      if (elements.lightMarker) {
+        elements.lightMarker.style.left = `${lightProgress}%`;
+      }
+    } finally {
+      state.updating = false;
+    }
+  }
+
+  void update();
+  window.setInterval(() => {
+    void update();
+  }, 30000);
+}
+
+function initLivePrayerModule(root, config) {
+  const state = {
+    currentDateKey: '',
+    today: null,
+    tomorrow: null,
+    updating: false,
+  };
+
+  const elements = {
+    lead: root.querySelector('[data-live-lead]'),
+    nextName: root.querySelector('[data-live-next-prayer-name]'),
+    nextTime: root.querySelector('[data-live-next-prayer-time]'),
+    nextCountdown: root.querySelector('[data-live-next-prayer-countdown]'),
+    prayerCards: [...root.querySelectorAll('[data-live-prayer-card]')],
+    prayerTimes: [...root.querySelectorAll('[data-live-prayer-time]')],
+    dateLabels: [...root.querySelectorAll('[data-live-long-date]')],
+  };
+
+  async function ensureToday(now) {
+    const nextDateKey = getDateKeyInTimezone(now, config.timezone);
+    if (state.currentDateKey === nextDateKey && state.today) {
+      return state.today;
+    }
+
+    state.currentDateKey = nextDateKey;
+    state.tomorrow = null;
+    state.today = await fetchCityTimes(config.citySlug, nextDateKey);
+    return state.today;
+  }
+
+  async function ensureTomorrow() {
+    if (!state.currentDateKey) return null;
+    if (!state.tomorrow) {
+      state.tomorrow = await fetchCityTimes(config.citySlug, addDaysToDateKey(state.currentDateKey, 1));
+    }
+
+    return state.tomorrow;
+  }
+
+  async function update() {
+    if (state.updating) return;
+    state.updating = true;
+
+    try {
+      const now = new Date();
+      const today = await ensureToday(now);
+      if (!today?.prayerTimes?.fajrIso || !today?.prayerTimes?.ishaIso) {
+        return;
+      }
+
+      let tomorrow = null;
+      if (now >= new Date(today.prayerTimes.ishaIso)) {
+        tomorrow = await ensureTomorrow();
+      }
+
+      const nextPrayer = getNextPrayerState(now, today, tomorrow, config);
+      if (!nextPrayer) {
+        return;
+      }
+
+      const countdown = formatLiveDuration(
+        new Date(nextPrayer.timeIso).getTime() - now.getTime(),
+        config.duration,
+        config.locale,
+      );
+      const templateValues = {
+        countdown,
+        date: formatLiveLongDate(now, config.timezone, config.locale),
+        localTime: formatLiveLocalTime(now, config.timezone, config.locale),
+        nextPrayerName: nextPrayer.label,
+        nextPrayerTime: nextPrayer.timeText,
+      };
+
+      if (elements.lead && config.leadTemplate) {
+        elements.lead.innerHTML = renderTemplate(config.leadTemplate, templateValues);
+      }
+
+      setText(elements.nextName, nextPrayer.label);
+      setText(elements.nextTime, nextPrayer.timeText);
+      setText(
+        elements.nextCountdown,
+        renderTemplate(config.countdownTemplate || '{{countdown}}', {
+          countdown,
+        }),
+      );
+
+      elements.prayerCards.forEach((card) => {
+        card.classList.toggle('prayer-card-active', card.dataset.livePrayerCard === nextPrayer.key);
+      });
+
+      elements.prayerTimes.forEach((timeEl) => {
+        const prayerKey = timeEl.dataset.livePrayerTime;
+        const prayerTimeIso = prayerKey ? today.prayerTimes[`${prayerKey}Iso`] : null;
+        if (!prayerKey || !prayerTimeIso) {
+          return;
+        }
+
+        setText(
+          timeEl,
+          formatLiveLocalTime(new Date(prayerTimeIso), config.timezone, config.locale),
+        );
+      });
+
+      elements.dateLabels.forEach((label) => {
+        setText(label, templateValues.date);
+      });
+    } finally {
+      state.updating = false;
+    }
+  }
+
+  void update();
+  window.setInterval(() => {
+    void update();
+  }, 30000);
+}
+
+function initLiveGoldenModule(root, config) {
+  const state = {
+    currentDateKey: '',
+    today: null,
+    tomorrow: null,
+    updating: false,
+  };
+
+  const elements = {
+    lead: root.querySelector('[data-live-lead]'),
+    nextLabel: root.querySelector('[data-live-next-label]'),
+    nextCountdown: root.querySelector('[data-live-next-countdown]'),
+    nextTime: root.querySelector('[data-live-next-time]'),
+    nextSupport: root.querySelector('[data-live-next-support]'),
+  };
+
+  async function ensureToday(now) {
+    const nextDateKey = getDateKeyInTimezone(now, config.timezone);
+    if (state.currentDateKey === nextDateKey && state.today) {
+      return state.today;
+    }
+
+    state.currentDateKey = nextDateKey;
+    state.tomorrow = null;
+    state.today = await fetchCityTimes(config.citySlug, nextDateKey);
+    return state.today;
+  }
+
+  async function ensureTomorrow() {
+    if (!state.currentDateKey) return null;
+    if (!state.tomorrow) {
+      state.tomorrow = await fetchCityTimes(config.citySlug, addDaysToDateKey(state.currentDateKey, 1));
+    }
+
+    return state.tomorrow;
+  }
+
+  async function update() {
+    if (state.updating) return;
+    state.updating = true;
+
+    try {
+      const now = new Date();
+      const today = await ensureToday(now);
+      if (!today?.goldenHour?.morningStartIso || !today?.goldenHour?.eveningEndIso) {
+        return;
+      }
+
+      let tomorrow = null;
+      if (now >= new Date(today.goldenHour.eveningEndIso)) {
+        tomorrow = await ensureTomorrow();
+      }
+
+      const nextWindow = getNextGoldenWindowState(now, today, tomorrow, config);
+      if (!nextWindow) {
+        return;
+      }
+
+      const countdown = formatLiveDuration(
+        new Date(nextWindow.timeIso).getTime() - now.getTime(),
+        config.duration,
+        config.locale,
+      );
+      const templateValues = {
+        countdown,
+        date: formatLiveLongDate(now, config.timezone, config.locale),
+        localTime: formatLiveLocalTime(now, config.timezone, config.locale),
+        nextLabel: nextWindow.label,
+        nextTime: nextWindow.timeText,
+      };
+
+      if (elements.lead && config.leadTemplate) {
+        elements.lead.innerHTML = renderTemplate(config.leadTemplate, templateValues);
+      }
+
+      setText(elements.nextLabel, nextWindow.label);
+      setText(elements.nextCountdown, countdown);
+      setText(
+        elements.nextTime,
+        renderTemplate(config.nextTimeTemplate || '{{nextTime}}', {
+          nextTime: nextWindow.timeText,
+        }),
+      );
+      setText(elements.nextSupport, nextWindow.supportText);
+    } finally {
+      state.updating = false;
+    }
+  }
+
+  void update();
+  window.setInterval(() => {
+    void update();
+  }, 30000);
+}
+
+function getNextSunEventState(now, today, tomorrow, config) {
+  const sunriseTime = new Date(today.sun.sunriseIso);
+  const sunsetTime = new Date(today.sun.sunsetIso);
+
+  if (now < sunriseTime) {
+    return {
+      label: config.events.sunrise.label,
+      timeIso: today.sun.sunriseIso,
+      timeText: formatLiveLocalTime(new Date(today.sun.sunriseIso), config.timezone, config.locale),
+      supportText: renderTemplate(config.events.sunrise.supportTemplate, {
+        daylight: formatLiveDuration(
+          (today.sun.daylightMinutes || 0) * 60000,
+          config.duration,
+          config.locale,
+        ),
+        eveningStart: today.goldenHour.eveningStart,
+        morningEnd: today.goldenHour.morningEnd,
+      }),
+    };
+  }
+
+  if (now < sunsetTime) {
+    return {
+      label: config.events.sunset.label,
+      timeIso: today.sun.sunsetIso,
+      timeText: formatLiveLocalTime(new Date(today.sun.sunsetIso), config.timezone, config.locale),
+      supportText: renderTemplate(config.events.sunset.supportTemplate, {
+        daylight: formatLiveDuration(
+          (today.sun.daylightMinutes || 0) * 60000,
+          config.duration,
+          config.locale,
+        ),
+        eveningStart: today.goldenHour.eveningStart,
+        morningEnd: today.goldenHour.morningEnd,
+      }),
+    };
+  }
+
+  if (!tomorrow?.sun?.sunriseIso) {
+    return null;
+  }
+
+  return {
+    label: config.events.tomorrowSunrise.label,
+    timeIso: tomorrow.sun.sunriseIso,
+    timeText: formatLiveLocalTime(new Date(tomorrow.sun.sunriseIso), config.timezone, config.locale),
+    supportText: renderTemplate(config.events.tomorrowSunrise.supportTemplate, {
+      daylight: formatLiveDuration(
+        (tomorrow.sun.daylightMinutes || 0) * 60000,
+        config.duration,
+        config.locale,
+      ),
+      eveningStart: tomorrow.goldenHour.eveningStart,
+      morningEnd: tomorrow.goldenHour.morningEnd,
+    }),
+  };
+}
+
+function getNextPrayerState(now, today, tomorrow, config) {
+  const prayers = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'].map((key) => ({
+    key,
+    label: config.prayerLabels?.[key] || key,
+    timeIso: today.prayerTimes[`${key}Iso`],
+    timeText: formatLiveLocalTime(new Date(today.prayerTimes[`${key}Iso`]), config.timezone, config.locale),
+  }));
+
+  const nextPrayer = prayers.find((prayer) => new Date(prayer.timeIso) > now);
+  if (nextPrayer) {
+    return nextPrayer;
+  }
+
+  if (!tomorrow?.prayerTimes?.fajrIso) {
+    return null;
+  }
+
+  return {
+    key: 'fajr',
+    label: config.prayerLabels?.fajr || 'Fajr',
+    timeIso: tomorrow.prayerTimes.fajrIso,
+    timeText: formatLiveLocalTime(new Date(tomorrow.prayerTimes.fajrIso), config.timezone, config.locale),
+  };
+}
+
+function getNextGoldenWindowState(now, today, tomorrow, config) {
+  const morningStart = new Date(today.goldenHour.morningStartIso);
+  const morningEnd = new Date(today.goldenHour.morningEndIso);
+  const eveningStart = new Date(today.goldenHour.eveningStartIso);
+  const eveningEnd = new Date(today.goldenHour.eveningEndIso);
+
+  if (now < morningStart) {
+    return {
+      label: config.events.morningStart.label,
+      timeIso: today.goldenHour.morningStartIso,
+      timeText: formatLiveLocalTime(new Date(today.goldenHour.morningStartIso), config.timezone, config.locale),
+      supportText: renderTemplate(config.events.morningStart.supportTemplate, {
+        eveningEnd: today.goldenHour.eveningEnd,
+        eveningStart: today.goldenHour.eveningStart,
+        morningEnd: today.goldenHour.morningEnd,
+        morningStart: today.goldenHour.morningStart,
+      }),
+    };
+  }
+
+  if (now < morningEnd) {
+    return {
+      label: config.events.morningEnd.label,
+      timeIso: today.goldenHour.morningEndIso,
+      timeText: formatLiveLocalTime(new Date(today.goldenHour.morningEndIso), config.timezone, config.locale),
+      supportText: renderTemplate(config.events.morningEnd.supportTemplate, {
+        eveningEnd: today.goldenHour.eveningEnd,
+        eveningStart: today.goldenHour.eveningStart,
+        morningEnd: today.goldenHour.morningEnd,
+        morningStart: today.goldenHour.morningStart,
+      }),
+    };
+  }
+
+  if (now < eveningStart) {
+    return {
+      label: config.events.eveningStart.label,
+      timeIso: today.goldenHour.eveningStartIso,
+      timeText: formatLiveLocalTime(new Date(today.goldenHour.eveningStartIso), config.timezone, config.locale),
+      supportText: renderTemplate(config.events.eveningStart.supportTemplate, {
+        eveningEnd: today.goldenHour.eveningEnd,
+        eveningStart: today.goldenHour.eveningStart,
+        morningEnd: today.goldenHour.morningEnd,
+        morningStart: today.goldenHour.morningStart,
+      }),
+    };
+  }
+
+  if (now < eveningEnd) {
+    return {
+      label: config.events.eveningEnd.label,
+      timeIso: today.goldenHour.eveningEndIso,
+      timeText: formatLiveLocalTime(new Date(today.goldenHour.eveningEndIso), config.timezone, config.locale),
+      supportText: renderTemplate(config.events.eveningEnd.supportTemplate, {
+        eveningEnd: today.goldenHour.eveningEnd,
+        eveningStart: today.goldenHour.eveningStart,
+        morningEnd: today.goldenHour.morningEnd,
+        morningStart: today.goldenHour.morningStart,
+      }),
+    };
+  }
+
+  if (!tomorrow?.goldenHour?.morningStartIso) {
+    return null;
+  }
+
+  return {
+    label: config.events.tomorrowMorningStart.label,
+    timeIso: tomorrow.goldenHour.morningStartIso,
+    timeText: formatLiveLocalTime(new Date(tomorrow.goldenHour.morningStartIso), config.timezone, config.locale),
+    supportText: renderTemplate(config.events.tomorrowMorningStart.supportTemplate, {
+      eveningEnd: tomorrow.goldenHour.eveningEnd,
+      eveningStart: tomorrow.goldenHour.eveningStart,
+      morningEnd: tomorrow.goldenHour.morningEnd,
+      morningStart: tomorrow.goldenHour.morningStart,
+    }),
+  };
+}
+
+function getLightStatus(now, today, labels = {}) {
+  const dawn = new Date(today.sun.dawnIso);
+  const sunrise = new Date(today.sun.sunriseIso);
+  const sunset = new Date(today.sun.sunsetIso);
+  const dusk = new Date(today.sun.duskIso);
+
+  if (now < dawn) return labels.beforeDawn || '';
+  if (now < sunrise) return labels.beforeSunrise || '';
+  if (now < sunset) return labels.beforeSunset || '';
+  if (now < dusk) return labels.beforeDusk || '';
+  return labels.afterDusk || '';
+}
+
+function getLightProgress(now, today) {
+  const dawn = new Date(today.sun.dawnIso).getTime();
+  const dusk = new Date(today.sun.duskIso).getTime();
+  return clamp(((now.getTime() - dawn) / (dusk - dawn)) * 100, 0, 100);
+}
+
+function fetchCityTimes(citySlug, dateKey) {
+  const cacheKey = `${citySlug}:${dateKey}`;
+
+  if (!cityTimesCache.has(cacheKey)) {
+    cityTimesCache.set(cacheKey, fetch(
+      `/api/v1/times?city=${encodeURIComponent(citySlug)}&date=${encodeURIComponent(dateKey)}`,
+      {
+        headers: { Accept: 'application/json' },
+      },
+    )
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`Live city request failed with ${response.status}`);
+        }
+
+        return response.json();
+      })
+      .catch(() => null));
+  }
+
+  return cityTimesCache.get(cacheKey);
+}
+
+function getDateKeyInTimezone(date, timezone) {
+  try {
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone: timezone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).formatToParts(date);
+
+    const year = parts.find((part) => part.type === 'year')?.value;
+    const month = parts.find((part) => part.type === 'month')?.value;
+    const day = parts.find((part) => part.type === 'day')?.value;
+
+    if (year && month && day) {
+      return `${year}-${month}-${day}`;
+    }
+  } catch {
+    // Fallback below.
+  }
+
+  return date.toISOString().slice(0, 10);
+}
+
+function addDaysToDateKey(dateKey, days) {
+  const [year, month, day] = dateKey.split('-').map((value) => Number(value));
+  const date = new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
+function formatLiveLocalTime(date, timezone, locale) {
+  return date.toLocaleTimeString(locale || 'en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZone: timezone,
+  });
+}
+
+function formatLiveLongDate(date, timezone, locale) {
+  return date.toLocaleDateString(locale || 'en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    timeZone: timezone,
+  });
+}
+
+function formatLiveDuration(ms, durationConfig = {}, locale = 'en-US') {
+  const totalMinutes = Math.max(1, Math.round(ms / 60000));
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  const number = new Intl.NumberFormat(locale);
+  const partSeparator = durationConfig.partSeparator ?? ' ';
+  const numberUnitSeparator = durationConfig.numberUnitSeparator ?? '';
+  const hourLabel = durationConfig.hourLabel ?? 'h';
+  const minuteLabel = durationConfig.minuteLabel ?? 'm';
+
+  const renderPart = (value, unit) => `${number.format(value)}${numberUnitSeparator}${unit}`;
+
+  if (hours && minutes) {
+    return `${renderPart(hours, hourLabel)}${partSeparator}${renderPart(minutes, minuteLabel)}`;
+  }
+
+  if (hours) {
+    return renderPart(hours, hourLabel);
+  }
+
+  return renderPart(minutes, minuteLabel);
+}
+
+function renderTemplate(template, values = {}) {
+  return (template || '').replace(/{{\s*([a-zA-Z0-9_]+)\s*}}/g, (_, key) => values[key] ?? '');
+}
+
+function setText(element, value) {
+  if (!element) return;
+  element.textContent = value ?? '';
+}
+
+function clamp(value, min, max) {
+  return Math.min(Math.max(value, min), max);
 }

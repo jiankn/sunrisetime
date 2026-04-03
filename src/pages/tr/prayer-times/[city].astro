@@ -2,7 +2,7 @@
 import Base from '@layouts/Base.astro';
 import TurkishHeader from '@components/TurkishHeader.astro';
 import TurkishFooter from '@components/TurkishFooter.astro';
-import { getCityBySlug, getComparisonCities, getNearbyCities } from '@data/site';
+import { getCityBySlug, getCityStaticPaths, getComparisonCities, getNearbyCities } from '@data/site';
 import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
 import {
   getTurkishCityLocationLabel,
@@ -15,7 +15,10 @@ import { getAnnualPrayerExtremes, getNextPrayer, getPrayerSeasonalCheckpoints, g
 import type { AsrJuristic, CalculationMethod } from '@utils/prayer-times';
 import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
 
-export const prerender = false;
+export function getStaticPaths() {
+  return getCityStaticPaths();
+}
+
 Astro.response.headers.set('Cache-Control', 'public, max-age=300, s-maxage=3600');
 
 const city = getCityBySlug(Astro.params.city ?? '');
@@ -105,6 +108,28 @@ const otherCities = getComparisonCities(city, 4);
 const pagePath = `/prayer-times/${city.slug}/`;
 const turkishPath = localizePath('tr', pagePath);
 const pageUrl = `https://sunrisetime.co${turkishPath}`;
+const liveCityConfig = {
+  kind: 'prayer',
+  citySlug: city.slug,
+  timezone: city.timezone,
+  locale: turkishLocale,
+  duration: {
+    hourLabel: 'sa',
+    minuteLabel: 'dk',
+    numberUnitSeparator: ' ',
+    partSeparator: ' ',
+  },
+  leadTemplate: 'Yerel saat {{localTime}}. Sıradaki vakit <strong>{{nextPrayerName}}</strong> ve saat {{nextPrayerTime}}, yani {{countdown}} sonra.',
+  countdownTemplate: '{{countdown}} kaldı',
+  prayerLabels: {
+    fajr: getTurkishPrayerName('Fajr'),
+    sunrise: getTurkishPrayerName('Sunrise'),
+    dhuhr: getTurkishPrayerName('Dhuhr'),
+    asr: getTurkishPrayerName('Asr'),
+    maghrib: getTurkishPrayerName('Maghrib'),
+    isha: getTurkishPrayerName('Isha'),
+  },
+};
 const alternates = buildAlternateLinks([
   { hrefLang: 'en', path: pagePath },
   { hrefLang: 'tr', path: turkishPath },
@@ -190,7 +215,7 @@ const jsonLd = [
 >
   <TurkishHeader languageLinks={languageLinks} currentLanguage="tr" />
 
-  <main class="city-page prayer-page">
+  <main class="city-page prayer-page" data-live-city-root data-live-config-id="cityLiveConfig">
     <div class="container">
       <nav class="breadcrumb" aria-label="Breadcrumb">
         <a href="/tr/">Ana Sayfa</a>
@@ -202,9 +227,9 @@ const jsonLd = [
 
       <section class="prayer-hero glass-card-lg">
         <div class="prayer-hero-copy">
-          <span class="city-kicker">{localDateLabel}</span>
+          <span class="city-kicker">Yerel namaz çizelgesi</span>
           <h1><span class="gradient-text">{cityName}</span> namaz vakitleri</h1>
-          <p class="city-lead">
+          <p class="city-lead" data-live-lead>
             Yerel saat {localTimeLabel}. Sıradaki vakit <strong>{getTurkishPrayerName(nextPrayer.name)}</strong> ve saat {formatTime(nextPrayer.time, city.timezone, turkishLocale)}{nextPrayerCountdown ? `, yani ${nextPrayerCountdown} sonra` : ''}.
             Bu URL tam namaz çizelgesini, hesaplama yöntemini ve vakitlerin güneş döngüsüyle bağlantısını aynı akışta toplar.
           </p>
@@ -230,27 +255,30 @@ const jsonLd = [
         <div class="prayer-hero-panel">
           <div class="prayer-next-hero glass-card">
             <span class="prayer-next-label">Sıradaki vakit</span>
-            <strong class="prayer-next-name">{getTurkishPrayerName(nextPrayer.name)}</strong>
-            <span class="prayer-next-time">{formatTime(nextPrayer.time, city.timezone, turkishLocale)}</span>
+            <strong class="prayer-next-name" data-live-next-prayer-name>{getTurkishPrayerName(nextPrayer.name)}</strong>
+            <span class="prayer-next-time" data-live-next-prayer-time>{formatTime(nextPrayer.time, city.timezone, turkishLocale)}</span>
             {nextPrayerCountdown && (
-              <span class="prayer-next-countdown">{nextPrayerCountdown} kaldı</span>
+              <span class="prayer-next-countdown" data-live-next-prayer-countdown>{nextPrayerCountdown} kaldı</span>
             )}
           </div>
         </div>
       </section>
 
-      <section class="detail-section" id="schedule" aria-label="Bugünün namaz vakitleri">
+      <section class="detail-section" id="schedule" aria-label="Namaz vakitleri">
         <div class="detail-section-head">
-          <h2><i data-lucide="clock" class="icon-md"></i> Bugünün namaz vakitleri</h2>
-          <p>{cityName} vakitleri {localDateLabel} için {city.timezone} saat diliminde gösterilir.</p>
+          <h2><i data-lucide="clock" class="icon-md"></i> Namaz vakitleri</h2>
+          <p>{cityName} vakitleri {city.timezone} saat diliminde gösterilir.</p>
         </div>
 
         <div class="prayer-grid">
           {prayerList.map((entry) => (
-            <div class={`prayer-card glass-card ${nextPrayer.name === entry.name ? 'prayer-card-active' : ''}`}>
+            <div
+              class={`prayer-card glass-card ${nextPrayer.name === entry.name ? 'prayer-card-active' : ''}`}
+              data-live-prayer-card={entry.name.toLowerCase()}
+            >
               <i data-lucide={entry.icon} class="icon-md"></i>
               <span class="prayer-name">{getTurkishPrayerName(entry.name)}</span>
-              <span class="prayer-time">{formatTime(entry.time, city.timezone, turkishLocale)}</span>
+              <span class="prayer-time" data-live-prayer-time={entry.name.toLowerCase()}>{formatTime(entry.time, city.timezone, turkishLocale)}</span>
               <span class="prayer-desc">{entry.desc}</span>
             </div>
           ))}
@@ -341,7 +369,7 @@ const jsonLd = [
         <h2><i data-lucide="info" class="icon-md"></i> {cityName} için namaz vakitleri nasıl hesaplanır?</h2>
         <div class="seo-text glass-card">
           <p>
-            {cityName} namaz vakitleri güneşin ufka göre konumundan hesaplanır. Bugün {localDateLabel} için İmsak {formatTime(prayers.fajr, city.timezone, turkishLocale)}, Öğle {formatTime(prayers.dhuhr, city.timezone, turkishLocale)}, İkindi {formatTime(prayers.asr, city.timezone, turkishLocale)}, Akşam {formatTime(prayers.maghrib, city.timezone, turkishLocale)} ve Yatsı {formatTime(prayers.isha, city.timezone, turkishLocale)} saatindedir.
+            {cityName} namaz vakitleri güneşin ufka göre konumundan hesaplanır. İmsak {formatTime(prayers.fajr, city.timezone, turkishLocale)}, Öğle {formatTime(prayers.dhuhr, city.timezone, turkishLocale)}, İkindi {formatTime(prayers.asr, city.timezone, turkishLocale)}, Akşam {formatTime(prayers.maghrib, city.timezone, turkishLocale)} ve Yatsı {formatTime(prayers.isha, city.timezone, turkishLocale)} saatindedir.
           </p>
 
           <h3>Sayfanın teknik temeli</h3>
@@ -510,4 +538,5 @@ const jsonLd = [
   </main>
 
   <TurkishFooter />
+  <script type="application/json" id="cityLiveConfig" set:html={JSON.stringify(liveCityConfig)} />
 </Base>

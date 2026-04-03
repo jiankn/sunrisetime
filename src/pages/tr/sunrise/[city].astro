@@ -2,7 +2,7 @@
 import Base from '@layouts/Base.astro';
 import TurkishHeader from '@components/TurkishHeader.astro';
 import TurkishFooter from '@components/TurkishFooter.astro';
-import { getCityBySlug, getComparisonCities, getNearbyCities } from '@data/site';
+import { getCityBySlug, getCityStaticPaths, getComparisonCities, getNearbyCities } from '@data/site';
 import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
 import {
   getTurkishCityLocationLabel,
@@ -16,7 +16,10 @@ import { getMoonData, getNextMoonEvent } from '@utils/moon';
 import { getNextPrayer } from '@utils/prayer-times';
 import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
 
-export const prerender = false;
+export function getStaticPaths() {
+  return getCityStaticPaths();
+}
+
 Astro.response.headers.set('Cache-Control', 'public, max-age=300, s-maxage=3600');
 
 const city = getCityBySlug(Astro.params.city ?? '');
@@ -170,6 +173,41 @@ const otherCities = getComparisonCities(city, 4);
 const pagePath = `/sunrise/${city.slug}/`;
 const turkishPath = localizePath('tr', pagePath);
 const pageUrl = `https://sunrisetime.co${turkishPath}`;
+const liveCityConfig = {
+  kind: 'sun',
+  citySlug: city.slug,
+  timezone: city.timezone,
+  locale: turkishLocale,
+  duration: {
+    hourLabel: 'sa',
+    minuteLabel: 'dk',
+    numberUnitSeparator: ' ',
+    partSeparator: ' ',
+  },
+  leadTemplate: 'Yerel saat {{localTime}}. ' + cityName + ' için gün doğumu {{sunrise}}, gün batımı ise {{sunset}}. Bu sayfa gündüz süresi, altın saat, ay evresi ve namaz vakitlerine hızlı geçişi aynı ekranda verir.',
+  nextTimeTemplate: '{{nextTime}} yerel saat',
+  events: {
+    sunrise: {
+      label: 'Gün doğumuna kalan',
+      supportTemplate: 'Sabah altın saati {{morningEnd}}\'de biter.',
+    },
+    sunset: {
+      label: 'Gün batımına kalan',
+      supportTemplate: 'Akşam altın saati {{eveningStart}}\'de başlar.',
+    },
+    tomorrowSunrise: {
+      label: 'Yarının gün doğumu',
+      supportTemplate: 'Yarın toplam {{daylight}} gün ışığı var.',
+    },
+  },
+  lightStatusLabels: {
+    beforeDawn: 'Gece hâlâ baskın.',
+    beforeSunrise: 'Sivil tan başladı.',
+    beforeSunset: 'Şu anda gün ışığı aktif.',
+    beforeDusk: 'Sivil alacakaranlık sürüyor.',
+    afterDusk: 'Gece yeniden başladı.',
+  },
+};
 const alternates = buildAlternateLinks([
   { hrefLang: 'en', path: pagePath },
   { hrefLang: 'tr', path: turkishPath },
@@ -241,7 +279,7 @@ const jsonLd = [
 >
   <TurkishHeader languageLinks={languageLinks} currentLanguage="tr" />
 
-  <main class="city-page">
+  <main class="city-page" data-live-city-root data-live-config-id="cityLiveConfig">
     <div class="container">
       <nav class="breadcrumb" aria-label="Breadcrumb">
         <a href="/tr/">Ana Sayfa</a>
@@ -255,8 +293,8 @@ const jsonLd = [
         <div class="city-snapshot-copy">
           <span class="city-kicker">{cityName} için gün ışığı özeti</span>
           <h1><span class="gradient-text">{cityName}</span> için gün doğumu ve gün batımı saatleri</h1>
-          <p class="city-lead">
-            Bugün {localDateLabel}, yerel saat {localTimeLabel}. {cityName} için gün doğumu {formatTime(sun.sunrise, city.timezone, turkishLocale)}, gün batımı ise {formatTime(sun.sunset, city.timezone, turkishLocale)}.
+          <p class="city-lead" data-live-lead>
+            Yerel saat {localTimeLabel}. {cityName} için gün doğumu {formatTime(sun.sunrise, city.timezone, turkishLocale)}, gün batımı ise {formatTime(sun.sunset, city.timezone, turkishLocale)}.
             Bu sayfa gündüz süresi, altın saat, ay evresi ve namaz vakitlerine hızlı geçişi aynı ekranda verir.
           </p>
 
@@ -284,21 +322,21 @@ const jsonLd = [
 
         <div class="city-snapshot-panel">
           <div class="city-next-event glass-card">
-            <span class="city-next-label">{nextSunEvent.label}</span>
-            <strong>{nextSunEvent.countdown}</strong>
-            <span class="city-next-time">{nextSunEvent.time} yerel saat</span>
-            <p>{nextSunEvent.support}</p>
+            <span class="city-next-label" data-live-next-label>{nextSunEvent.label}</span>
+            <strong data-live-next-countdown>{nextSunEvent.countdown}</strong>
+            <span class="city-next-time" data-live-next-time>{nextSunEvent.time} yerel saat</span>
+            <p data-live-next-support>{nextSunEvent.support}</p>
           </div>
 
           <div class="city-light-track glass-card">
             <div class="city-track-head">
               <span>Tan {formatTime(sun.dawn, city.timezone, turkishLocale)}</span>
-              <strong>{lightStatus}</strong>
+              <strong data-live-light-status>{lightStatus}</strong>
               <span>Alacakaranlık {formatTime(sun.dusk, city.timezone, turkishLocale)}</span>
             </div>
             <div class="city-track-bar">
-              <span class="city-track-fill" style={`width:${lightProgress}%`}></span>
-              <span class="city-track-marker" style={`left:${lightProgress}%`}></span>
+              <span class="city-track-fill" data-live-light-fill style={`width:${lightProgress}%`}></span>
+              <span class="city-track-marker" data-live-light-marker style={`left:${lightProgress}%`}></span>
             </div>
             <div class="city-track-points">
               <span>Gün doğumu {formatTime(sun.sunrise, city.timezone, turkishLocale)}</span>
@@ -656,4 +694,5 @@ const jsonLd = [
   </main>
 
   <TurkishFooter />
+  <script type="application/json" id="cityLiveConfig" set:html={JSON.stringify(liveCityConfig)} />
 </Base>

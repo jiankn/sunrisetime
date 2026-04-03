@@ -54,6 +54,64 @@ const otherCities = getComparisonCities(city, 4);
 const citiesPath = localizePath(languageCode, '/cities/');
 const sunrisePath = localizePath(languageCode, `/sunrise/${city.slug}/`);
 const prayerPath = localizePath(languageCode, `/prayer-times/${city.slug}/`);
+const liveDuration = languageCode === 'zh-cn'
+  ? {
+    hourLabel: '小时',
+    minuteLabel: '分钟',
+    numberUnitSeparator: '',
+    partSeparator: '',
+  }
+  : languageCode === 'ar'
+    ? {
+      hourLabel: 'س',
+      minuteLabel: 'د',
+      numberUnitSeparator: ' ',
+      partSeparator: ' ',
+    }
+    : languageCode === 'tr'
+      ? {
+        hourLabel: 'sa',
+        minuteLabel: 'dk',
+        numberUnitSeparator: ' ',
+        partSeparator: ' ',
+      }
+      : {
+        hourLabel: 'h',
+        minuteLabel: 'min',
+        numberUnitSeparator: ' ',
+        partSeparator: ' ',
+      };
+const liveCityConfig = {
+  kind: 'golden',
+  citySlug: city.slug,
+  timezone: city.timezone,
+  locale,
+  duration: liveDuration,
+  leadTemplate: copy.lead('{{localTime}}', '{{nextLabel}}', '{{countdown}}', '{{nextTime}}'),
+  nextTimeTemplate: '{{nextTime}}',
+  events: {
+    morningStart: {
+      label: copy.nextMorningStarts,
+      supportTemplate: copy.nextMorningSupport('{{morningStart}}', '{{morningEnd}}'),
+    },
+    morningEnd: {
+      label: copy.nextMorningEnds,
+      supportTemplate: copy.nextMorningSupport('{{morningStart}}', '{{morningEnd}}'),
+    },
+    eveningStart: {
+      label: copy.nextEveningStarts,
+      supportTemplate: copy.nextEveningSupport('{{eveningStart}}', '{{eveningEnd}}'),
+    },
+    eveningEnd: {
+      label: copy.nextEveningEnds,
+      supportTemplate: copy.nextEveningSupport('{{eveningStart}}', '{{eveningEnd}}'),
+    },
+    tomorrowMorningStart: {
+      label: copy.nextTomorrowMorningStarts,
+      supportTemplate: copy.nextTomorrowSupport('{{morningStart}}', '{{morningEnd}}'),
+    },
+  },
+};
 
 function formatLocalTime(date: Date) {
   return formatTime(date, city.timezone, locale);
@@ -138,7 +196,7 @@ const localTimeLabel = today.toLocaleTimeString(locale, {
 });
 ---
 
-<main class="city-page">
+<main class="city-page" data-live-city-root data-live-config-id="cityLiveConfig">
   <div class="container">
     <nav class="breadcrumb" aria-label="Breadcrumb">
       <a href={localizePath(languageCode, '/')}>{copy.breadcrumbHome}</a>
@@ -152,12 +210,12 @@ const localTimeLabel = today.toLocaleTimeString(locale, {
       <div class="city-snapshot-copy">
         <span class="city-kicker">{copy.kicker(cityName)}</span>
         <h1>{copy.heading(cityName)}</h1>
-        <p class="city-lead">{copy.lead(localTimeLabel, nextWindow.label, nextWindow.countdown, nextWindow.time)}</p>
+        <p class="city-lead" data-live-lead>{copy.lead(localTimeLabel, nextWindow.label, nextWindow.countdown, nextWindow.time)}</p>
 
         <div class="city-chip-row">
           <span class="city-chip city-country-badge">{cityLocationLabel}</span>
           <span class="city-chip">{city.timezone}</span>
-          <span class="city-chip">{localDateLabel}</span>
+          <span class="city-chip">{copy.daylightLabel}: {copy.formatDuration(sun.daylightDuration)}</span>
         </div>
 
         <div class="city-action-row">
@@ -178,10 +236,10 @@ const localTimeLabel = today.toLocaleTimeString(locale, {
 
       <div class="city-snapshot-panel">
         <div class="city-next-event glass-card">
-          <span class="city-next-label">{nextWindow.label}</span>
-          <strong>{nextWindow.countdown}</strong>
-          <span class="city-next-time">{nextWindow.time}</span>
-          <p>{nextWindow.support}</p>
+          <span class="city-next-label" data-live-next-label>{nextWindow.label}</span>
+          <strong data-live-next-countdown>{nextWindow.countdown}</strong>
+          <span class="city-next-time" data-live-next-time>{nextWindow.time}</span>
+          <p data-live-next-support>{nextWindow.support}</p>
         </div>
 
         <div class="city-snapshot-metrics">
@@ -419,6 +477,7 @@ const localTimeLabel = today.toLocaleTimeString(locale, {
     </section>
   </div>
 </main>
+<script type="application/json" id="cityLiveConfig" set:html={JSON.stringify(liveCityConfig)} />
 
 <style>
   table {

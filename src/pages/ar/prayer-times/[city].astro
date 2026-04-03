@@ -2,7 +2,7 @@
 import Base from '@layouts/Base.astro';
 import ArabicHeader from '@components/ArabicHeader.astro';
 import ArabicFooter from '@components/ArabicFooter.astro';
-import { getCityBySlug, getComparisonCities, getNearbyCities } from '@data/site';
+import { getCityBySlug, getCityStaticPaths, getComparisonCities, getNearbyCities } from '@data/site';
 import {
   arabicLocale,
   getArabicCityDisplayName,
@@ -15,7 +15,10 @@ import { getSunTimes, formatTime, getClockTimeDelta, getDaylightChangeDays, getL
 import { getAnnualPrayerExtremes, getNextPrayer, getPrayerSeasonalCheckpoints, getPrayerTimes } from '@utils/prayer-times';
 import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
 
-export const prerender = false;
+export function getStaticPaths() {
+  return getCityStaticPaths();
+}
+
 Astro.response.headers.set('Cache-Control', 'public, max-age=300, s-maxage=3600');
 
 const city = getCityBySlug(Astro.params.city ?? '');
@@ -100,6 +103,28 @@ const pagePath = `/prayer-times/${city.slug}/`;
 const arPath = localizePath('ar', pagePath);
 const sunrisePath = localizePath('ar', `/sunrise/${city.slug}/`);
 const pageUrl = `https://sunrisetime.co${arPath}`;
+const liveCityConfig = {
+  kind: 'prayer',
+  citySlug: city.slug,
+  timezone: city.timezone,
+  locale: arabicLocale,
+  duration: {
+    hourLabel: 'س',
+    minuteLabel: 'د',
+    numberUnitSeparator: ' ',
+    partSeparator: ' ',
+  },
+  leadTemplate: 'الوقت المحلي الآن {{localTime}}. الصلاة القادمة هي <strong>{{nextPrayerName}}</strong> عند {{nextPrayerTime}}، بعد {{countdown}}.',
+  countdownTemplate: 'بعد {{countdown}}',
+  prayerLabels: {
+    fajr: getArabicPrayerName('Fajr'),
+    sunrise: getArabicPrayerName('Sunrise'),
+    dhuhr: getArabicPrayerName('Dhuhr'),
+    asr: getArabicPrayerName('Asr'),
+    maghrib: getArabicPrayerName('Maghrib'),
+    isha: getArabicPrayerName('Isha'),
+  },
+};
 const alternates = buildAlternateLinks([
   { hrefLang: 'en', path: pagePath },
   { hrefLang: 'es', path: localizePath('es', pagePath) },
@@ -149,7 +174,7 @@ const jsonLd = [
 >
   <ArabicHeader languageLinks={languageLinks} currentLanguage="ar" />
 
-  <main class="city-page prayer-page">
+  <main class="city-page prayer-page" data-live-city-root data-live-config-id="cityLiveConfig">
     <div class="container">
       <nav class="breadcrumb" aria-label="Breadcrumb">
         <a href="/ar/">الرئيسية</a>
@@ -161,9 +186,9 @@ const jsonLd = [
 
       <section class="prayer-hero glass-card-lg">
         <div class="prayer-hero-copy">
-          <span class="city-kicker">{localDateLabel}</span>
+          <span class="city-kicker">الجدول المحلي للصلاة</span>
           <h1>مواقيت الصلاة في <span class="gradient-text">{cityName}</span></h1>
-          <p class="city-lead">
+          <p class="city-lead" data-live-lead>
             الصلاة القادمة هي <strong>{getArabicPrayerName(nextPrayer.name)}</strong> عند {formatTime(nextPrayer.time, city.timezone, arabicLocale)}{nextPrayerCountdown ? ` بعد ${nextPrayerCountdown}` : ''}. تعرض الصفحة اليوم الكامل مع رابط مباشر إلى الشروق والغروب.
           </p>
 
@@ -188,10 +213,10 @@ const jsonLd = [
         <div class="prayer-hero-panel">
           <div class="prayer-next-hero glass-card">
             <span class="prayer-next-label">الصلاة القادمة</span>
-            <strong class="prayer-next-name">{getArabicPrayerName(nextPrayer.name)}</strong>
-            <span class="prayer-next-time">{formatTime(nextPrayer.time, city.timezone, arabicLocale)}</span>
+            <strong class="prayer-next-name" data-live-next-prayer-name>{getArabicPrayerName(nextPrayer.name)}</strong>
+            <span class="prayer-next-time" data-live-next-prayer-time>{formatTime(nextPrayer.time, city.timezone, arabicLocale)}</span>
             {nextPrayerCountdown && (
-              <span class="prayer-next-countdown">{nextPrayerCountdown}</span>
+              <span class="prayer-next-countdown" data-live-next-prayer-countdown>{nextPrayerCountdown}</span>
             )}
           </div>
         </div>
@@ -199,16 +224,19 @@ const jsonLd = [
 
       <section class="detail-section" id="schedule" aria-label="جدول الصلاة">
         <div class="detail-section-head">
-          <h2><i data-lucide="clock" class="icon-md"></i> جدول الصلاة لليوم</h2>
-          <p>المواقيت التالية تخص {cityDisplayName} في {localDateLabel}.</p>
+          <h2><i data-lucide="clock" class="icon-md"></i> جدول الصلاة</h2>
+          <p>المواقيت التالية تخص {cityDisplayName} ضمن التوقيت المحلي للمدينة.</p>
         </div>
 
         <div class="prayer-grid">
           {prayerList.map((entry) => (
-            <div class={`prayer-card glass-card ${nextPrayer.name === entry.name ? 'prayer-card-active' : ''}`}>
+            <div
+              class={`prayer-card glass-card ${nextPrayer.name === entry.name ? 'prayer-card-active' : ''}`}
+              data-live-prayer-card={entry.name.toLowerCase()}
+            >
               <i data-lucide={entry.icon} class="icon-md"></i>
               <span class="prayer-name">{getArabicPrayerName(entry.name)}</span>
-              <span class="prayer-time">{formatTime(entry.time, city.timezone, arabicLocale)}</span>
+              <span class="prayer-time" data-live-prayer-time={entry.name.toLowerCase()}>{formatTime(entry.time, city.timezone, arabicLocale)}</span>
               <span class="prayer-desc">{entry.desc}</span>
             </div>
           ))}
@@ -403,4 +431,5 @@ const jsonLd = [
   </main>
 
   <ArabicFooter />
+  <script type="application/json" id="cityLiveConfig" set:html={JSON.stringify(liveCityConfig)} />
 </Base>

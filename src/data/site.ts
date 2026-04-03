@@ -75,6 +75,12 @@ export function getCityBySlug(slug: string) {
   return cityMap.get(slug);
 }
 
+export function getCityStaticPaths() {
+  return allCities.map((city) => ({
+    params: { city: city.slug },
+  }));
+}
+
 export function getNearbyCities(city: City, limit = 6) {
   return sortByDistance(
     city,
