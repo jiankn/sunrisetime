@@ -428,29 +428,49 @@ const jsonLd = [
           <p>用春分、夏至、秋分、冬至四个节点替代 365 天长表，更方便理解全年变化。</p>
         </div>
 
-        <div class="glass-card">
-          <table>
+        <div class="seasonal-checkpoints-card glass-card">
+          <div class="seasonal-checkpoints-head">
+            <div>
+              <span class="seasonal-checkpoints-kicker">全年四个关键节点</span>
+              <h3>把一年白昼变化浓缩到一张表里</h3>
+            </div>
+            <p>春分、夏至、秋分、冬至并排放在一起，更容易横向比较日期、日出、日落和日照时长的整体节奏。</p>
+          </div>
+
+          <div class="seasonal-checkpoints-table-wrap">
+            <table class="seasonal-checkpoints-table">
             <thead>
               <tr>
-                <th>节点</th>
-                <th>日期</th>
-                <th>日出</th>
-                <th>日落</th>
-                <th>日照时长</th>
+                <th scope="col">节点</th>
+                <th scope="col">日期</th>
+                <th scope="col">日出</th>
+                <th scope="col">日落</th>
+                <th scope="col">日照时长</th>
               </tr>
             </thead>
             <tbody>
               {seasonalCheckpoints.map((checkpoint) => (
                 <tr>
-                  <td>{checkpoint.label}</td>
-                  <td>{formatCalendarDate(checkpoint.date)}</td>
-                  <td>{formatTime(checkpoint.sunrise, city.timezone, chineseLocale)}</td>
-                  <td>{formatTime(checkpoint.sunset, city.timezone, chineseLocale)}</td>
-                  <td>{checkpoint.daylightFormatted}</td>
+                  <th scope="row">
+                    <span class="seasonal-node-badge">{checkpoint.label}</span>
+                  </th>
+                  <td data-label="日期">
+                    <span class="seasonal-checkpoint-meta">{formatCalendarDate(checkpoint.date)}</span>
+                  </td>
+                  <td data-label="日出">
+                    <span class="seasonal-checkpoint-value">{formatTime(checkpoint.sunrise, city.timezone, chineseLocale)}</span>
+                  </td>
+                  <td data-label="日落">
+                    <span class="seasonal-checkpoint-value">{formatTime(checkpoint.sunset, city.timezone, chineseLocale)}</span>
+                  </td>
+                  <td data-label="日照时长">
+                    <span class="seasonal-checkpoint-value seasonal-checkpoint-duration">{checkpoint.daylightFormatted}</span>
+                  </td>
                 </tr>
               ))}
             </tbody>
-          </table>
+            </table>
+          </div>
         </div>
       </section>
 

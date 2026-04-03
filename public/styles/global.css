@@ -4112,6 +4112,131 @@ summary:focus-visible {
   color: var(--text-secondary);
 }
 
+/* Seasonal checkpoints table — zh-CN sunrise page */
+.seasonal-checkpoints-card {
+  padding: clamp(1.15rem, 2vw, 1.6rem);
+  overflow: hidden;
+}
+
+.seasonal-checkpoints-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  gap: var(--space-lg);
+  align-items: end;
+  margin-bottom: var(--space-lg);
+}
+
+.seasonal-checkpoints-kicker {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.38rem 0.72rem;
+  margin-bottom: 0.9rem;
+  border-radius: 999px;
+  background: rgba(236, 131, 48, 0.12);
+  border: 1px solid rgba(236, 131, 48, 0.16);
+  color: var(--text-accent);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.seasonal-checkpoints-head h3 {
+  font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", var(--font-body);
+  font-size: clamp(1.08rem, 1.8vw, 1.28rem);
+  line-height: 1.42;
+  letter-spacing: 0.01em;
+}
+
+.seasonal-checkpoints-head p {
+  max-width: 34ch;
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  line-height: 1.8;
+}
+
+.seasonal-checkpoints-table-wrap {
+  overflow-x: auto;
+}
+
+.seasonal-checkpoints-table {
+  width: 100%;
+  min-width: 680px;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", var(--font-body);
+}
+
+.seasonal-checkpoints-table thead th {
+  padding: 0 0 0.9rem;
+  border-bottom: 1px solid var(--border-medium);
+  text-align: left;
+  color: var(--text-tertiary);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.seasonal-checkpoints-table thead th:first-child,
+.seasonal-checkpoints-table tbody th {
+  width: 108px;
+}
+
+.seasonal-checkpoints-table tbody th,
+.seasonal-checkpoints-table tbody td {
+  padding: 1rem 0;
+  border-bottom: 1px solid rgba(23, 52, 85, 0.08);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.seasonal-checkpoints-table tbody th {
+  padding-right: var(--space-lg);
+  font-weight: 600;
+}
+
+.seasonal-checkpoints-table tbody td {
+  color: var(--text-primary);
+}
+
+.seasonal-checkpoints-table tbody tr:last-child th,
+.seasonal-checkpoints-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.seasonal-node-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 4.25rem;
+  padding: 0.52rem 0.88rem;
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(247, 200, 108, 0.32), rgba(236, 131, 48, 0.16));
+  border: 1px solid rgba(236, 131, 48, 0.14);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
+  color: var(--text-warm);
+  font-size: 0.94rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.seasonal-checkpoint-meta {
+  color: var(--text-secondary);
+  font-size: 0.96rem;
+  font-weight: 600;
+}
+
+.seasonal-checkpoint-value {
+  font-family: var(--font-heading);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.seasonal-checkpoint-duration {
+  color: var(--text-accent);
+}
+
 .city-secondary-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
@@ -4173,6 +4298,15 @@ summary:focus-visible {
 
   .city-highlight-grid {
     grid-template-columns: 1fr;
+  }
+
+  .seasonal-checkpoints-head {
+    grid-template-columns: 1fr;
+    gap: var(--space-md);
+  }
+
+  .seasonal-checkpoints-head p {
+    max-width: none;
   }
 }
 
@@ -4369,6 +4503,73 @@ summary:focus-visible {
   .city-track-points {
     flex-direction: column;
   }
+
+  .seasonal-checkpoints-card {
+    padding: 1.1rem;
+  }
+
+  .seasonal-checkpoints-table-wrap {
+    overflow: visible;
+  }
+
+  .seasonal-checkpoints-table {
+    min-width: 0;
+  }
+
+  .seasonal-checkpoints-table thead {
+    display: none;
+  }
+
+  .seasonal-checkpoints-table tbody {
+    display: grid;
+    gap: 0.85rem;
+  }
+
+  .seasonal-checkpoints-table tbody tr {
+    display: grid;
+    gap: 0.72rem;
+    padding: 1rem;
+    border: 1px solid rgba(23, 52, 85, 0.08);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.56);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.48);
+  }
+
+  .seasonal-checkpoints-table tbody th,
+  .seasonal-checkpoints-table tbody td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-md);
+    width: 100%;
+    padding: 0;
+    border-bottom: none;
+  }
+
+  .seasonal-checkpoints-table tbody th {
+    width: 100%;
+    padding-bottom: 0.4rem;
+    margin-bottom: 0.1rem;
+    border-bottom: 1px dashed rgba(23, 52, 85, 0.1);
+  }
+
+  .seasonal-checkpoints-table tbody td::before {
+    content: attr(data-label);
+    color: var(--text-tertiary);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+  }
+
+  .seasonal-node-badge {
+    min-width: 0;
+    padding-inline: 0.82rem;
+  }
+
+  .seasonal-checkpoint-meta,
+  .seasonal-checkpoint-value {
+    text-align: right;
+  }
 }
 
 @media (max-width: 520px) {
@@ -4410,6 +4611,10 @@ summary:focus-visible {
   .city-jump-chip {
     width: 100%;
     text-align: center;
+  }
+
+  .seasonal-checkpoints-card {
+    padding: 1rem;
   }
 }
 
