@@ -10,6 +10,7 @@ import Base from '@layouts/Base.astro';
 import Header from '@components/Header.astro';
 import Footer from '@components/Footer.astro';
 import AdUnit from '@components/AdUnit.astro';
+import PrayerCitySeoBoost from '@components/PrayerCitySeoBoost.astro';
 import { getCityBySlug, getCityDisplayName, getCityLocationLabel, getCityStaticPaths, getComparisonCities, getNearbyCities } from '@data/site';
 import { getSunTimes, formatTime, getClockTimeDelta, getDaylightChangeDays, getLocalYear } from '@utils/sun';
 import { getPrayerTimes, getNextPrayer, getAnnualPrayerExtremes, getPrayerSeasonalCheckpoints } from '@utils/prayer-times';
@@ -411,6 +412,14 @@ const jsonLd = [
           </p>
         </div>
       </section>
+
+      <PrayerCitySeoBoost
+        city={city}
+        cityName={city.name}
+        cityLocationLabel={cityLocationLabel}
+        languageCode="en"
+        locale="en-US"
+      />
 
       <section class="detail-section" aria-label="30-day prayer outlook">
         <div class="detail-section-head">

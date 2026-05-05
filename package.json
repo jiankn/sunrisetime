@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
-    "preview": "astro preview"
+    "preview": "astro preview",
+    "seo:gsc-opportunities": "node scripts/analyze-gsc-opportunities.mjs"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^12.3.0",

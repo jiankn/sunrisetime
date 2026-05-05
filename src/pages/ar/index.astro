@@ -2,6 +2,7 @@
 import Base from '@layouts/Base.astro';
 import ArabicHeader from '@components/ArabicHeader.astro';
 import ArabicFooter from '@components/ArabicFooter.astro';
+import OpportunityCityLinks from '@components/OpportunityCityLinks.astro';
 import { allCities, regionHubs, totalCities } from '@data/site';
 import {
   arabicHomeFaqs,
@@ -245,6 +246,8 @@ const regionGroups = regionHubs.map((region) => ({
           </a>
         </div>
       </section>
+
+      <OpportunityCityLinks locale="ar" />
 
       <section class="faq" id="faq">
         <div class="section-header">

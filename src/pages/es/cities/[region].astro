@@ -3,6 +3,7 @@ import Base from '@layouts/Base.astro';
 import LocalizedHeader from '@components/LocalizedHeader.astro';
 import LocalizedFooter from '@components/LocalizedFooter.astro';
 import AdUnit from '@components/AdUnit.astro';
+import RegionSunComparison from '@components/RegionSunComparison.astro';
 import { getRegionHub, regionHubs, useCaseHubs } from '@data/site';
 import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
 import {
@@ -13,6 +14,7 @@ import {
   getSpanishRegionName,
 } from '@i18n/spanish';
 import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
+import { buildRegionItemListJsonLd, buildRegionSunRows } from '@utils/region-hub';
 
 export function getStaticPaths() {
   return regionHubs.map((region) => ({
@@ -40,6 +42,12 @@ const alternates = buildAlternateLinks([
 ]);
 const languageLinks = buildLanguageSwitcherLinks(pagePath);
 const regionName = getSpanishRegionName(region.slug, region.name);
+const regionSunRows = buildRegionSunRows(region.featuredCities.length ? region.featuredCities : region.cities, {
+  locale: 'es-ES',
+  pathPrefix: '/es',
+  getCityName: getSpanishCityName,
+  getCityLocationLabel: (city) => getSpanishCityLocationLabel(city, { includeAdmin1: Boolean(city.admin1) }),
+});
 
 const jsonLd = [
   {
@@ -58,6 +66,7 @@ const jsonLd = [
     { name: 'Ciudades', path: '/es/cities/' },
     { name: regionName, path: spanishPath },
   ]),
+  buildRegionItemListJsonLd(pageUrl, `${regionName} ciudades destacadas`, regionSunRows),
 ];
 ---
 
@@ -115,6 +124,16 @@ const jsonLd = [
           </ul>
         </article>
       </section>
+
+      <RegionSunComparison
+        rows={regionSunRows}
+        heading={`Comparación de amanecer hoy en ${regionName}`}
+        intro="Compara amanecer, atardecer y luz diurna en ciudades representativas antes de abrir una página local."
+        cityLabel="Ciudad"
+        sunriseLabel="Amanecer"
+        sunsetLabel="Atardecer"
+        daylightLabel="Luz diurna"
+      />
 
       <section class="resource-section">
         <div class="detail-section-head">

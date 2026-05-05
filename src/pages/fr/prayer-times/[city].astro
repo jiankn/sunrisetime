@@ -2,6 +2,7 @@
 import Base from '@layouts/Base.astro';
 import FrenchHeader from '@components/FrenchHeader.astro';
 import FrenchFooter from '@components/FrenchFooter.astro';
+import PrayerCitySeoBoost from '@components/PrayerCitySeoBoost.astro';
 import { getCityBySlug, getCityStaticPaths, getComparisonCities, getNearbyCities } from '@data/site';
 import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
 import {
@@ -383,6 +384,14 @@ const jsonLd = [
           </p>
         </div>
       </section>
+
+      <PrayerCitySeoBoost
+        city={city}
+        cityName={cityName}
+        cityLocationLabel={cityLocationLabel}
+        languageCode="fr"
+        locale={frenchLocale}
+      />
 
       <section class="detail-section" aria-label="Perspective priere sur 30 jours">
         <div class="detail-section-head">

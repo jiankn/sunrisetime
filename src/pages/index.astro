@@ -11,6 +11,7 @@ import Features from '@components/Features.astro';
 import Dashboard from '@components/Dashboard.astro';
 import AdUnit from '@components/AdUnit.astro';
 import TopCities from '@components/TopCities.astro';
+import OpportunityCityLinks from '@components/OpportunityCityLinks.astro';
 import FAQ from '@components/FAQ.astro';
 import CTA from '@components/CTA.astro';
 import Footer from '@components/Footer.astro';
@@ -95,6 +96,9 @@ const jsonLd = [
   <Dashboard />
   <AdUnit id="ad-mid" />
   <TopCities />
+  <div class="container">
+    <OpportunityCityLinks locale="en" />
+  </div>
   <FAQ />
   <AdUnit id="ad-bottom" />
   <CTA />

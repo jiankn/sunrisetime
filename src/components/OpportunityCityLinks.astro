@@ -1,0 +1,125 @@
+---
+type LocaleKey = 'en' | 'es' | 'fr' | 'tr' | 'zh-cn' | 'ar';
+
+type OpportunityLink = {
+  path: string;
+  label: string;
+  meta: string;
+};
+
+const {
+  locale = 'en',
+} = Astro.props as {
+  locale?: LocaleKey;
+};
+
+const copy: Record<LocaleKey, { eyebrow: string; title: string; intro: string }> = {
+  en: {
+    eyebrow: 'Fast city answers',
+    title: 'Sunrise pages people are checking now',
+    intro: 'Open a high-demand city page directly for today and tomorrow sunrise, sunset, daylight, and golden hour details.',
+  },
+  es: {
+    eyebrow: 'Respuestas rapidas',
+    title: 'Ciudades con busquedas activas de amanecer',
+    intro: 'Abre directamente una ciudad con demanda para ver el amanecer, el atardecer, la luz diurna y la hora dorada de hoy y manana.',
+  },
+  fr: {
+    eyebrow: 'Reponses rapides',
+    title: 'Villes avec une forte demande de lever du soleil',
+    intro: 'Ouvrez directement une ville demandee pour le lever du soleil, le coucher du soleil, la lumiere du jour et l heure doree aujourd hui et demain.',
+  },
+  tr: {
+    eyebrow: 'Hizli sehir cevaplari',
+    title: 'Gunumuzde en cok bakilan gun dogumu sehirleri',
+    intro: 'Bugun ve yarin icin gun dogumu, gun batimi, gun isigi ve altin saat ayrintilarina dogrudan gidin.',
+  },
+  'zh-cn': {
+    eyebrow: '快速城市入口',
+    title: '近期搜索需求更高的日出城市页',
+    intro: '直接打开高需求城市页，查看今天和明天的日出、日落、日照时长与黄金时刻。',
+  },
+  ar: {
+    eyebrow: 'روابط سريعة للمدن',
+    title: 'مدن يبحث عنها الناس لمعرفة وقت الشروق',
+    intro: 'افتح صفحة مدينة مطلوبة مباشرة لمواعيد الشروق والغروب وطول النهار والساعة الذهبية اليوم وغدا.',
+  },
+};
+
+const linksByLocale: Record<LocaleKey, OpportunityLink[]> = {
+  en: [
+    { path: '/sunrise/lima/', label: 'Sunrise today and tomorrow in Lima', meta: 'High-impression sunrise page' },
+    { path: '/sunrise/bogota/', label: 'Sunrise today and tomorrow in Bogota', meta: 'Today and tomorrow answer' },
+    { path: '/sunrise/rio-de-janeiro/', label: 'Sunrise today and tomorrow in Rio de Janeiro', meta: 'Sunrise, sunset, daylight' },
+    { path: '/sunrise/brasilia/', label: 'Sunrise today and tomorrow in Brasilia', meta: 'Daily light planning' },
+    { path: '/sunrise/curitiba/', label: 'Sunrise today and tomorrow in Curitiba', meta: 'Sunrise and sunset times' },
+    { path: '/sunrise/cairo/', label: 'Sunrise today and tomorrow in Cairo', meta: 'Sunrise, sunset, prayer flow' },
+    { path: '/golden-hour/goiania/', label: 'Golden hour in Goiania today', meta: 'Photography light window' },
+    { path: '/sunrise/mexico-city/', label: 'Sunrise today and tomorrow in Mexico City', meta: 'Large city demand' },
+  ],
+  es: [
+    { path: '/es/sunrise/cali/', label: 'Amanecer hoy y manana en Cali', meta: 'Amanecer y atardecer' },
+    { path: '/es/sunrise/santa-cruz-de-la-sierra/', label: 'Amanecer hoy y manana en Santa Cruz de la Sierra', meta: 'Respuesta diaria' },
+    { path: '/es/sunrise/medellin/', label: 'Amanecer hoy y manana en Medellin', meta: 'Luz diurna local' },
+    { path: '/es/sunrise/chicago/', label: 'Amanecer hoy y manana en Chicago', meta: 'Ciudad con demanda' },
+    { path: '/es/sunrise/phoenix/', label: 'Amanecer hoy y manana en Phoenix', meta: 'Amanecer, atardecer y hora dorada' },
+  ],
+  fr: [
+    { path: '/fr/sunrise/kinshasa/', label: 'Lever du soleil aujourd hui et demain a Kinshasa', meta: 'Lever et coucher du soleil' },
+    { path: '/fr/sunrise/paris/', label: 'Lever du soleil aujourd hui et demain a Paris', meta: 'Reponse quotidienne' },
+    { path: '/fr/sunrise/casablanca/', label: 'Lever du soleil aujourd hui et demain a Casablanca', meta: 'Lumiere du jour locale' },
+    { path: '/fr/sunrise/montreal/', label: 'Lever du soleil aujourd hui et demain a Montreal', meta: 'Ville demandee' },
+  ],
+  tr: [
+    { path: '/tr/sunrise/diyarbakir/', label: 'Diyarbakir bugun ve yarin gun dogumu', meta: 'Yuksek gosterimli sayfa' },
+    { path: '/tr/sunrise/kayseri/', label: 'Kayseri bugun ve yarin gun dogumu', meta: 'Gun dogumu ve gun batimi' },
+    { path: '/tr/sunrise/ankara/', label: 'Ankara bugun ve yarin gun dogumu', meta: 'Gunluk cevap' },
+    { path: '/tr/sunrise/istanbul/', label: 'Istanbul bugun ve yarin gun dogumu', meta: 'Populer sehir' },
+  ],
+  'zh-cn': [
+    { path: '/zh-cn/sunrise/shanghai/', label: '上海今天和明天日出日落时间', meta: '高频城市入口' },
+    { path: '/zh-cn/sunrise/beijing/', label: '北京今天和明天日出日落时间', meta: '日出、日落与日照' },
+    { path: '/zh-cn/sunrise/guangzhou/', label: '广州今天和明天日出日落时间', meta: '今日答案' },
+    { path: '/zh-cn/sunrise/shenzhen/', label: '深圳今天和明天日出日落时间', meta: '黄金时刻与白昼时长' },
+  ],
+  ar: [
+    { path: '/ar/sunrise/cairo/', label: 'الشروق والغروب في القاهرة اليوم وغدا', meta: 'مدينة عالية الطلب' },
+    { path: '/ar/sunrise/riyadh/', label: 'الشروق والغروب في الرياض اليوم وغدا', meta: 'إجابة يومية' },
+    { path: '/ar/sunrise/dubai/', label: 'الشروق والغروب في دبي اليوم وغدا', meta: 'الشروق والغروب والضوء' },
+    { path: '/ar/sunrise/jeddah/', label: 'الشروق والغروب في جدة اليوم وغدا', meta: 'روابط مدينة مباشرة' },
+  ],
+};
+
+const section = copy[locale];
+const links = linksByLocale[locale];
+---
+
+<section class="opportunity-links-section" aria-labelledby={`opportunity-links-${locale}`}>
+  <div class="detail-section-head">
+    <span class="section-badge">
+      <i data-lucide="trending-up" class="icon-xs"></i>
+      {section.eyebrow}
+    </span>
+    <h2 id={`opportunity-links-${locale}`}>{section.title}</h2>
+    <p>{section.intro}</p>
+  </div>
+
+  <div class="resource-link-grid opportunity-link-grid">
+    {links.map((link) => (
+      <a href={link.path} class="resource-link-card glass-card">
+        <strong>{link.label}</strong>
+        <span>{link.meta}</span>
+      </a>
+    ))}
+  </div>
+</section>
+
+<style>
+  .opportunity-links-section {
+    margin: clamp(2rem, 5vw, 4rem) 0;
+  }
+
+  .opportunity-link-grid {
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  }
+</style>

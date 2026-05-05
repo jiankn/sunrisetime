@@ -2,6 +2,8 @@
 import Base from '@layouts/Base.astro';
 import ArabicHeader from '@components/ArabicHeader.astro';
 import ArabicFooter from '@components/ArabicFooter.astro';
+import SunriseTodayTomorrowAnswer from '@components/SunriseTodayTomorrowAnswer.astro';
+import CityFaqBlock from '@components/CityFaqBlock.astro';
 import { getCityBySlug, getCityStaticPaths, getComparisonCities, getNearbyCities } from '@data/site';
 import {
   arabicLocale,
@@ -16,6 +18,7 @@ import { getAnnualSunExtremes, getDaylightSeries, getGoldenHour, getSeasonalSunC
 import { getMoonData } from '@utils/moon';
 import { getNextPrayer } from '@utils/prayer-times';
 import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
+import { buildFaqPageJsonLd, buildSunriseFaqSection } from '@utils/sunrise-faq';
 
 export function getStaticPaths() {
   return getCityStaticPaths();
@@ -66,10 +69,13 @@ function formatCalendarDate(date: Date) {
 }
 
 const today = new Date();
+const tomorrow = new Date(today);
+tomorrow.setDate(tomorrow.getDate() + 1);
 const cityName = getArabicCityName(city);
 const cityDisplayName = getArabicCityDisplayName(city, { includeAdmin1: Boolean(city.admin1) });
 const locationLabel = getArabicCityLocationLabel(city, { includeAdmin1: Boolean(city.admin1) });
 const sun = getSunTimes(today, city.lat, city.lng);
+const tomorrowSun = getSunTimes(tomorrow, city.lat, city.lng);
 const golden = getGoldenHour(today, city.lat, city.lng);
 const moon = getMoonData(today, city.lat, city.lng);
 const nextPrayer = getNextPrayer(today, city.lat, city.lng, 'MWL', 'Standard');
@@ -183,8 +189,23 @@ const alternates = buildAlternateLinks([
 ]);
 const languageLinks = buildLanguageSwitcherLinks(pagePath);
 
-const pageTitle = `الشروق والغروب في ${cityDisplayName} اليوم`;
-const pageDesc = `الشروق في ${cityDisplayName} اليوم عند ${formatTime(sun.sunrise, city.timezone, arabicLocale)} والغروب عند ${formatTime(sun.sunset, city.timezone, arabicLocale)} مع الساعة الذهبية ومرحلة القمر.`;
+const pageTitle = `الشروق والغروب في ${cityDisplayName} اليوم وغدًا`;
+const pageDesc = `الشروق في ${cityDisplayName} اليوم عند ${formatTime(sun.sunrise, city.timezone, arabicLocale)} وشروق الغد عند ${formatTime(tomorrowSun.sunrise, city.timezone, arabicLocale)} مع الغروب والساعة الذهبية ومرحلة القمر.`;
+const sunriseFaq = buildSunriseFaqSection({
+  locale: 'ar',
+  cityName,
+  sunrise: formatTime(sun.sunrise, city.timezone, arabicLocale),
+  sunset: formatTime(sun.sunset, city.timezone, arabicLocale),
+  tomorrowSunrise: formatTime(tomorrowSun.sunrise, city.timezone, arabicLocale),
+  daylight: sun.daylightFormatted,
+  morningGoldenStart: formatTime(golden.morning.start, city.timezone, arabicLocale),
+  morningGoldenEnd: formatTime(golden.morning.end, city.timezone, arabicLocale),
+  eveningGoldenStart: formatTime(golden.evening.start, city.timezone, arabicLocale),
+  eveningGoldenEnd: formatTime(golden.evening.end, city.timezone, arabicLocale),
+  nextPrayerName: getArabicPrayerName(nextPrayer.name),
+  nextPrayerTime: formatTime(nextPrayer.time, city.timezone, arabicLocale),
+  timezoneLabel: city.timezone,
+});
 
 const jsonLd = [
   {
@@ -200,6 +221,7 @@ const jsonLd = [
     { name: 'المدن', path: '/ar/cities/' },
     { name: cityName, path: arPath },
   ]),
+  buildFaqPageJsonLd(pageUrl, sunriseFaq),
 ];
 ---
 
@@ -300,6 +322,13 @@ const jsonLd = [
           </div>
         </div>
       </section>
+
+      <SunriseTodayTomorrowAnswer
+        city={city}
+        cityName={cityName}
+        languageCode="ar"
+        locale={arabicLocale}
+      />
 
       <section class="city-highlight-grid" aria-label="Quick paths">
         <div class="city-highlight-card glass-card">
@@ -488,6 +517,8 @@ const jsonLd = [
           </table>
         </div>
       </section>
+
+      <CityFaqBlock section={sunriseFaq} />
 
       <section class="detail-section" id="nearby" aria-label="مدن أخرى">
         <div class="detail-section-head">

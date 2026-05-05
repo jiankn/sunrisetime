@@ -194,6 +194,156 @@ const localTimeLabel = today.toLocaleTimeString(locale, {
   minute: '2-digit',
   timeZone: city.timezone,
 });
+
+const numberFormat = new Intl.NumberFormat(locale, {
+  maximumFractionDigits: 2,
+});
+const seasonalSwingMinutes = Math.round(
+  annualExtremes.longestDay.daylightDuration - annualExtremes.shortestDay.daylightDuration,
+);
+const eveningVsMorningMinutes = golden.evening.durationMin - golden.morning.durationMin;
+const latitudeBand: 'tropical' | 'subtropical' | 'mid' | 'high' = Math.abs(city.lat) < 15
+  ? 'tropical'
+  : Math.abs(city.lat) < 35
+    ? 'subtropical'
+    : Math.abs(city.lat) < 55
+      ? 'mid'
+      : 'high';
+
+const planningCopy = {
+  en: {
+    title: 'Photo planning signals for this city',
+    intro: (name: string) => `These checks make the page more than a time lookup: they show how ${name}'s latitude, season, and nearby alternatives affect the shoot window.`,
+    latitude: 'Latitude band',
+    latitudeBands: {
+      tropical: 'Low-latitude light, usually steadier through the year',
+      subtropical: 'Moderate seasonal movement with useful morning/evening contrast',
+      mid: 'Clear seasonal swing, worth checking month by month',
+      high: 'Large seasonal swing; daylight can change the plan dramatically',
+    },
+    windowBalance: 'Window balance',
+    seasonalSwing: 'Annual daylight swing',
+    practicalUse: 'Best use',
+    compare: 'Compare the same light window',
+    sunrise: 'Full sun times',
+    prayer: 'Prayer times',
+    cities: 'City index',
+    minutes: (value: number) => `${numberFormat.format(Math.abs(value))} min`,
+    swing: (value: number) => `${numberFormat.format(Math.round(value / 60))} h between shortest and longest day`,
+    balance: (value: number) => value === 0 ? 'Morning and evening windows are similar today' : `${value > 0 ? 'Evening' : 'Morning'} golden hour is ${numberFormat.format(Math.abs(value))} min longer today`,
+    use: 'Check the matrix before scheduling portraits, skyline shots, travel arrivals, or outdoor video.',
+  },
+  es: {
+    title: 'Señales para planificar fotos en esta ciudad',
+    intro: (name: string) => `Estas señales muestran cómo la latitud, la estación y las ciudades cercanas cambian la ventana de luz de ${name}.`,
+    latitude: 'Banda de latitud',
+    latitudeBands: {
+      tropical: 'Luz de baja latitud, normalmente más estable durante el año',
+      subtropical: 'Movimiento estacional moderado y buen contraste entre mañana y tarde',
+      mid: 'Cambio estacional claro, conviene revisar por mes',
+      high: 'Cambio estacional grande; la duración del día puede cambiar el plan',
+    },
+    windowBalance: 'Balance de ventanas',
+    seasonalSwing: 'Cambio anual de luz',
+    practicalUse: 'Uso práctico',
+    compare: 'Comparar la misma ventana',
+    sunrise: 'Sol completo',
+    prayer: 'Horarios de oración',
+    cities: 'Índice de ciudades',
+    minutes: (value: number) => `${numberFormat.format(Math.abs(value))} min`,
+    swing: (value: number) => `${numberFormat.format(Math.round(value / 60))} h entre el día más corto y el más largo`,
+    balance: (value: number) => value === 0 ? 'La mañana y la tarde son similares hoy' : `La hora dorada de ${value > 0 ? 'la tarde' : 'la mañana'} dura ${numberFormat.format(Math.abs(value))} min más hoy`,
+    use: 'Revísalo antes de programar retratos, skyline, llegada de viaje o video exterior.',
+  },
+  ar: {
+    title: 'إشارات تخطيط التصوير لهذه المدينة',
+    intro: (name: string) => `توضح هذه الإشارات كيف تؤثر خطوط العرض والموسم والمدن القريبة في نافذة الضوء في ${name}.`,
+    latitude: 'نطاق خط العرض',
+    latitudeBands: {
+      tropical: 'ضوء منخفض العرض، غالبًا أكثر ثباتًا خلال السنة',
+      subtropical: 'حركة موسمية متوسطة مع فرق مفيد بين الصباح والمساء',
+      mid: 'تغير موسمي واضح يستحق الفحص شهريًا',
+      high: 'تغير موسمي كبير؛ طول النهار قد يغير الخطة بالكامل',
+    },
+    windowBalance: 'توازن النافذة',
+    seasonalSwing: 'تغير النهار السنوي',
+    practicalUse: 'أفضل استخدام',
+    compare: 'قارن نافذة الضوء نفسها',
+    sunrise: 'أوقات الشمس الكاملة',
+    prayer: 'مواقيت الصلاة',
+    cities: 'فهرس المدن',
+    minutes: (value: number) => `${numberFormat.format(Math.abs(value))} د`,
+    swing: (value: number) => `${numberFormat.format(Math.round(value / 60))} س بين أقصر وأطول نهار`,
+    balance: (value: number) => value === 0 ? 'نافذتا الصباح والمساء متقاربتان اليوم' : `الساعة الذهبية ${value > 0 ? 'المسائية' : 'الصباحية'} أطول بـ ${numberFormat.format(Math.abs(value))} د اليوم`,
+    use: 'افحص هذه الإشارات قبل ترتيب البورتريه، أفق المدينة، الوصول أثناء السفر أو تصوير الفيديو الخارجي.',
+  },
+  'zh-cn': {
+    title: '这座城市的摄影规划信号',
+    intro: (name: string) => `这些信号说明 ${name} 的纬度、季节和附近城市，会怎样影响今天的黄金时刻窗口。`,
+    latitude: '纬度带',
+    latitudeBands: {
+      tropical: '低纬度光线，全年通常更稳定',
+      subtropical: '季节变化适中，早晚窗口有可比较空间',
+      mid: '季节变化明显，适合按月份检查',
+      high: '季节变化很大，白昼长度可能显著改变计划',
+    },
+    windowBalance: '早晚窗口对比',
+    seasonalSwing: '全年白昼波动',
+    practicalUse: '适合用途',
+    compare: '继续比较同类光线窗口',
+    sunrise: '完整日出日落',
+    prayer: '礼拜时间',
+    cities: '城市索引',
+    minutes: (value: number) => `${numberFormat.format(Math.abs(value))} 分钟`,
+    swing: (value: number) => `最长与最短白昼相差约 ${numberFormat.format(Math.round(value / 60))} 小时`,
+    balance: (value: number) => value === 0 ? '今天早晨和傍晚黄金时刻接近' : `今天${value > 0 ? '傍晚' : '早晨'}黄金时刻长 ${numberFormat.format(Math.abs(value))} 分钟`,
+    use: '安排人像、城市天际线、旅行抵达或户外视频前，先用这组信号判断时间窗口。',
+  },
+  fr: {
+    title: 'Signaux photo pour cette ville',
+    intro: (name: string) => `Ces signaux montrent comment la latitude, la saison et les villes voisines changent la fenêtre lumineuse de ${name}.`,
+    latitude: 'Bande de latitude',
+    latitudeBands: {
+      tropical: 'Lumière de basse latitude, souvent plus stable sur l’année',
+      subtropical: 'Mouvement saisonnier modéré avec contraste matin/soir utile',
+      mid: 'Variation saisonnière nette, à vérifier mois par mois',
+      high: 'Forte variation saisonnière; la durée du jour peut changer le plan',
+    },
+    windowBalance: 'Balance des fenêtres',
+    seasonalSwing: 'Écart annuel de lumière',
+    practicalUse: 'Usage pratique',
+    compare: 'Comparer la même fenêtre',
+    sunrise: 'Soleil complet',
+    prayer: 'Horaires de prière',
+    cities: 'Index des villes',
+    minutes: (value: number) => `${numberFormat.format(Math.abs(value))} min`,
+    swing: (value: number) => `${numberFormat.format(Math.round(value / 60))} h entre le jour le plus court et le plus long`,
+    balance: (value: number) => value === 0 ? 'Les fenêtres matin et soir sont proches aujourd’hui' : `L’heure dorée du ${value > 0 ? 'soir' : 'matin'} dure ${numberFormat.format(Math.abs(value))} min de plus aujourd’hui`,
+    use: 'À vérifier avant de planifier portrait, skyline, arrivée de voyage ou vidéo extérieure.',
+  },
+  tr: {
+    title: 'Bu şehir için fotoğraf planlama sinyalleri',
+    intro: (name: string) => `Bu sinyaller ${name} için enlem, mevsim ve yakın şehirlerin ışık penceresini nasıl etkilediğini gösterir.`,
+    latitude: 'Enlem bandı',
+    latitudeBands: {
+      tropical: 'Düşük enlem ışığı, yıl boyunca genelde daha dengeli',
+      subtropical: 'Orta düzey mevsim hareketi ve sabah/akşam farkı',
+      mid: 'Belirgin mevsim değişimi, ay ay kontrol edilmeli',
+      high: 'Büyük mevsim değişimi; gün uzunluğu planı ciddi etkileyebilir',
+    },
+    windowBalance: 'Pencere dengesi',
+    seasonalSwing: 'Yıllık gün ışığı farkı',
+    practicalUse: 'Pratik kullanım',
+    compare: 'Aynı ışık penceresini karşılaştır',
+    sunrise: 'Tam güneş saatleri',
+    prayer: 'Namaz vakitleri',
+    cities: 'Şehir indeksi',
+    minutes: (value: number) => `${numberFormat.format(Math.abs(value))} dk`,
+    swing: (value: number) => `En kısa ve en uzun gün arasında ${numberFormat.format(Math.round(value / 60))} sa`,
+    balance: (value: number) => value === 0 ? 'Sabah ve akşam pencereleri bugün benzer' : `Bugün ${value > 0 ? 'akşam' : 'sabah'} altın saat ${numberFormat.format(Math.abs(value))} dk daha uzun`,
+    use: 'Portre, şehir silüeti, seyahat varışı veya dış çekim videosu planlamadan önce kontrol edin.',
+  },
+}[languageCode];
 ---
 
 <main class="city-page" data-live-city-root data-live-config-id="cityLiveConfig">
@@ -427,6 +577,42 @@ const localTimeLabel = today.toLocaleTimeString(locale, {
       </div>
     </section>
 
+    <section class="detail-section" aria-label="Photo planning signals">
+      <div class="detail-section-head">
+        <h2><i data-lucide="compass" class="icon-md"></i> {planningCopy.title}</h2>
+        <p>{planningCopy.intro(cityName)}</p>
+      </div>
+
+      <div class="planner-grid">
+        <div class="planner-card glass-card">
+          <span class="planner-label">{planningCopy.latitude}</span>
+          <strong>{planningCopy.latitudeBands[latitudeBand]}</strong>
+          <p>{numberFormat.format(city.lat)}°, {numberFormat.format(city.lng)}° · {city.timezone}</p>
+        </div>
+
+        <div class="planner-card glass-card">
+          <span class="planner-label">{planningCopy.windowBalance}</span>
+          <strong>{planningCopy.balance(eveningVsMorningMinutes)}</strong>
+          <p>{copy.morningGoldenHour}: {planningCopy.minutes(golden.morning.durationMin)} · {copy.eveningGoldenHour}: {planningCopy.minutes(golden.evening.durationMin)}</p>
+        </div>
+
+        <div class="planner-card glass-card">
+          <span class="planner-label">{planningCopy.seasonalSwing}</span>
+          <strong>{planningCopy.swing(seasonalSwingMinutes)}</strong>
+          <p>{copy.longestDay}: {copy.formatDuration(annualExtremes.longestDay.daylightDuration)} · {copy.shortestDay}: {copy.formatDuration(annualExtremes.shortestDay.daylightDuration)}</p>
+        </div>
+
+        <div class="planner-card glass-card planner-links">
+          <span class="planner-label">{planningCopy.compare}</span>
+          <a href={sunrisePath}>{planningCopy.sunrise}</a>
+          <a href={prayerPath}>{planningCopy.prayer}</a>
+          <a href={citiesPath}>{planningCopy.cities}</a>
+        </div>
+      </div>
+
+      <p class="planner-use">{planningCopy.use}</p>
+    </section>
+
     <AdUnit id={`ad-${languageCode}-golden-hour-city`} />
 
     <section class="detail-section seo-content" aria-label="About golden hour">
@@ -540,7 +726,47 @@ const localTimeLabel = today.toLocaleTimeString(locale, {
     color: var(--text-main, #111827);
   }
 
+  .planner-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+  }
+
+  .planner-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .planner-label {
+    color: var(--text-muted, #6b7280);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .planner-card p,
+  .planner-use {
+    margin: 0;
+    color: var(--text-muted, #6b7280);
+    line-height: 1.6;
+  }
+
+  .planner-use {
+    margin-top: 1rem;
+  }
+
+  .planner-links a {
+    color: var(--accent, #2563eb);
+    font-weight: 700;
+  }
+
   @media (max-width: 640px) {
+    .planner-grid {
+      grid-template-columns: 1fr;
+    }
+
     th,
     td {
       padding: 0.5rem;

@@ -9,11 +9,14 @@ import Base from '@layouts/Base.astro';
 import Header from '@components/Header.astro';
 import Footer from '@components/Footer.astro';
 import AdUnit from '@components/AdUnit.astro';
+import SunriseTodayTomorrowAnswer from '@components/SunriseTodayTomorrowAnswer.astro';
+import CityFaqBlock from '@components/CityFaqBlock.astro';
 import { getCityBySlug, getCityDisplayName, getCityLocationLabel, getCityStaticPaths, getComparisonCities, getNearbyCities } from '@data/site';
 import { getSunTimes, getGoldenHour, getDaylightSeries, formatTime, getSunriseDelta, getSunsetDelta, getDaylightChangeDays, getSunEventShiftDays, getAnnualSunExtremes, getSeasonalSunCheckpoints, getLocalYear } from '@utils/sun';
 import { getMoonData, getNextMoonEvent } from '@utils/moon';
 import { getPrayerTimes, getNextPrayer } from '@utils/prayer-times';
 import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
+import { buildFaqPageJsonLd, buildSunriseFaqSection } from '@utils/sunrise-faq';
 import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
 import SunriseQuality from '@components/SunriseQuality.astro';
 
@@ -94,8 +97,11 @@ function formatCalendarDate(date: Date) {
 }
 
 const today = new Date();
+const tomorrow = new Date(today);
+tomorrow.setDate(tomorrow.getDate() + 1);
 const currentYear = getLocalYear(today, city.timezone);
 const sun = getSunTimes(today, city.lat, city.lng);
+const tomorrowSun = getSunTimes(tomorrow, city.lat, city.lng);
 const golden = getGoldenHour(today, city.lat, city.lng);
 const moon = getMoonData(today, city.lat, city.lng);
 const nextMoonEvent = getNextMoonEvent(today);
@@ -184,8 +190,8 @@ const daysUntilMoonEvent = Math.max(1, Math.ceil((nextMoonEvent.date.getTime() -
 const nearbyCities = getNearbyCities(city, 6);
 const otherCities = getComparisonCities(city, 4);
 
-const pageTitle = `Sunrise & Sunset Times in ${cityLabel} Today — SunriseTime`;
-const pageDesc = `Today's sunrise in ${cityLabel} is at ${formatTime(sun.sunrise, city.timezone)}, sunset at ${formatTime(sun.sunset, city.timezone)}. ${sun.daylightFormatted} of daylight. Golden hour, moon phase, and prayer times included.`;
+const pageTitle = `Sunrise & Sunset in ${cityLabel} Today and Tomorrow — SunriseTime`;
+const pageDesc = `Today's sunrise in ${cityLabel} is at ${formatTime(sun.sunrise, city.timezone)} and tomorrow's sunrise is at ${formatTime(tomorrowSun.sunrise, city.timezone)}. Sunset, daylight, golden hour, moon phase, and prayer times included.`;
 const pagePath = `/sunrise/${city.slug}/`;
 const pageUrl = `https://sunrisetime.co${pagePath}`;
 const liveCityConfig = {
@@ -235,6 +241,21 @@ const breadcrumbItems = [
   { name: 'Cities', path: '/cities/' },
   { name: city.name, path: `/sunrise/${city.slug}/` },
 ];
+const sunriseFaq = buildSunriseFaqSection({
+  locale: 'en',
+  cityName: cityLabel,
+  sunrise: formatTime(sun.sunrise, city.timezone),
+  sunset: formatTime(sun.sunset, city.timezone),
+  tomorrowSunrise: formatTime(tomorrowSun.sunrise, city.timezone),
+  daylight: sun.daylightFormatted,
+  morningGoldenStart: formatTime(golden.morning.start, city.timezone),
+  morningGoldenEnd: formatTime(golden.morning.end, city.timezone),
+  eveningGoldenStart: formatTime(golden.evening.start, city.timezone),
+  eveningGoldenEnd: formatTime(golden.evening.end, city.timezone),
+  nextPrayerName: nextPrayer.name,
+  nextPrayerTime: formatTime(nextPrayer.time, city.timezone),
+  timezoneLabel: city.timezone,
+});
 
 const jsonLd = [
   {
@@ -248,28 +269,7 @@ const jsonLd = [
     }
   },
   buildBreadcrumbJsonLd(breadcrumbItems),
-  {
-    "@type": "FAQPage",
-    "@id": `${pageUrl}#faq`,
-    "mainEntity": [
-      {
-        "@type": "Question",
-        "name": `What time is sunrise in ${cityLabel} today?`,
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": `Sunrise in ${cityLabel} today is at ${formatTime(sun.sunrise, city.timezone)}.`
-        }
-      },
-      {
-        "@type": "Question",
-        "name": `What time is sunset in ${cityLabel} today?`,
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": `Sunset in ${cityLabel} today is at ${formatTime(sun.sunset, city.timezone)}.`
-        }
-      }
-    ]
-  }
+  buildFaqPageJsonLd(pageUrl, sunriseFaq),
 ];
 ---
 
@@ -380,6 +380,13 @@ const jsonLd = [
           </div>
         </div>
       </section>
+
+      <SunriseTodayTomorrowAnswer
+        city={city}
+        cityName={city.name}
+        languageCode="en"
+        locale="en-US"
+      />
 
       <section class="city-highlight-grid" aria-label="Quick paths">
         <a href="#photography" class="city-highlight-card glass-card">
@@ -718,6 +725,8 @@ const jsonLd = [
           </table>
         </div>
       </section>
+
+      <CityFaqBlock section={sunriseFaq} />
 
       <section class="detail-section" id="nearby" aria-label="Nearby cities">
         <div class="detail-section-head">

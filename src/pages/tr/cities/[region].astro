@@ -3,6 +3,7 @@ import Base from '@layouts/Base.astro';
 import TurkishHeader from '@components/TurkishHeader.astro';
 import TurkishFooter from '@components/TurkishFooter.astro';
 import AdUnit from '@components/AdUnit.astro';
+import RegionSunComparison from '@components/RegionSunComparison.astro';
 import { getRegionHub, regionHubs, useCaseHubs } from '@data/site';
 import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
 import {
@@ -13,6 +14,7 @@ import {
   getTurkishRegionName,
 } from '@i18n/turkish';
 import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
+import { buildRegionItemListJsonLd, buildRegionSunRows } from '@utils/region-hub';
 
 export function getStaticPaths() {
   return regionHubs.map((region) => ({
@@ -40,6 +42,12 @@ const alternates = buildAlternateLinks([
 ]);
 const languageLinks = buildLanguageSwitcherLinks(pagePath);
 const regionName = getTurkishRegionName(region.slug, region.name);
+const regionSunRows = buildRegionSunRows(region.featuredCities.length ? region.featuredCities : region.cities, {
+  locale: 'tr-TR',
+  pathPrefix: '/tr',
+  getCityName: getTurkishCityName,
+  getCityLocationLabel: (city) => getTurkishCityLocationLabel(city, { includeAdmin1: Boolean(city.admin1) }),
+});
 
 const jsonLd = [
   {
@@ -58,6 +66,7 @@ const jsonLd = [
     { name: 'Şehirler', path: '/tr/cities/' },
     { name: regionName, path: turkishPath },
   ]),
+  buildRegionItemListJsonLd(pageUrl, `${regionName} one cikan sehirler`, regionSunRows),
 ];
 ---
 
@@ -115,6 +124,16 @@ const jsonLd = [
           </ul>
         </article>
       </section>
+
+      <RegionSunComparison
+        rows={regionSunRows}
+        heading={`${regionName} icin bugunku gun dogumu karsilastirmasi`}
+        intro="Yerel sayfayi acmadan once temsilci sehirlerde gun dogumu, gun batimi ve gun isigi suresini karsilastirin."
+        cityLabel="Sehir"
+        sunriseLabel="Gun dogumu"
+        sunsetLabel="Gun batimi"
+        daylightLabel="Gun isigi"
+      />
 
       <section class="resource-section">
         <div class="detail-section-head">

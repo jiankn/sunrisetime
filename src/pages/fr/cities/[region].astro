@@ -3,6 +3,7 @@ import Base from '@layouts/Base.astro';
 import FrenchHeader from '@components/FrenchHeader.astro';
 import FrenchFooter from '@components/FrenchFooter.astro';
 import AdUnit from '@components/AdUnit.astro';
+import RegionSunComparison from '@components/RegionSunComparison.astro';
 import { getRegionHub, regionHubs, useCaseHubs } from '@data/site';
 import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
 import {
@@ -13,6 +14,7 @@ import {
   getFrenchRegionName,
 } from '@i18n/french';
 import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
+import { buildRegionItemListJsonLd, buildRegionSunRows } from '@utils/region-hub';
 
 export function getStaticPaths() {
   return regionHubs.map((region) => ({
@@ -40,6 +42,12 @@ const alternates = buildAlternateLinks([
 ]);
 const languageLinks = buildLanguageSwitcherLinks(pagePath);
 const regionName = getFrenchRegionName(region.slug, region.name);
+const regionSunRows = buildRegionSunRows(region.featuredCities.length ? region.featuredCities : region.cities, {
+  locale: 'fr-FR',
+  pathPrefix: '/fr',
+  getCityName: getFrenchCityName,
+  getCityLocationLabel: (city) => getFrenchCityLocationLabel(city, { includeAdmin1: Boolean(city.admin1) }),
+});
 
 const jsonLd = [
   {
@@ -58,6 +66,7 @@ const jsonLd = [
     { name: 'Villes', path: '/fr/cities/' },
     { name: regionName, path: frenchPath },
   ]),
+  buildRegionItemListJsonLd(pageUrl, `${regionName} villes mises en avant`, regionSunRows),
 ];
 ---
 
@@ -115,6 +124,16 @@ const jsonLd = [
           </ul>
         </article>
       </section>
+
+      <RegionSunComparison
+        rows={regionSunRows}
+        heading={`Comparaison du lever du soleil aujourd hui en ${regionName}`}
+        intro="Comparez le lever, le coucher et la lumiere du jour dans des villes representatives avant d ouvrir une page locale."
+        cityLabel="Ville"
+        sunriseLabel="Lever"
+        sunsetLabel="Coucher"
+        daylightLabel="Lumiere du jour"
+      />
 
       <section class="resource-section">
         <div class="detail-section-head">

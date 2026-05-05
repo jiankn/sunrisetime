@@ -3,6 +3,7 @@ import Base from '@layouts/Base.astro';
 import ArabicHeader from '@components/ArabicHeader.astro';
 import ArabicFooter from '@components/ArabicFooter.astro';
 import AdUnit from '@components/AdUnit.astro';
+import RegionSunComparison from '@components/RegionSunComparison.astro';
 import { getRegionHub, regionHubs, useCaseHubs } from '@data/site';
 import {
   getArabicCityLocationLabel,
@@ -13,6 +14,7 @@ import {
 } from '@i18n/arabic';
 import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
 import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
+import { buildRegionItemListJsonLd, buildRegionSunRows } from '@utils/region-hub';
 
 export function getStaticPaths() {
   return regionHubs.map((region) => ({
@@ -40,17 +42,24 @@ const alternates = buildAlternateLinks([
   { hrefLang: 'x-default', path: pagePath },
 ]);
 const languageLinks = buildLanguageSwitcherLinks(pagePath);
+const regionName = getArabicRegionName(region.slug, region.name);
 const breadcrumbItems = [
   { name: 'الرئيسية', path: '/ar/' },
   { name: 'المدن', path: '/ar/cities/' },
-  { name: getArabicRegionName(region.slug, region.name), path: arabicPath },
+  { name: regionName, path: arabicPath },
 ];
+const regionSunRows = buildRegionSunRows(region.featuredCities.length ? region.featuredCities : region.cities, {
+  locale: 'ar',
+  pathPrefix: '/ar',
+  getCityName: getArabicCityName,
+  getCityLocationLabel: (city) => getArabicCityLocationLabel(city, { includeAdmin1: Boolean(city.admin1) }),
+});
 
 const jsonLd = [
   {
     "@type": "CollectionPage",
     "@id": `${pageUrl}#webpage`,
-    "name": `${getArabicRegionName(region.slug, region.name)} - الشروق والغروب`,
+    "name": `${regionName} - الشروق والغروب`,
     "description": localizedRegion.description,
     "url": pageUrl,
     "inLanguage": "ar",
@@ -59,6 +68,7 @@ const jsonLd = [
     }
   },
   buildBreadcrumbJsonLd(breadcrumbItems),
+  buildRegionItemListJsonLd(pageUrl, `${regionName} مدن مميزة`, regionSunRows),
 ];
 ---
 
@@ -81,13 +91,13 @@ const jsonLd = [
         <i data-lucide="chevron-right" class="icon-xs"></i>
         <a href="/ar/cities/">المدن</a>
         <i data-lucide="chevron-right" class="icon-xs"></i>
-        <span>{getArabicRegionName(region.slug, region.name)}</span>
+        <span>{regionName}</span>
       </nav>
 
       <header class="resource-header">
         <span class="section-badge">
           <i data-lucide="globe-2" class="icon-xs"></i>
-          {getArabicRegionName(region.slug, region.name)}
+          {regionName}
         </span>
         <h1>{localizedRegion.description}</h1>
         <p class="resource-subtitle">{localizedRegion.intro}</p>
@@ -117,6 +127,16 @@ const jsonLd = [
           </ul>
         </article>
       </section>
+
+      <RegionSunComparison
+        rows={regionSunRows}
+        heading={`مقارنة الشروق اليوم في ${regionName}`}
+        intro="قارن الشروق والغروب وطول النهار في مدن ممثلة قبل فتح صفحة المدينة الكاملة."
+        cityLabel="المدينة"
+        sunriseLabel="الشروق"
+        sunsetLabel="الغروب"
+        daylightLabel="طول النهار"
+      />
 
       <section class="resource-section">
         <div class="detail-section-head">

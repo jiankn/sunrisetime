@@ -2,6 +2,7 @@
 import Base from '@layouts/Base.astro';
 import ArabicHeader from '@components/ArabicHeader.astro';
 import ArabicFooter from '@components/ArabicFooter.astro';
+import OpportunityCityLinks from '@components/OpportunityCityLinks.astro';
 import { getCitySearchText, regionHubs, totalCities } from '@data/site';
 import {
   getArabicCityDisplayName,
@@ -88,6 +89,8 @@ const jsonLd = [
           </div>
         </section>
       ))}
+
+      <OpportunityCityLinks locale="ar" />
     </div>
   </main>
 

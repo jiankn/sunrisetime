@@ -2,6 +2,8 @@
 import Base from '@layouts/Base.astro';
 import LocalizedHeader from '@components/LocalizedHeader.astro';
 import LocalizedFooter from '@components/LocalizedFooter.astro';
+import SunriseTodayTomorrowAnswer from '@components/SunriseTodayTomorrowAnswer.astro';
+import CityFaqBlock from '@components/CityFaqBlock.astro';
 import { getCityBySlug, getCityStaticPaths, getComparisonCities, getNearbyCities } from '@data/site';
 import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
 import {
@@ -15,6 +17,7 @@ import { getAnnualSunExtremes, getDaylightSeries, getGoldenHour, getSeasonalSunC
 import { getMoonData, getNextMoonEvent } from '@utils/moon';
 import { getNextPrayer, getPrayerTimes } from '@utils/prayer-times';
 import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
+import { buildFaqPageJsonLd, buildSunriseFaqSection } from '@utils/sunrise-faq';
 
 export function getStaticPaths() {
   return getCityStaticPaths();
@@ -61,9 +64,12 @@ function formatCalendarDate(date: Date) {
 }
 
 const today = new Date();
+const tomorrow = new Date(today);
+tomorrow.setDate(tomorrow.getDate() + 1);
 const cityName = getSpanishCityName(city);
 const countryName = getSpanishCountryName(city.country);
 const sun = getSunTimes(today, city.lat, city.lng);
+const tomorrowSun = getSunTimes(tomorrow, city.lat, city.lng);
 const golden = getGoldenHour(today, city.lat, city.lng);
 const moon = getMoonData(today, city.lat, city.lng);
 const nextMoonEvent = getNextMoonEvent(today);
@@ -193,8 +199,23 @@ const alternates = buildAlternateLinks([
 ]);
 const languageLinks = buildLanguageSwitcherLinks(pagePath);
 
-const pageTitle = `Hora del amanecer y atardecer en ${cityName} hoy - SunriseTime`;
-const pageDesc = `Hoy el amanecer en ${cityName} es a las ${formatTime(sun.sunrise, city.timezone, spanishLocale)} y el atardecer a las ${formatTime(sun.sunset, city.timezone, spanishLocale)}. ${sun.daylightFormatted} de luz diurna, hora dorada, fase lunar y enlace a horarios de oración.`;
+const pageTitle = `Amanecer y atardecer en ${cityName} hoy y mañana - SunriseTime`;
+const pageDesc = `Hoy el amanecer en ${cityName} es a las ${formatTime(sun.sunrise, city.timezone, spanishLocale)} y mañana a las ${formatTime(tomorrowSun.sunrise, city.timezone, spanishLocale)}. Atardecer, luz diurna, hora dorada y fase lunar.`;
+const sunriseFaq = buildSunriseFaqSection({
+  locale: 'es',
+  cityName,
+  sunrise: formatTime(sun.sunrise, city.timezone, spanishLocale),
+  sunset: formatTime(sun.sunset, city.timezone, spanishLocale),
+  tomorrowSunrise: formatTime(tomorrowSun.sunrise, city.timezone, spanishLocale),
+  daylight: sun.daylightFormatted,
+  morningGoldenStart: formatTime(golden.morning.start, city.timezone, spanishLocale),
+  morningGoldenEnd: formatTime(golden.morning.end, city.timezone, spanishLocale),
+  eveningGoldenStart: formatTime(golden.evening.start, city.timezone, spanishLocale),
+  eveningGoldenEnd: formatTime(golden.evening.end, city.timezone, spanishLocale),
+  nextPrayerName: getSpanishPrayerName(nextPrayer.name),
+  nextPrayerTime: formatTime(nextPrayer.time, city.timezone, spanishLocale),
+  timezoneLabel: city.timezone,
+});
 
 const jsonLd = [
   {
@@ -213,36 +234,7 @@ const jsonLd = [
     { name: 'Ciudades', path: '/es/cities/' },
     { name: cityName, path: spanishPath },
   ]),
-  {
-    "@type": "FAQPage",
-    "@id": `${pageUrl}#faq`,
-    "mainEntity": [
-      {
-        "@type": "Question",
-        "name": `¿A qué hora amanece hoy en ${cityName}?`,
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": `Hoy el amanecer en ${cityName} es a las ${formatTime(sun.sunrise, city.timezone, spanishLocale)}.`
-        }
-      },
-      {
-        "@type": "Question",
-        "name": `¿A qué hora atardece hoy en ${cityName}?`,
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": `Hoy el atardecer en ${cityName} es a las ${formatTime(sun.sunset, city.timezone, spanishLocale)} y la luz diurna total es de ${sun.daylightFormatted}.`
-        }
-      },
-      {
-        "@type": "Question",
-        "name": `¿La página también muestra hora dorada y horarios de oración en ${cityName}?`,
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": `Sí. La página incluye hora dorada, fase lunar y un acceso directo a los horarios de oración de ${cityName}.`
-        }
-      }
-    ]
-  }
+  buildFaqPageJsonLd(pageUrl, sunriseFaq),
 ];
 ---
 
@@ -351,6 +343,13 @@ const jsonLd = [
           </div>
         </div>
       </section>
+
+      <SunriseTodayTomorrowAnswer
+        city={city}
+        cityName={cityName}
+        languageCode="es"
+        locale={spanishLocale}
+      />
 
       <section class="city-highlight-grid" aria-label="Quick paths">
         <a href="#golden" class="city-highlight-card glass-card">
@@ -592,6 +591,8 @@ const jsonLd = [
           </table>
         </div>
       </section>
+
+      <CityFaqBlock section={sunriseFaq} />
 
       <section class="detail-section" id="nearby" aria-label="Ciudades cercanas">
         <div class="detail-section-head">

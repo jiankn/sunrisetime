@@ -2,6 +2,7 @@
 import Base from '@layouts/Base.astro';
 import FrenchHeader from '@components/FrenchHeader.astro';
 import FrenchFooter from '@components/FrenchFooter.astro';
+import OpportunityCityLinks from '@components/OpportunityCityLinks.astro';
 import { getCitySearchText, regionHubs, totalCities } from '@data/site';
 import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
 import {
@@ -88,6 +89,8 @@ const jsonLd = [
           </div>
         </section>
       ))}
+
+      <OpportunityCityLinks locale="fr" />
     </div>
   </main>
 

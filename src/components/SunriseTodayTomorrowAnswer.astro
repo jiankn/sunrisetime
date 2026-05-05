@@ -1,0 +1,158 @@
+---
+import type { City } from '@data/site';
+import { localizePath, type EnabledLanguageCode } from '@i18n/config';
+import { formatTime, getSunTimes } from '@utils/sun';
+
+interface Props {
+  city: City;
+  cityName: string;
+  languageCode: EnabledLanguageCode;
+  locale: string;
+}
+
+const { city, cityName, languageCode, locale } = Astro.props;
+
+const today = new Date();
+const tomorrow = new Date(today);
+tomorrow.setDate(tomorrow.getDate() + 1);
+
+const todaySun = getSunTimes(today, city.lat, city.lng);
+const tomorrowSun = getSunTimes(tomorrow, city.lat, city.lng);
+
+const copy = {
+  en: {
+    title: `Sunrise today and tomorrow in ${cityName}`,
+    intro: `Use this quick answer when you only need the exact sunrise or sunset time without reading the full planner.`,
+    today: 'Today',
+    tomorrow: 'Tomorrow',
+    sunrise: 'Sunrise',
+    sunset: 'Sunset',
+    daylight: 'Daylight',
+    timezone: 'Time zone',
+    more: 'Open golden hour',
+  },
+  es: {
+    title: `Amanecer de hoy y mañana en ${cityName}`,
+    intro: `Respuesta rápida para consultar la hora exacta de amanecer o atardecer sin recorrer toda la página.`,
+    today: 'Hoy',
+    tomorrow: 'Mañana',
+    sunrise: 'Amanecer',
+    sunset: 'Atardecer',
+    daylight: 'Luz diurna',
+    timezone: 'Zona horaria',
+    more: 'Ver hora dorada',
+  },
+  ar: {
+    title: `شروق اليوم والغد في ${cityName}`,
+    intro: `إجابة سريعة عندما تحتاج وقت الشروق أو الغروب مباشرة دون قراءة كامل الصفحة.`,
+    today: 'اليوم',
+    tomorrow: 'غدًا',
+    sunrise: 'الشروق',
+    sunset: 'الغروب',
+    daylight: 'مدة النهار',
+    timezone: 'المنطقة الزمنية',
+    more: 'عرض الساعة الذهبية',
+  },
+  'zh-cn': {
+    title: `${cityName}今天和明天的日出时间`,
+    intro: '当你只想快速确认今天或明天的日出、日落时间时，先看这张答案表。',
+    today: '今天',
+    tomorrow: '明天',
+    sunrise: '日出',
+    sunset: '日落',
+    daylight: '白昼',
+    timezone: '时区',
+    more: '查看黄金时刻',
+  },
+  fr: {
+    title: `Lever du soleil aujourd’hui et demain à ${cityName}`,
+    intro: `Réponse rapide pour vérifier l’heure exacte du lever ou du coucher sans parcourir toute la page.`,
+    today: 'Aujourd’hui',
+    tomorrow: 'Demain',
+    sunrise: 'Lever',
+    sunset: 'Coucher',
+    daylight: 'Lumière du jour',
+    timezone: 'Fuseau',
+    more: 'Voir l’heure dorée',
+  },
+  tr: {
+    title: `${cityName} bugün ve yarın gün doğumu`,
+    intro: `Tam sayfayı okumadan gün doğumu veya gün batımı saatini hızlıca kontrol edin.`,
+    today: 'Bugün',
+    tomorrow: 'Yarın',
+    sunrise: 'Gün doğumu',
+    sunset: 'Gün batımı',
+    daylight: 'Gün ışığı',
+    timezone: 'Saat dilimi',
+    more: 'Altın saati aç',
+  },
+}[languageCode];
+
+const goldenPath = localizePath(languageCode, `/golden-hour/${city.slug}/`);
+---
+
+<section class="detail-section quick-answer" aria-label="Today and tomorrow sunrise answer">
+  <div class="detail-section-head">
+    <h2><i data-lucide="calendar-days" class="icon-md"></i> {copy.title}</h2>
+    <p>{copy.intro}</p>
+  </div>
+
+  <div class="quick-answer-grid">
+    <div class="quick-answer-card glass-card">
+      <span class="quick-answer-label">{copy.today}</span>
+      <strong>{copy.sunrise}: {formatTime(todaySun.sunrise, city.timezone, locale)}</strong>
+      <p>{copy.sunset}: {formatTime(todaySun.sunset, city.timezone, locale)} · {copy.daylight}: {todaySun.daylightFormatted}</p>
+    </div>
+
+    <div class="quick-answer-card glass-card">
+      <span class="quick-answer-label">{copy.tomorrow}</span>
+      <strong>{copy.sunrise}: {formatTime(tomorrowSun.sunrise, city.timezone, locale)}</strong>
+      <p>{copy.sunset}: {formatTime(tomorrowSun.sunset, city.timezone, locale)} · {copy.daylight}: {tomorrowSun.daylightFormatted}</p>
+    </div>
+
+    <div class="quick-answer-card glass-card">
+      <span class="quick-answer-label">{copy.timezone}</span>
+      <strong>{city.timezone}</strong>
+      <p><a href={goldenPath}>{copy.more}</a></p>
+    </div>
+  </div>
+</section>
+
+<style>
+  .quick-answer-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+  }
+
+  .quick-answer-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+  }
+
+  .quick-answer-label {
+    color: var(--text-muted, #6b7280);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .quick-answer-card p {
+    margin: 0;
+    color: var(--text-muted, #6b7280);
+    line-height: 1.6;
+  }
+
+  .quick-answer-card a {
+    color: var(--accent, #2563eb);
+    font-weight: 700;
+  }
+
+  @media (max-width: 760px) {
+    .quick-answer-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

@@ -1,0 +1,39 @@
+---
+import type { SunriseFaqSection } from '@utils/sunrise-faq';
+
+const {
+  section,
+} = Astro.props as {
+  section: SunriseFaqSection;
+};
+---
+
+<section class="detail-section city-faq-section" id="faq" aria-labelledby="city-faq-heading">
+  <div class="detail-section-head">
+    <h2 id="city-faq-heading">
+      <i data-lucide="help-circle" class="icon-md"></i>
+      {section.heading}
+    </h2>
+    <p>{section.intro}</p>
+  </div>
+
+  <div class="faq-list">
+    {section.items.map((item, index) => (
+      <details class="faq-item glass-card" id={`city-faq-${index + 1}`}>
+        <summary>
+          <span>{item.question}</span>
+          <i data-lucide="chevron-down" class="icon-sm faq-icon"></i>
+        </summary>
+        <div class="faq-answer">
+          <p>{item.answer}</p>
+        </div>
+      </details>
+    ))}
+  </div>
+</section>
+
+<style>
+  .city-faq-section {
+    scroll-margin-top: 6rem;
+  }
+</style>

@@ -2,6 +2,7 @@
 import Base from '@layouts/Base.astro';
 import ChineseHeader from '@components/ChineseHeader.astro';
 import ChineseFooter from '@components/ChineseFooter.astro';
+import OpportunityCityLinks from '@components/OpportunityCityLinks.astro';
 import { getCitySearchText, regionHubs, totalCities } from '@data/site';
 import {
   getChineseCityDisplayName,
@@ -88,6 +89,8 @@ const jsonLd = [
           </div>
         </section>
       ))}
+
+      <OpportunityCityLinks locale="zh-cn" />
     </div>
   </main>
 

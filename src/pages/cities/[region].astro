@@ -3,9 +3,11 @@ import Base from '@layouts/Base.astro';
 import Header from '@components/Header.astro';
 import Footer from '@components/Footer.astro';
 import AdUnit from '@components/AdUnit.astro';
+import RegionSunComparison from '@components/RegionSunComparison.astro';
 import { getCityLocationLabel, getRegionHub, regionHubs, useCaseHubs } from '@data/site';
 import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
 import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
+import { buildRegionItemListJsonLd, buildRegionSunRows } from '@utils/region-hub';
 
 export function getStaticPaths() {
   return regionHubs.map((region) => ({
@@ -35,6 +37,11 @@ const breadcrumbItems = [
   { name: 'Cities', path: '/cities/' },
   { name: region.name, path: region.path },
 ];
+const regionSunRows = buildRegionSunRows(region.featuredCities.length ? region.featuredCities : region.cities, {
+  locale: 'en-US',
+  getCityName: (city) => city.name,
+  getCityLocationLabel: (city) => getCityLocationLabel(city, { includeAdmin1: Boolean(city.admin1) }),
+});
 
 const jsonLd = [
   {
@@ -48,6 +55,7 @@ const jsonLd = [
     }
   },
   buildBreadcrumbJsonLd(breadcrumbItems),
+  buildRegionItemListJsonLd(pageUrl, `${region.name} featured sunrise cities`, regionSunRows),
 ];
 ---
 
@@ -105,6 +113,12 @@ const jsonLd = [
           </ul>
         </article>
       </section>
+
+      <RegionSunComparison
+        rows={regionSunRows}
+        heading={`Today's sunrise comparison in ${region.name}`}
+        intro="Use these representative cities to compare today's sunrise, sunset, and daylight before opening the full city page."
+      />
 
       <section class="resource-section">
         <div class="detail-section-head">

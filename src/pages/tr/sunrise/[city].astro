@@ -2,6 +2,8 @@
 import Base from '@layouts/Base.astro';
 import TurkishHeader from '@components/TurkishHeader.astro';
 import TurkishFooter from '@components/TurkishFooter.astro';
+import SunriseTodayTomorrowAnswer from '@components/SunriseTodayTomorrowAnswer.astro';
+import CityFaqBlock from '@components/CityFaqBlock.astro';
 import { getCityBySlug, getCityStaticPaths, getComparisonCities, getNearbyCities } from '@data/site';
 import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
 import {
@@ -15,6 +17,7 @@ import { getAnnualSunExtremes, getDaylightSeries, getGoldenHour, getSeasonalSunC
 import { getMoonData, getNextMoonEvent } from '@utils/moon';
 import { getNextPrayer } from '@utils/prayer-times';
 import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
+import { buildFaqPageJsonLd, buildSunriseFaqSection } from '@utils/sunrise-faq';
 
 export function getStaticPaths() {
   return getCityStaticPaths();
@@ -76,9 +79,12 @@ function formatCalendarDate(date: Date) {
 }
 
 const today = new Date();
+const tomorrow = new Date(today);
+tomorrow.setDate(tomorrow.getDate() + 1);
 const cityName = getTurkishCityName(city);
 const cityLocationLabel = getTurkishCityLocationLabel(city, { includeAdmin1: Boolean(city.admin1) });
 const sun = getSunTimes(today, city.lat, city.lng);
+const tomorrowSun = getSunTimes(tomorrow, city.lat, city.lng);
 const golden = getGoldenHour(today, city.lat, city.lng);
 const moon = getMoonData(today, city.lat, city.lng);
 const nextMoonEvent = getNextMoonEvent(today);
@@ -215,8 +221,23 @@ const alternates = buildAlternateLinks([
 ]);
 const languageLinks = buildLanguageSwitcherLinks(pagePath);
 
-const pageTitle = `${cityName} bugün gün doğumu ve gün batımı saatleri - SunriseTime`;
-const pageDesc = `Bugün ${cityName} için gün doğumu ${formatTime(sun.sunrise, city.timezone, turkishLocale)}, gün batımı ${formatTime(sun.sunset, city.timezone, turkishLocale)}. ${sun.daylightFormatted} gündüz süresi, altın saat, ay evresi ve namaz sayfasına hızlı geçiş burada.`;
+const pageTitle = `${cityName} bugün ve yarın gün doğumu, gün batımı - SunriseTime`;
+const pageDesc = `Bugün ${cityName} için gün doğumu ${formatTime(sun.sunrise, city.timezone, turkishLocale)}, yarın ${formatTime(tomorrowSun.sunrise, city.timezone, turkishLocale)}. Gün batımı, gündüz süresi, altın saat ve ay evresi burada.`;
+const sunriseFaq = buildSunriseFaqSection({
+  locale: 'tr',
+  cityName,
+  sunrise: formatTime(sun.sunrise, city.timezone, turkishLocale),
+  sunset: formatTime(sun.sunset, city.timezone, turkishLocale),
+  tomorrowSunrise: formatTime(tomorrowSun.sunrise, city.timezone, turkishLocale),
+  daylight: sun.daylightFormatted,
+  morningGoldenStart: formatTime(golden.morning.start, city.timezone, turkishLocale),
+  morningGoldenEnd: formatTime(golden.morning.end, city.timezone, turkishLocale),
+  eveningGoldenStart: formatTime(golden.evening.start, city.timezone, turkishLocale),
+  eveningGoldenEnd: formatTime(golden.evening.end, city.timezone, turkishLocale),
+  nextPrayerName: getTurkishPrayerName(nextPrayer.name),
+  nextPrayerTime: formatTime(nextPrayer.time, city.timezone, turkishLocale),
+  timezoneLabel: city.timezone,
+});
 
 const jsonLd = [
   {
@@ -235,36 +256,7 @@ const jsonLd = [
     { name: 'Şehirler', path: '/tr/cities/' },
     { name: cityName, path: turkishPath },
   ]),
-  {
-    "@type": "FAQPage",
-    "@id": `${pageUrl}#faq`,
-    "mainEntity": [
-      {
-        "@type": "Question",
-        "name": `Bugün ${cityName} için gün doğumu saat kaçta?`,
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": `Bugün ${cityName} için gün doğumu ${formatTime(sun.sunrise, city.timezone, turkishLocale)}.`
-        }
-      },
-      {
-        "@type": "Question",
-        "name": `Bugün ${cityName} için gün batımı saat kaçta?`,
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": `Bugün ${cityName} için gün batımı ${formatTime(sun.sunset, city.timezone, turkishLocale)} ve toplam gündüz süresi ${sun.daylightFormatted}.`
-        }
-      },
-      {
-        "@type": "Question",
-        "name": `${cityName} sayfasında altın saat ve namaz vakitleri de var mı?`,
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": `Evet. Sayfa altın saat, ay evresi ve ${cityName} namaz vakitlerine doğrudan geçişi birlikte gösterir.`
-        }
-      }
-    ]
-  }
+  buildFaqPageJsonLd(pageUrl, sunriseFaq),
 ];
 ---
 
@@ -373,6 +365,13 @@ const jsonLd = [
           </div>
         </div>
       </section>
+
+      <SunriseTodayTomorrowAnswer
+        city={city}
+        cityName={cityName}
+        languageCode="tr"
+        locale={turkishLocale}
+      />
 
       <section class="city-highlight-grid" aria-label="Hızlı geçişler">
         <a href="#golden" class="city-highlight-card glass-card">
@@ -653,6 +652,8 @@ const jsonLd = [
           </table>
         </div>
       </section>
+
+      <CityFaqBlock section={sunriseFaq} />
 
       <section class="detail-section" id="nearby" aria-label="Yakın şehirler">
         <div class="detail-section-head">

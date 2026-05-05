@@ -2,6 +2,8 @@
 import Base from '@layouts/Base.astro';
 import ChineseHeader from '@components/ChineseHeader.astro';
 import ChineseFooter from '@components/ChineseFooter.astro';
+import SunriseTodayTomorrowAnswer from '@components/SunriseTodayTomorrowAnswer.astro';
+import CityFaqBlock from '@components/CityFaqBlock.astro';
 import { getCityBySlug, getCityStaticPaths, getComparisonCities, getNearbyCities } from '@data/site';
 import {
   chineseLocale,
@@ -18,6 +20,7 @@ import { getAnnualSunExtremes, getDaylightSeries, getGoldenHour, getSeasonalSunC
 import { getMoonData } from '@utils/moon';
 import { getNextPrayer } from '@utils/prayer-times';
 import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
+import { buildFaqPageJsonLd, buildSunriseFaqSection } from '@utils/sunrise-faq';
 
 export function getStaticPaths() {
   return getCityStaticPaths();
@@ -68,11 +71,14 @@ function formatCalendarDate(date: Date) {
 }
 
 const today = new Date();
+const tomorrow = new Date(today);
+tomorrow.setDate(tomorrow.getDate() + 1);
 const cityName = getChineseCityName(city);
 const cityDisplayName = getChineseCityDisplayName(city);
 const locationLabel = getChineseCityLocationLabel(city);
 const timezoneLabel = getChineseTimezoneLabel(city.timezone, today);
 const sun = getSunTimes(today, city.lat, city.lng);
+const tomorrowSun = getSunTimes(tomorrow, city.lat, city.lng);
 const golden = getGoldenHour(today, city.lat, city.lng);
 const moon = getMoonData(today, city.lat, city.lng);
 const nextPrayer = getNextPrayer(today, city.lat, city.lng, 'MWL', 'Standard');
@@ -195,8 +201,23 @@ const alternates = buildAlternateLinks([
 ]);
 const languageLinks = buildLanguageSwitcherLinks(pagePath);
 
-const pageTitle = `${cityDisplayName}今日日出日落时间`;
-const pageDesc = `${cityDisplayName}今天的日出时间为 ${formatTime(sun.sunrise, city.timezone, chineseLocale)}，日落时间为 ${formatTime(sun.sunset, city.timezone, chineseLocale)}，并提供黄金时刻、月相和礼拜时间入口。`;
+const pageTitle = `${cityDisplayName}今天和明天日出日落时间`;
+const pageDesc = `${cityDisplayName}今天日出 ${formatTime(sun.sunrise, city.timezone, chineseLocale)}，明天日出 ${formatTime(tomorrowSun.sunrise, city.timezone, chineseLocale)}。同时提供日落、白昼、黄金时刻、月相和礼拜时间入口。`;
+const sunriseFaq = buildSunriseFaqSection({
+  locale: 'zh-cn',
+  cityName,
+  sunrise: formatTime(sun.sunrise, city.timezone, chineseLocale),
+  sunset: formatTime(sun.sunset, city.timezone, chineseLocale),
+  tomorrowSunrise: formatTime(tomorrowSun.sunrise, city.timezone, chineseLocale),
+  daylight: formatChineseDuration(sun.daylightDuration),
+  morningGoldenStart: formatTime(golden.morning.start, city.timezone, chineseLocale),
+  morningGoldenEnd: formatTime(golden.morning.end, city.timezone, chineseLocale),
+  eveningGoldenStart: formatTime(golden.evening.start, city.timezone, chineseLocale),
+  eveningGoldenEnd: formatTime(golden.evening.end, city.timezone, chineseLocale),
+  nextPrayerName: getChinesePrayerName(nextPrayer.name),
+  nextPrayerTime: formatTime(nextPrayer.time, city.timezone, chineseLocale),
+  timezoneLabel,
+});
 
 const jsonLd = [
   {
@@ -212,6 +233,7 @@ const jsonLd = [
     { name: '城市索引', path: '/zh-cn/cities/' },
     { name: cityName, path: zhPath },
   ]),
+  buildFaqPageJsonLd(pageUrl, sunriseFaq),
 ];
 ---
 
@@ -312,6 +334,13 @@ const jsonLd = [
           </div>
         </div>
       </section>
+
+      <SunriseTodayTomorrowAnswer
+        city={city}
+        cityName={cityName}
+        languageCode="zh-cn"
+        locale={chineseLocale}
+      />
 
       <section class="city-highlight-grid" aria-label="快捷入口">
         <div class="city-highlight-card glass-card">
@@ -520,6 +549,8 @@ const jsonLd = [
           </div>
         </div>
       </section>
+
+      <CityFaqBlock section={sunriseFaq} />
 
       <section class="detail-section" id="nearby" aria-label="相近城市">
         <div class="detail-section-head">

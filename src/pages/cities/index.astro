@@ -6,6 +6,7 @@
 import Base from '@layouts/Base.astro';
 import Header from '@components/Header.astro';
 import Footer from '@components/Footer.astro';
+import OpportunityCityLinks from '@components/OpportunityCityLinks.astro';
 import { getCityLocationLabel, getCitySearchText, regionHubs, totalCities } from '@data/site';
 import { buildBreadcrumbJsonLd } from '@utils/seo';
 import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
@@ -89,6 +90,8 @@ const jsonLd = [
           </div>
         </section>
       ))}
+
+      <OpportunityCityLinks locale="en" />
     </div>
   </main>
 

@@ -3,6 +3,7 @@ import Base from '@layouts/Base.astro';
 import ChineseHeader from '@components/ChineseHeader.astro';
 import ChineseFooter from '@components/ChineseFooter.astro';
 import AdUnit from '@components/AdUnit.astro';
+import RegionSunComparison from '@components/RegionSunComparison.astro';
 import { getRegionHub, regionHubs, useCaseHubs } from '@data/site';
 import {
   getChineseCityLocationLabel,
@@ -13,6 +14,7 @@ import {
 } from '@i18n/chinese';
 import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
 import { buildAlternateLinks, buildBreadcrumbJsonLd } from '@utils/seo';
+import { buildRegionItemListJsonLd, buildRegionSunRows } from '@utils/region-hub';
 
 export function getStaticPaths() {
   return regionHubs.map((region) => ({
@@ -41,6 +43,12 @@ const alternates = buildAlternateLinks([
 ]);
 const languageLinks = buildLanguageSwitcherLinks(pagePath);
 const regionName = getChineseRegionName(region.slug, region.name);
+const regionSunRows = buildRegionSunRows(region.featuredCities.length ? region.featuredCities : region.cities, {
+  locale: 'zh-CN',
+  pathPrefix: '/zh-cn',
+  getCityName: getChineseCityName,
+  getCityLocationLabel: getChineseCityLocationLabel,
+});
 
 const jsonLd = [
   {
@@ -56,6 +64,7 @@ const jsonLd = [
     { name: '城市索引', path: '/zh-cn/cities/' },
     { name: regionName, path: chinesePath },
   ]),
+  buildRegionItemListJsonLd(pageUrl, `${regionName}代表城市`, regionSunRows),
 ];
 ---
 
@@ -114,6 +123,16 @@ const jsonLd = [
           </ul>
         </article>
       </section>
+
+      <RegionSunComparison
+        rows={regionSunRows}
+        heading={`${regionName}今天日出日落对比`}
+        intro="先比较代表城市的日出、日落和白昼时长，再进入具体城市页查看完整信息。"
+        cityLabel="城市"
+        sunriseLabel="日出"
+        sunsetLabel="日落"
+        daylightLabel="白昼时长"
+      />
 
       <section class="resource-section">
         <div class="detail-section-head">

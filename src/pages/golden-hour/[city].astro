@@ -165,6 +165,23 @@ const localTimeLabel = today.toLocaleTimeString('en-US', {
   hour12: true,
   timeZone: city.timezone,
 });
+const numberFormat = new Intl.NumberFormat('en-US', {
+  maximumFractionDigits: 2,
+});
+const seasonalSwingMinutes = Math.round(
+  annualExtremes.longestDay.daylightDuration - annualExtremes.shortestDay.daylightDuration,
+);
+const eveningVsMorningMinutes = golden.evening.durationMin - golden.morning.durationMin;
+const latitudeBand = Math.abs(city.lat) < 15
+  ? 'Low-latitude light, usually steadier through the year'
+  : Math.abs(city.lat) < 35
+    ? 'Moderate seasonal movement with useful morning/evening contrast'
+    : Math.abs(city.lat) < 55
+      ? 'Clear seasonal swing, worth checking month by month'
+      : 'Large seasonal swing; daylight can change the plan dramatically';
+const windowBalance = eveningVsMorningMinutes === 0
+  ? 'Morning and evening windows are similar today'
+  : `${eveningVsMorningMinutes > 0 ? 'Evening' : 'Morning'} golden hour is ${Math.abs(eveningVsMorningMinutes)} min longer today`;
 const lightProgress = clamp(
   ((today.getTime() - sun.dawn.getTime()) / (sun.dusk.getTime() - sun.dawn.getTime())) * 100,
   0,
@@ -744,6 +761,42 @@ const jsonLd = [
         </div>
       </section>
 
+      <section class="detail-section" aria-label="Photo planning signals">
+        <div class="detail-section-head">
+          <h2><i data-lucide="compass" class="icon-md"></i> Photo Planning Signals for {city.name}</h2>
+          <p>These checks make the page more than a time lookup: they show how latitude, season, and nearby alternatives affect the shoot window.</p>
+        </div>
+
+        <div class="planner-grid">
+          <div class="planner-card glass-card">
+            <span class="planner-label">Latitude band</span>
+            <strong>{latitudeBand}</strong>
+            <p>{numberFormat.format(city.lat)}°, {numberFormat.format(city.lng)}° · {city.timezone}</p>
+          </div>
+
+          <div class="planner-card glass-card">
+            <span class="planner-label">Window balance</span>
+            <strong>{windowBalance}</strong>
+            <p>Morning: {golden.morning.durationMin} min · Evening: {golden.evening.durationMin} min</p>
+          </div>
+
+          <div class="planner-card glass-card">
+            <span class="planner-label">Annual daylight swing</span>
+            <strong>{Math.round(seasonalSwingMinutes / 60)} h between shortest and longest day</strong>
+            <p>Longest day: {annualExtremes.longestDay.daylightFormatted} · Shortest day: {annualExtremes.shortestDay.daylightFormatted}</p>
+          </div>
+
+          <div class="planner-card glass-card planner-links">
+            <span class="planner-label">Compare the same light window</span>
+            <a href={`/sunrise/${city.slug}/`}>Full sun times</a>
+            <a href={`/prayer-times/${city.slug}/`}>Prayer times</a>
+            <a href="/cities/">City index</a>
+          </div>
+        </div>
+
+        <p class="planner-use">Check this matrix before scheduling portraits, skyline shots, travel arrivals, or outdoor video in {city.name}.</p>
+      </section>
+
       <section class="detail-section" id="nearby" aria-label="Nearby cities">
         <div class="detail-section-head">
           <h2><i data-lucide="map-pin" class="icon-md"></i> Sunrise Times in Nearby Cities</h2>
@@ -839,8 +892,48 @@ const jsonLd = [
   .outlook-shift.negative {
     color: #ef4444; /* red-500 */
   }
+
+  .planner-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+  }
+
+  .planner-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .planner-label {
+    color: var(--text-muted, #6b7280);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .planner-card p,
+  .planner-use {
+    margin: 0;
+    color: var(--text-muted, #6b7280);
+    line-height: 1.6;
+  }
+
+  .planner-use {
+    margin-top: 1rem;
+  }
+
+  .planner-links a {
+    color: var(--accent, #2563eb);
+    font-weight: 700;
+  }
   
   @media (max-width: 640px) {
+    .planner-grid {
+      grid-template-columns: 1fr;
+    }
+
     th, td {
       padding: 0.5rem;
       font-size: 0.85rem;

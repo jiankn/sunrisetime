@@ -1,0 +1,257 @@
+---
+import { getCityDisplayName, getCityLocationLabel } from '@data/site';
+import type { City } from '@data/site';
+import { localizePath, type EnabledLanguageCode } from '@i18n/config';
+import { getClockTimeDelta, getDaylightChangeDays, getSunTimes, formatTime } from '@utils/sun';
+import { getPrayerTimes } from '@utils/prayer-times';
+
+interface Props {
+  city: City;
+  cityName: string;
+  cityLocationLabel?: string;
+  languageCode: EnabledLanguageCode;
+  locale: string;
+}
+
+const {
+  city,
+  cityName,
+  cityLocationLabel = getCityLocationLabel(city, { includeAdmin1: Boolean(city.admin1) }),
+  languageCode,
+  locale,
+} = Astro.props;
+
+const today = new Date();
+const thirtyDaysAgo = new Date(today);
+thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+const thirtyDaysLater = new Date(today);
+thirtyDaysLater.setDate(thirtyDaysLater.getDate() + 30);
+
+const sun = getSunTimes(today, city.lat, city.lng);
+const prayers = getPrayerTimes(today, city.lat, city.lng, 'MWL', 'Standard');
+const pastPrayers = getPrayerTimes(thirtyDaysAgo, city.lat, city.lng, 'MWL', 'Standard');
+const futurePrayers = getPrayerTimes(thirtyDaysLater, city.lat, city.lng, 'MWL', 'Standard');
+const fajrVs30DaysAgo = getClockTimeDelta(pastPrayers.fajr, prayers.fajr, city.timezone);
+const maghribVs30DaysAgo = getClockTimeDelta(pastPrayers.maghrib, prayers.maghrib, city.timezone);
+const fajrIn30Days = getClockTimeDelta(prayers.fajr, futurePrayers.fajr, city.timezone);
+const maghribIn30Days = getClockTimeDelta(prayers.maghrib, futurePrayers.maghrib, city.timezone);
+const daylightIn30Days = getDaylightChangeDays(today, 30, city.lat, city.lng);
+
+const numberFormat = new Intl.NumberFormat(locale, {
+  maximumFractionDigits: 2,
+});
+
+const copy = {
+  en: {
+    title: 'Prayer planning signals for this city',
+    intro: (name: string) => `Use these signals when the daily table is not enough. They explain why ${name}'s prayer schedule moves the way it does and where to verify the related sun data.`,
+    location: 'Local context',
+    method: 'Calculation basis',
+    movement: '30-day movement',
+    links: 'Related planning pages',
+    coordinates: 'Coordinates',
+    timezone: 'Time zone',
+    methodValue: 'Muslim World League, Standard Asr',
+    fajr: 'Fajr',
+    maghrib: 'Maghrib',
+    daylight: 'Daylight change',
+    sunrise: 'Sunrise and sunset',
+    golden: 'Golden hour',
+    cities: 'City index',
+    baselinePast: '30d ago',
+    baselineToday: 'today',
+    move: (value: number, baseline: string) => value === 0 ? `same as ${baseline}` : `${Math.abs(value)} min ${value > 0 ? 'later' : 'earlier'} than ${baseline}`,
+    daylightMove: (value: number) => value === 0 ? 'no change expected' : `${Math.abs(value)} min ${value > 0 ? 'longer' : 'shorter'} in 30 days`,
+  },
+  es: {
+    title: 'Señales de planificación para esta ciudad',
+    intro: (name: string) => `Estas señales explican por qué cambia el horario de oración de ${name} y dónde comprobar los datos solares relacionados.`,
+    location: 'Contexto local',
+    method: 'Base de cálculo',
+    movement: 'Movimiento a 30 días',
+    links: 'Páginas relacionadas',
+    coordinates: 'Coordenadas',
+    timezone: 'Zona horaria',
+    methodValue: 'Muslim World League, Asr estándar',
+    fajr: 'Fajr',
+    maghrib: 'Maghrib',
+    daylight: 'Cambio de luz',
+    sunrise: 'Amanecer y atardecer',
+    golden: 'Hora dorada',
+    cities: 'Índice de ciudades',
+    baselinePast: 'hace 30 días',
+    baselineToday: 'hoy',
+    move: (value: number, baseline: string) => value === 0 ? `igual que ${baseline}` : `${Math.abs(value)} min ${value > 0 ? 'más tarde' : 'más temprano'} que ${baseline}`,
+    daylightMove: (value: number) => value === 0 ? 'sin cambio previsto' : `${Math.abs(value)} min ${value > 0 ? 'más larga' : 'más corta'} en 30 días`,
+  },
+  ar: {
+    title: 'إشارات تخطيط الصلاة لهذه المدينة',
+    intro: (name: string) => `توضح هذه الإشارات لماذا تتحرك مواقيت الصلاة في ${name} وكيف يمكن التحقق من بيانات الشمس المرتبطة بها.`,
+    location: 'السياق المحلي',
+    method: 'أساس الحساب',
+    movement: 'التغير خلال 30 يومًا',
+    links: 'صفحات مرتبطة',
+    coordinates: 'الإحداثيات',
+    timezone: 'المنطقة الزمنية',
+    methodValue: 'رابطة العالم الإسلامي، العصر القياسي',
+    fajr: 'الفجر',
+    maghrib: 'المغرب',
+    daylight: 'تغير النهار',
+    sunrise: 'الشروق والغروب',
+    golden: 'الساعة الذهبية',
+    cities: 'فهرس المدن',
+    baselinePast: 'قبل 30 يومًا',
+    baselineToday: 'اليوم',
+    move: (value: number, baseline: string) => value === 0 ? `مثل ${baseline}` : `${Math.abs(value)} دقيقة ${value > 0 ? 'أبعد' : 'أبكر'} من ${baseline}`,
+    daylightMove: (value: number) => value === 0 ? 'لا تغير متوقع' : `${Math.abs(value)} دقيقة ${value > 0 ? 'أطول' : 'أقصر'} خلال 30 يومًا`,
+  },
+  'zh-cn': {
+    title: '这座城市的礼拜时间判断信号',
+    intro: (name: string) => `这些信号解释 ${name} 的礼拜时间为什么会移动，并给出可继续核对的日出、日落和光线页面。`,
+    location: '本地背景',
+    method: '计算依据',
+    movement: '30 天变化',
+    links: '相关规划页面',
+    coordinates: '坐标',
+    timezone: '时区',
+    methodValue: '穆斯林世界联盟，标准 Asr',
+    fajr: '晨礼',
+    maghrib: '昏礼',
+    daylight: '白昼变化',
+    sunrise: '日出日落',
+    golden: '黄金时刻',
+    cities: '城市索引',
+    baselinePast: '30 天前',
+    baselineToday: '今天',
+    move: (value: number, baseline: string) => value === 0 ? `与${baseline}相同` : `比${baseline}${value > 0 ? '晚' : '早'} ${Math.abs(value)} 分钟`,
+    daylightMove: (value: number) => value === 0 ? '预计无变化' : `30 天内${value > 0 ? '增加' : '减少'} ${Math.abs(value)} 分钟`,
+  },
+  fr: {
+    title: 'Signaux de planification pour cette ville',
+    intro: (name: string) => `Ces signaux expliquent pourquoi les horaires de prière de ${name} bougent et où vérifier les données solaires associées.`,
+    location: 'Contexte local',
+    method: 'Base de calcul',
+    movement: 'Mouvement sur 30 jours',
+    links: 'Pages liées',
+    coordinates: 'Coordonnées',
+    timezone: 'Fuseau horaire',
+    methodValue: 'Muslim World League, Asr standard',
+    fajr: 'Fajr',
+    maghrib: 'Maghrib',
+    daylight: 'Variation du jour',
+    sunrise: 'Lever et coucher',
+    golden: 'Heure dorée',
+    cities: 'Index des villes',
+    baselinePast: 'il y a 30 jours',
+    baselineToday: 'aujourd’hui',
+    move: (value: number, baseline: string) => value === 0 ? `comme ${baseline}` : `${Math.abs(value)} min ${value > 0 ? 'plus tard' : 'plus tôt'} que ${baseline}`,
+    daylightMove: (value: number) => value === 0 ? 'aucun changement prévu' : `${Math.abs(value)} min ${value > 0 ? 'de plus' : 'de moins'} dans 30 jours`,
+  },
+  tr: {
+    title: 'Bu şehir için namaz planlama sinyalleri',
+    intro: (name: string) => `Bu sinyaller ${name} namaz vakitlerinin neden değiştiğini ve ilgili güneş verilerinin nerede kontrol edileceğini açıklar.`,
+    location: 'Yerel bağlam',
+    method: 'Hesap temeli',
+    movement: '30 günlük hareket',
+    links: 'İlgili planlama sayfaları',
+    coordinates: 'Koordinatlar',
+    timezone: 'Saat dilimi',
+    methodValue: 'Muslim World League, standart ikindi',
+    fajr: 'İmsak',
+    maghrib: 'Akşam',
+    daylight: 'Gün ışığı değişimi',
+    sunrise: 'Gün doğumu ve batımı',
+    golden: 'Altın saat',
+    cities: 'Şehir indeksi',
+    baselinePast: '30 gün önce',
+    baselineToday: 'bugün',
+    move: (value: number, baseline: string) => value === 0 ? `${baseline} ile aynı` : `${baseline} göre ${Math.abs(value)} dk ${value > 0 ? 'daha geç' : 'daha erken'}`,
+    daylightMove: (value: number) => value === 0 ? 'değişim beklenmiyor' : `30 gün içinde ${Math.abs(value)} dk ${value > 0 ? 'daha uzun' : 'daha kısa'}`,
+  },
+}[languageCode];
+
+const displayLocation = cityLocationLabel || getCityDisplayName(city, { includeAdmin1: Boolean(city.admin1) });
+const sunrisePath = localizePath(languageCode, `/sunrise/${city.slug}/`);
+const goldenPath = localizePath(languageCode, `/golden-hour/${city.slug}/`);
+const citiesPath = localizePath(languageCode, '/cities/');
+---
+
+<section class="detail-section prayer-seo-boost" aria-label="Prayer planning signals">
+  <div class="detail-section-head">
+    <h2><i data-lucide="compass" class="icon-md"></i> {copy.title}</h2>
+    <p>{copy.intro(cityName)}</p>
+  </div>
+
+  <div class="planner-grid">
+    <div class="planner-card glass-card">
+      <span class="planner-label">{copy.location}</span>
+      <strong>{displayLocation}</strong>
+      <p>{copy.coordinates}: {numberFormat.format(city.lat)}, {numberFormat.format(city.lng)}</p>
+      <p>{copy.timezone}: {city.timezone}</p>
+    </div>
+
+    <div class="planner-card glass-card">
+      <span class="planner-label">{copy.method}</span>
+      <strong>{copy.methodValue}</strong>
+      <p>{copy.fajr}: {formatTime(prayers.fajr, city.timezone, locale)} · {copy.maghrib}: {formatTime(prayers.maghrib, city.timezone, locale)}</p>
+      <p>{copy.sunrise}: {formatTime(sun.sunrise, city.timezone, locale)} / {formatTime(sun.sunset, city.timezone, locale)}</p>
+    </div>
+
+    <div class="planner-card glass-card">
+      <span class="planner-label">{copy.movement}</span>
+      <strong>{copy.daylight}: {copy.daylightMove(daylightIn30Days)}</strong>
+      <p>{copy.fajr}: {copy.move(fajrVs30DaysAgo, copy.baselinePast)} · {copy.move(fajrIn30Days, copy.baselineToday)}</p>
+      <p>{copy.maghrib}: {copy.move(maghribVs30DaysAgo, copy.baselinePast)} · {copy.move(maghribIn30Days, copy.baselineToday)}</p>
+    </div>
+
+    <div class="planner-card glass-card planner-links">
+      <span class="planner-label">{copy.links}</span>
+      <a href={sunrisePath}>{copy.sunrise}</a>
+      <a href={goldenPath}>{copy.golden}</a>
+      <a href={citiesPath}>{copy.cities}</a>
+    </div>
+  </div>
+</section>
+
+<style>
+  .planner-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+  }
+
+  .planner-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .planner-label {
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-muted, #6b7280);
+  }
+
+  .planner-card strong {
+    font-size: 1.05rem;
+  }
+
+  .planner-card p {
+    margin: 0;
+    color: var(--text-muted, #6b7280);
+    line-height: 1.6;
+  }
+
+  .planner-links a {
+    font-weight: 700;
+    color: var(--accent, #2563eb);
+  }
+
+  @media (max-width: 760px) {
+    .planner-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

@@ -2,6 +2,7 @@
 import Base from '@layouts/Base.astro';
 import ChineseHeader from '@components/ChineseHeader.astro';
 import ChineseFooter from '@components/ChineseFooter.astro';
+import PrayerCitySeoBoost from '@components/PrayerCitySeoBoost.astro';
 import { getCityBySlug, getCityStaticPaths, getComparisonCities, getNearbyCities } from '@data/site';
 import {
   chineseLocale,
@@ -104,6 +105,7 @@ const otherCities = getComparisonCities(city, 4);
 
 const pagePath = `/prayer-times/${city.slug}/`;
 const zhPath = localizePath('zh-cn', pagePath);
+const prayerGuidePath = localizePath('zh-cn', '/guides/prayer-times/');
 const sunrisePagePath = `/sunrise/${city.slug}/`;
 const sunrisePath = localizePath('zh-cn', sunrisePagePath);
 const pageUrl = `https://sunrisetime.co${zhPath}`;
@@ -160,7 +162,7 @@ const jsonLd = [
   },
   buildBreadcrumbJsonLd([
     { name: '首页', path: '/zh-cn/' },
-    { name: '礼拜时间', path: zhPath },
+    { name: '礼拜时间', path: prayerGuidePath },
     { name: cityName, path: zhPath },
   ]),
 ];
@@ -183,7 +185,7 @@ const jsonLd = [
       <nav class="breadcrumb" aria-label="面包屑导航">
         <a href="/zh-cn/">首页</a>
         <i data-lucide="chevron-right" class="icon-xs"></i>
-        <a href={sunrisePath}>日出日落</a>
+        <a href={prayerGuidePath}>礼拜时间</a>
         <i data-lucide="chevron-right" class="icon-xs"></i>
         <span>{cityName}</span>
       </nav>
@@ -289,6 +291,14 @@ const jsonLd = [
           <p>这页把今天的礼拜顺序、下一次礼拜时间，以及与礼拜相关的日出日落信息放在同一页里。当前默认按穆斯林世界联盟（MWL）标准计算，晡礼使用标准影长规则。</p>
         </div>
       </section>
+
+      <PrayerCitySeoBoost
+        city={city}
+        cityName={cityName}
+        cityLocationLabel={locationLabel}
+        languageCode="zh-cn"
+        locale={chineseLocale}
+      />
 
       <section class="detail-section" aria-label="30天礼拜变化">
         <div class="detail-section-head">

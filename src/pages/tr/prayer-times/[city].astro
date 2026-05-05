@@ -2,6 +2,7 @@
 import Base from '@layouts/Base.astro';
 import TurkishHeader from '@components/TurkishHeader.astro';
 import TurkishFooter from '@components/TurkishFooter.astro';
+import PrayerCitySeoBoost from '@components/PrayerCitySeoBoost.astro';
 import { getCityBySlug, getCityStaticPaths, getComparisonCities, getNearbyCities } from '@data/site';
 import { buildLanguageSwitcherLinks, localizePath } from '@i18n/config';
 import {
@@ -383,6 +384,14 @@ const jsonLd = [
           </p>
         </div>
       </section>
+
+      <PrayerCitySeoBoost
+        city={city}
+        cityName={cityName}
+        cityLocationLabel={cityLocationLabel}
+        languageCode="tr"
+        locale={turkishLocale}
+      />
 
       <section class="detail-section" aria-label="30 günlük namaz görünümü">
         <div class="detail-section-head">
